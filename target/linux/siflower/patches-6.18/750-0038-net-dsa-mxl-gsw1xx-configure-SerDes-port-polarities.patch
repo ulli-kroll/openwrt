@@ -1,0 +1,132 @@
+From ffd034ac0912bb09c3d8e0fb30f3aedbdc0f25b4 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Sun, 1 Feb 2026 03:42:00 +0000
+Subject: [PATCH 1/2] net: dsa: mxl-gsw1xx: configure SerDes port polarities
+
+Configure SerDes (port 4) RX and TX polarities using the newly
+introduced generic properties. The polarities are described at the port
+level which equals the polarities of the external pins of the chip.
+
+Note that the RX lane is inverted internally and the vendor driver
+simply always sets bit GSW1XX_SGMII_PHY_RX0_CFG2_INVERT unconditionally
+to end up with the correct (ie. as documented in datasheets) polarity at
+the external pins.
+
+In this sense, PHY_POLARITY_NORMAL denotes normal polarity for pins as
+documented for the MRQFN 105-pin package (GSW120, GSW125, GSW140, GSW141
+and GSW145 all use the same package and have identical pin layouts
+except for TP port 2 and 3 being N/C on GSW12x):
+pin B18 (TX0_P) positive signal of the differential SGMII data output pair
+pin B19 (TX0_M) negative signal of the differential SGMII data output pair
+pin B20 (RX0_P) positive signal of the differential SGMII data input pair
+pin B21 (RX0_M) negative signal of the differential SGMII data input pair
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+Link: https://patch.msgid.link/8bf79b3476e23673fceffbe2bc9d6abc13d132e5.1769916962.git.daniel@makrotopia.org
+Reviewed-by: Vladimir Oltean <olteanv@gmail.com>
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ drivers/net/dsa/lantiq/Kconfig      |  1 +
+ drivers/net/dsa/lantiq/mxl-gsw1xx.c | 39 +++++++++++++++++++++--------
+ 2 files changed, 29 insertions(+), 11 deletions(-)
+
+diff --git a/drivers/net/dsa/lantiq/Kconfig b/drivers/net/dsa/lantiq/Kconfig
+index bad13817af25..98efeef2661b 100644
+--- a/drivers/net/dsa/lantiq/Kconfig
++++ b/drivers/net/dsa/lantiq/Kconfig
+@@ -15,6 +15,7 @@ config NET_DSA_MXL_GSW1XX
+ 	tristate "MaxLinear GSW1xx Ethernet switch support"
+ 	select NET_DSA_TAG_MXL_GSW1XX
+ 	select NET_DSA_LANTIQ_COMMON
++	select PHY_COMMON_PROPS
+ 	help
+ 	  This enables support for the Intel/MaxLinear GSW1xx family of 1GE
+ 	  switches.
+diff --git a/drivers/net/dsa/lantiq/mxl-gsw1xx.c b/drivers/net/dsa/lantiq/mxl-gsw1xx.c
+index 79cf72cc77be..61220b5fe5af 100644
+--- a/drivers/net/dsa/lantiq/mxl-gsw1xx.c
++++ b/drivers/net/dsa/lantiq/mxl-gsw1xx.c
+@@ -15,6 +15,8 @@
+ #include <linux/module.h>
+ #include <linux/of_device.h>
+ #include <linux/of_mdio.h>
++#include <linux/phy/phy-common-props.h>
++#include <linux/property.h>
+ #include <linux/regmap.h>
+ #include <linux/workqueue.h>
+ #include <net/dsa.h>
+@@ -229,11 +231,17 @@ static int gsw1xx_pcs_phy_xaui_write(struct gsw1xx_priv *priv, u16 addr,
+ 					1000, 100000);
+ }
+ 
+-static int gsw1xx_pcs_reset(struct gsw1xx_priv *priv)
++static int gsw1xx_pcs_reset(struct gsw1xx_priv *priv, phy_interface_t interface)
+ {
++	struct dsa_port *sgmii_port;
++	unsigned int pol;
+ 	int ret;
+ 	u16 val;
+ 
++	sgmii_port = dsa_to_port(priv->gswip.ds, GSW1XX_SGMII_PORT);
++	if (!sgmii_port)
++		return -EINVAL;
++
+ 	/* Assert and deassert SGMII shell reset */
+ 	ret = regmap_set_bits(priv->shell, GSW1XX_SHELL_RST_REQ,
+ 			      GSW1XX_RST_REQ_SGMII_SHELL);
+@@ -260,15 +268,20 @@ static int gsw1xx_pcs_reset(struct gsw1xx_priv *priv)
+ 	      FIELD_PREP(GSW1XX_SGMII_PHY_RX0_CFG2_FILT_CNT,
+ 			 GSW1XX_SGMII_PHY_RX0_CFG2_FILT_CNT_DEF);
+ 
++	ret = phy_get_manual_rx_polarity(of_fwnode_handle(sgmii_port->dn),
++					 phy_modes(interface), &pol);
++	if (ret)
++		return ret;
++
+ 	/* RX lane seems to be inverted internally, so bit
+ 	 * GSW1XX_SGMII_PHY_RX0_CFG2_INVERT needs to be set for normal
+-	 * (ie. non-inverted) operation.
+-	 *
+-	 * TODO: Take care of inverted RX pair once generic property is
+-	 *       available
++	 * (ie. non-inverted) operation matching the chips external pins as
++	 * described in datasheets dated 2023-11-08, ie. pin B20 (RX0_P) being
++	 * the positive signal and pin B21 (RX0_M) being the negative signal of
++	 * the differential input pair.
+ 	 */
+-
+-	val |= GSW1XX_SGMII_PHY_RX0_CFG2_INVERT;
++	if (pol == PHY_POL_NORMAL)
++		val |= GSW1XX_SGMII_PHY_RX0_CFG2_INVERT;
+ 
+ 	ret = regmap_write(priv->sgmii, GSW1XX_SGMII_PHY_RX0_CFG2, val);
+ 	if (ret < 0)
+@@ -277,9 +290,13 @@ static int gsw1xx_pcs_reset(struct gsw1xx_priv *priv)
+ 	val = FIELD_PREP(GSW1XX_SGMII_PHY_TX0_CFG3_VBOOST_LEVEL,
+ 			 GSW1XX_SGMII_PHY_TX0_CFG3_VBOOST_LEVEL_DEF);
+ 
+-	/* TODO: Take care of inverted TX pair once generic property is
+-	 *       available
+-	 */
++	ret = phy_get_manual_tx_polarity(of_fwnode_handle(sgmii_port->dn),
++					 phy_modes(interface), &pol);
++	if (ret)
++		return ret;
++
++	if (pol == PHY_POL_INVERT)
++		val |= GSW1XX_SGMII_PHY_TX0_CFG3_INVERT;
+ 
+ 	ret = regmap_write(priv->sgmii, GSW1XX_SGMII_PHY_TX0_CFG3, val);
+ 	if (ret < 0)
+@@ -336,7 +353,7 @@ static int gsw1xx_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
+ 	priv->tbi_interface = PHY_INTERFACE_MODE_NA;
+ 
+ 	if (!reconf)
+-		ret = gsw1xx_pcs_reset(priv);
++		ret = gsw1xx_pcs_reset(priv, interface);
+ 
+ 	if (ret)
+ 		return ret;
+-- 
+2.53.0
+

@@ -1,0 +1,154 @@
+From afe813fd89ecde068a5f972714c4abf896715167 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Thu, 22 Jan 2026 16:39:30 +0000
+Subject: [PATCH] net: dsa: mxl-gsw1xx: add support for Intel GSW150
+
+Add support for the Intel GSW150 (aka. Lantiq PEB7084) switch IC to
+the mxl-gsw1xx driver. This switch comes with 5 Gigabit Ethernet
+copper ports (Intel XWAY PHY11G (xRX v1.2 integrated) PHYs) as well as
+one GMII/RGMII and one RGMII port.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+Link: https://patch.msgid.link/c84cf94337bf1be30940841b338b6368468c6e17.1769099517.git.daniel@makrotopia.org
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ drivers/net/dsa/lantiq/Kconfig      |  4 +-
+ drivers/net/dsa/lantiq/mxl-gsw1xx.c | 67 ++++++++++++++++++++++++++---
+ drivers/net/dsa/lantiq/mxl-gsw1xx.h |  2 +
+ 3 files changed, 67 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/net/dsa/lantiq/Kconfig b/drivers/net/dsa/lantiq/Kconfig
+index 4a9771be5d58..bad13817af25 100644
+--- a/drivers/net/dsa/lantiq/Kconfig
++++ b/drivers/net/dsa/lantiq/Kconfig
+@@ -16,9 +16,11 @@ config NET_DSA_MXL_GSW1XX
+ 	select NET_DSA_TAG_MXL_GSW1XX
+ 	select NET_DSA_LANTIQ_COMMON
+ 	help
+-	  This enables support for the MaxLinear GSW1xx family of 1GE switches
++	  This enables support for the Intel/MaxLinear GSW1xx family of 1GE
++	  switches.
+ 	    GSW120 4 port, 2 PHYs, RGMII & SGMII/2500Base-X
+ 	    GSW125 4 port, 2 PHYs, RGMII & SGMII/2500Base-X, industrial temperature
+ 	    GSW140 6 port, 4 PHYs, RGMII & SGMII/2500Base-X
+ 	    GSW141 6 port, 4 PHYs, RGMII & SGMII
+ 	    GSW145 6 port, 4 PHYs, RGMII & SGMII/2500Base-X, industrial temperature
++	    GSW150 7 port, 5 PHYs, 1x GMII/RGMII, 1x RGMII
+diff --git a/drivers/net/dsa/lantiq/mxl-gsw1xx.c b/drivers/net/dsa/lantiq/mxl-gsw1xx.c
+index c6fa93229349..79cf72cc77be 100644
+--- a/drivers/net/dsa/lantiq/mxl-gsw1xx.c
++++ b/drivers/net/dsa/lantiq/mxl-gsw1xx.c
+@@ -502,6 +502,14 @@ static const struct phylink_pcs_ops gsw1xx_pcs_ops = {
+ 	.pcs_link_up = gsw1xx_pcs_link_up,
+ };
+ 
++static void gsw1xx_phylink_get_lpi_caps(struct phylink_config *config)
++{
++	config->lpi_capabilities = MAC_100FD | MAC_1000FD;
++	config->lpi_timer_default = 20;
++	memcpy(config->lpi_interfaces, config->supported_interfaces,
++	       sizeof(config->lpi_interfaces));
++}
++
+ static void gsw1xx_phylink_get_caps(struct dsa_switch *ds, int port,
+ 				    struct phylink_config *config)
+ {
+@@ -535,10 +543,32 @@ static void gsw1xx_phylink_get_caps(struct dsa_switch *ds, int port,
+ 		break;
+ 	}
+ 
+-	config->lpi_capabilities = MAC_100FD | MAC_1000FD;
+-	config->lpi_timer_default = 20;
+-	memcpy(config->lpi_interfaces, config->supported_interfaces,
+-	       sizeof(config->lpi_interfaces));
++	gsw1xx_phylink_get_lpi_caps(config);
++}
++
++static void gsw150_phylink_get_caps(struct dsa_switch *ds, int port,
++				    struct phylink_config *config)
++{
++	config->mac_capabilities = MAC_ASYM_PAUSE | MAC_SYM_PAUSE |
++				   MAC_10 | MAC_100 | MAC_1000;
++
++	switch (port) {
++	case 0 ... 4: /* built-in PHYs */
++		__set_bit(PHY_INTERFACE_MODE_INTERNAL,
++			  config->supported_interfaces);
++		break;
++
++	case 5: /* GMII or RGMII */
++		__set_bit(PHY_INTERFACE_MODE_GMII,
++			  config->supported_interfaces);
++		fallthrough;
++
++	case 6: /* RGMII */
++		phy_interface_set_rgmii(config->supported_interfaces);
++		break;
++	}
++
++	gsw1xx_phylink_get_lpi_caps(config);
+ }
+ 
+ static struct phylink_pcs *gsw1xx_phylink_mac_select_pcs(struct phylink_config *config,
+@@ -809,11 +839,38 @@ static const struct gswip_hw_info gsw141_data = {
+ 	.tag_protocol		= DSA_TAG_PROTO_MXL_GSW1XX,
+ };
+ 
++static const struct gswip_hw_info gsw150_data = {
++	.max_ports		= GSW150_PORTS,
++	.allowed_cpu_ports	= BIT(5) | BIT(6),
++	.mii_cfg = {
++		[0 ... 4] = -1,
++		[5] = 0,
++		[6] = 10,
++	},
++	.mii_pcdu = {
++		[0 ... 4] = -1,
++		[5] = 1,
++		[6] = 11,
++	},
++	.phylink_get_caps	= gsw150_phylink_get_caps,
++	/* There is only a single RGMII_SLEW_CFG register in GSW150 and it is
++	 * unknown if RGMII slew configuration affects both RGMII ports
++	 * or only port 5. Use .port_setup which assumes it affects port 5
++	 * for now.
++	 */
++	.port_setup		= gsw1xx_port_setup,
++	.pce_microcode		= &gsw1xx_pce_microcode,
++	.pce_microcode_size	= ARRAY_SIZE(gsw1xx_pce_microcode),
++	.tag_protocol		= DSA_TAG_PROTO_MXL_GSW1XX,
++};
++
+ /*
+  * GSW125 is the industrial temperature version of GSW120.
+  * GSW145 is the industrial temperature version of GSW140.
+  */
+ static const struct of_device_id gsw1xx_of_match[] = {
++	{ .compatible = "intel,gsw150", .data = &gsw150_data },
++	{ .compatible = "lantiq,peb7084", .data = &gsw150_data },
+ 	{ .compatible = "maxlinear,gsw120", .data = &gsw12x_data },
+ 	{ .compatible = "maxlinear,gsw125", .data = &gsw12x_data },
+ 	{ .compatible = "maxlinear,gsw140", .data = &gsw140_data },
+@@ -837,5 +894,5 @@ static struct mdio_driver gsw1xx_driver = {
+ mdio_module_driver(gsw1xx_driver);
+ 
+ MODULE_AUTHOR("Daniel Golle <daniel@makrotopia.org>");
+-MODULE_DESCRIPTION("Driver for MaxLinear GSW1xx ethernet switch");
++MODULE_DESCRIPTION("Driver for Intel/MaxLinear GSW1xx Ethernet switch");
+ MODULE_LICENSE("GPL");
+diff --git a/drivers/net/dsa/lantiq/mxl-gsw1xx.h b/drivers/net/dsa/lantiq/mxl-gsw1xx.h
+index 8c0298b2b766..d1fded56e967 100644
+--- a/drivers/net/dsa/lantiq/mxl-gsw1xx.h
++++ b/drivers/net/dsa/lantiq/mxl-gsw1xx.h
+@@ -10,6 +10,8 @@
+ #include <linux/bitfield.h>
+ 
+ #define GSW1XX_PORTS				6
++#define GSW150_PORTS				7
++
+ /* Port used for RGMII or optional RMII */
+ #define GSW1XX_MII_PORT				5
+ /* Port used for SGMII */
+-- 
+2.52.0
+

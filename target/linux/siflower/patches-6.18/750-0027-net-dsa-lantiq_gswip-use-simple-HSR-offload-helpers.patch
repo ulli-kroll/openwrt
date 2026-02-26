@@ -1,0 +1,37 @@
+From b6ad21ef286a00de103ef6d94292e4da649d6453 Mon Sep 17 00:00:00 2001
+From: Vladimir Oltean <vladimir.oltean@nxp.com>
+Date: Sun, 30 Nov 2025 15:16:51 +0200
+Subject: [PATCH 27/32] net: dsa: lantiq_gswip: use simple HSR offload helpers
+
+Both the "gswip" and "gsw1xx" protocols use dsa_xmit_port_mask(), so
+they are compatible with accelerating TX packet duplication for HSR
+rings.
+
+Enable that feature by setting the port_hsr_join() and port_hsr_leave()
+operations to the simple helpers provided by DSA.
+
+Cc: Hauke Mehrtens <hauke@hauke-m.de>
+Cc: Daniel Golle <daniel@makrotopia.org>
+Signed-off-by: Vladimir Oltean <vladimir.oltean@nxp.com>
+Link: https://patch.msgid.link/20251130131657.65080-10-vladimir.oltean@nxp.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/dsa/lantiq/lantiq_gswip_common.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/net/dsa/lantiq/lantiq_gswip_common.c b/drivers/net/dsa/lantiq/lantiq_gswip_common.c
+index 122ccea4057b..9da39edf8f57 100644
+--- a/drivers/net/dsa/lantiq/lantiq_gswip_common.c
++++ b/drivers/net/dsa/lantiq/lantiq_gswip_common.c
+@@ -1652,6 +1652,8 @@ static const struct dsa_switch_ops gswip_switch_ops = {
+ 	.get_sset_count		= gswip_get_sset_count,
+ 	.set_mac_eee		= gswip_set_mac_eee,
+ 	.support_eee		= gswip_support_eee,
++	.port_hsr_join		= dsa_port_simple_hsr_join,
++	.port_hsr_leave		= dsa_port_simple_hsr_leave,
+ };
+ 
+ void gswip_disable_switch(struct gswip_priv *priv)
+-- 
+2.52.0
+
