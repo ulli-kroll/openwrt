@@ -5,6 +5,8 @@ FEATURES+=fpu source-only
 CPU_TYPE:=24kc
 CPU_SUBTYPE:=24kf
 
+KERNEL_TESTING_PATCHVER:=6.18
+
 KERNELNAME:=vmlinux
 
 define Target/Description
