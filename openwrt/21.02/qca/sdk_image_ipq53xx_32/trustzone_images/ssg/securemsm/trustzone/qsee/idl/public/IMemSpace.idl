@@ -1,0 +1,66 @@
+include "IMemRegion.idl"
+
+/**
+ * A memory space determines mapping from virtual addresses to physical
+ * addresses, and the types of access allowed at each virtual addresses.
+ */
+/** @cond */
+interface IMemSpace {
+/** @endcond */
+
+  /**
+   * @addtogroup IMemSpace
+   * @{
+   */
+
+  /** @cond */
+  /*
+   * Memory cannot be mapped as specified because the provided memory
+   * region object did not confer the required memory access permissions.
+   */
+  error ERROR_PERM;
+
+  /*
+   * The provided object was not a memory region.
+   */
+  error ERROR_INVALID_REGION;
+
+  /*
+   * Allocate app region got failed due to either allocate_physical_pages
+   * or allocate_virtual_pages
+   */
+  error ERROR_TA_APP_REGION_ALLOC;
+  /** @endcond */
+
+  /**
+    Makes a memory region visible in the address space as a contiguous range
+    of virtual addresses.
+
+    On success, virtual addresses from <tt>addr</tt> to <tt>addr+size-1</tt> are
+    accessible with at least the specified permissions, and remain
+    accessible until the memmap object is released.
+
+    If the region is already mapped with the requested permissions,
+    the operation succeeds and returns the same addresses and a new
+    memmap object.
+
+    @param[in]  region  Identifies memory to be made visible.
+    @param[in]  perms   Access permissions required for mapping, as defined in
+                        IMemRegion::PERM_... constants.  If these permissions cannot
+                        be satisfied, the operation fails.
+    @param[out] addr    Virtual address of the mapped region.
+    @param[out] size    Mapped region size.
+    @param[out] memmap  An object that acts as a reference count on mapping.
+                        When deleted, the map is removed from the address
+                        space.
+
+    @return
+    Object_OK on success.
+  */
+  method map(in IMemRegion region,
+             in uint32 perms,
+             out uint64 addr,
+             out uint64 size,
+             out interface memmap);
+  /* @} */ /* end_addtogroup IMemSpace */
+};

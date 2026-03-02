@@ -1,0 +1,6 @@
+{
+  "url" : "https://oemapi.oemdomain.com/",
+  "type": "ALL",
+  "retry_cnt" : 3,
+  "path" : "/etc/pairing/"
+}

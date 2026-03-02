@@ -1,0 +1,127 @@
+From: Leon Zhang <leon.zhang@cudy.com>
+Date: Mon, 5 Aug 2024 17:38:39 +0800
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+---
+ src/dnsmasq.h |  2 +-
+ src/forward.c | 14 ++++++--------
+ src/rfc1035.c | 20 ++++++++++----------
+ 3 files changed, 17 insertions(+), 19 deletions(-)
+
+diff --git a/src/dnsmasq.h b/src/dnsmasq.h
+index 99aea4b..07a44eb 100644
+--- a/src/dnsmasq.h
++++ b/src/dnsmasq.h
+@@ -1266,7 +1266,7 @@ size_t setup_reply(struct dns_header *header, size_t  qlen,
+ 		   union all_addr *addrp, unsigned int flags,
+ 		   unsigned long ttl);
+ int extract_addresses(struct dns_header *header, size_t qlen, char *name,
+-		      time_t now, char **ipsets, int is_sign, int check_rebind,
++		      time_t now, char **_ipset_lists[], size_t _ipset_lists_size, int is_sign, int check_rebind,
+ 		      int no_cache_dnssec, int secure, int *doctored);
+ size_t answer_request(struct dns_header *header, char *limit, size_t qlen,  
+ 		      struct in_addr local_addr, struct in_addr local_netmask, 
+diff --git a/src/forward.c b/src/forward.c
+index 37c4dc9..6cfb1f3 100644
+--- a/src/forward.c
++++ b/src/forward.c
+@@ -712,7 +712,8 @@ static size_t process_reply(struct dns_header *header, time_t now, struct server
+ 			    int check_subnet, union mysockaddr *query_source)
+ {
+   unsigned char *pheader, *sizep;
+-  char **sets = 0;
++  char ** _ipset_lists[1024] = {NULL}; // ipset命中的列表，假设最大 1024 条
++  size_t _ipset_lists_size = 0;
+   int munged = 0, is_sign;
+   unsigned int rcode = RCODE(header);
+   size_t plen; 
+@@ -727,25 +728,22 @@ static size_t process_reply(struct dns_header *header, time_t now, struct server
+       /* Similar algorithm to search_servers. */
+       struct ipsets *ipset_pos;
+       unsigned int namelen = strlen(daemon->namebuff);
+-      unsigned int matchlen = 0;
+       for (ipset_pos = daemon->ipsets; ipset_pos; ipset_pos = ipset_pos->next) 
+ 	{
+ #ifdef HAVE_REGEX
+ #ifdef HAVE_REGEX_IPSET
+ 	  if (ipset_pos->domain_type & IPSET_IS_REGEX){
+ 		  if (match_regex(ipset_pos->regex, ipset_pos->pextra, daemon->namebuff, namelen, NULL))
+-		    sets = ipset_pos->sets;
++		    _ipset_lists[_ipset_lists_size++] = ipset_pos->sets;
+ 	  }else{
+ #endif
+ #endif
+ 	  unsigned int domainlen = strlen(ipset_pos->domain);
+ 	  char *matchstart = daemon->namebuff + namelen - domainlen;
+ 	  if (namelen >= domainlen && hostname_isequal(matchstart, ipset_pos->domain) &&
+-	      (domainlen == 0 || namelen == domainlen || *(matchstart - 1) == '.' ) &&
+-	      domainlen >= matchlen) 
++	      (domainlen == 0 || namelen == domainlen || *(matchstart - 1) == '.' )) 
+ 	    {
+-	      matchlen = domainlen;
+-	      sets = ipset_pos->sets;
++	      _ipset_lists[_ipset_lists_size++] = ipset_pos->sets;
+ 	    }
+ #ifdef HAVE_REGEX
+ #ifdef HAVE_REGEX_IPSET
+@@ -856,7 +854,7 @@ static size_t process_reply(struct dns_header *header, time_t now, struct server
+ 	  cache_secure = 0;
+ 	}
+       
+-      if (extract_addresses(header, n, daemon->namebuff, now, sets, is_sign, check_rebind, no_cache, cache_secure, &doctored))
++      if (extract_addresses(header, n, daemon->namebuff, now, _ipset_lists, _ipset_lists_size, is_sign, check_rebind, no_cache, cache_secure, &doctored))
+ 	{
+ 	  my_syslog(LOG_WARNING, _("possible DNS-rebind attack detected: %s"), daemon->namebuff);
+ 	  munged = 1;
+diff --git a/src/rfc1035.c b/src/rfc1035.c
+index 2b05f0e..d114ba3 100644
+--- a/src/rfc1035.c
++++ b/src/rfc1035.c
+@@ -530,7 +530,7 @@ static int find_soa(struct dns_header *header, size_t qlen, char *name, int *doc
+    expired and cleaned out that way. 
+    Return 1 if we reject an address because it look like part of dns-rebinding attack. */
+ int extract_addresses(struct dns_header *header, size_t qlen, char *name, time_t now, 
+-		      char **ipsets, int is_sign, int check_rebind, int no_cache_dnssec,
++		      char **_ipset_lists[], size_t _ipset_lists_size, int is_sign, int check_rebind, int no_cache_dnssec,
+ 		      int secure, int *doctored)
+ {
+   unsigned char *p, *p1, *endrr, *namep;
+@@ -539,8 +539,6 @@ int extract_addresses(struct dns_header *header, size_t qlen, char *name, time_t
+   union all_addr addr;
+ #ifdef HAVE_IPSET
+   char **ipsets_cur;
+-#else
+-  (void)ipsets; /* unused */
+ #endif
+ 
+   
+@@ -820,15 +818,17 @@ int extract_addresses(struct dns_header *header, size_t qlen, char *name, time_t
+ 			    }
+ 
+ #ifdef HAVE_IPSET
+-			  if (ipsets && (flags & (F_IPV4 | F_IPV6)))
+-			    {
+-			      ipsets_cur = ipsets;
+-			      while (*ipsets_cur)
++		for (int i = 0; i < _ipset_lists_size; i++) {
++			char **ipsets = _ipset_lists[i];
++			if (ipsets && (flags & (F_IPV4 | F_IPV6))) {
++				ipsets_cur = ipsets;
++				while (*ipsets_cur)
+ 				{
+-				  log_query((flags & (F_IPV4 | F_IPV6)) | F_IPSET, name, &addr, *ipsets_cur);
+-				  add_to_ipset(*ipsets_cur++, &addr, flags, 0);
++					log_query((flags & (F_IPV4 | F_IPV6)) | F_IPSET, name, &addr, *ipsets_cur);
++					add_to_ipset(*ipsets_cur++, &addr, flags, 0);
+ 				}
+-			    }
++			}
++		}
+ #endif
+ 			}
+ 		      
+-- 
+2.17.1
+

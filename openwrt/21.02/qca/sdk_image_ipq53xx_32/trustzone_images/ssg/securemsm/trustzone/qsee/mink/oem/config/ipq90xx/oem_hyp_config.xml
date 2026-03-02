@@ -1,0 +1,14 @@
+<driver name="NULL">
+  <global_def>
+
+  </global_def>
+  <device id="/hyp/oem">
+    <props name="OEM_kernel_code_region" type=DALPROP_ATTR_TYPE_UINT32>
+      0x41100000
+    </props>
+    <props name="OEM_kernel_code_size" type=DALPROP_ATTR_TYPE_UINT32>
+      0x6F0000
+    </props>
+  </device>
+
+</driver>

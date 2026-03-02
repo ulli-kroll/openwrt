@@ -1,0 +1,29 @@
+// Copyright (c) 2017 Qualcomm Technologies, Inc.  All Rights Reserved.
+// Qualcomm Technologies Proprietary and Confidential.
+
+/**
+ * Updates Output Protection Service with the revoked receiver IDs
+ * list retrieved from a signed SRM file.
+ */
+/** @cond */
+interface IHdcpSrm {
+/** @endcond */
+
+  /**
+   * @addtogroup IHdcpSrm
+   * @{
+   */
+
+  /**
+    Updates receiver IDs parsed from HDCP System Renewability Message.
+
+    @param[in] version         SRM version number.
+    @param[in] receiverIdList  Receiver IDs to be revoked.
+
+    @return
+    Object_OK on success.
+  */
+  method updateRevokedIds(in uint16 version, in uint8[] receiverIdList);
+  /** @} */ /* end_addtogroup IHdcpSrm */
+};
+

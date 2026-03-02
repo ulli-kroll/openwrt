@@ -1,0 +1,157 @@
+/**
+ * Copyright (c) 2020-2022 Qualcomm Technologies, Inc.
+ * All Rights Reserved.
+ * Qualcomm Technologies Proprietary and Confidential.
+ */
+
+/** @file IHWKeyFactory.idl */
+
+/** @cond */
+
+struct IHWKey_operationPolicy {
+  uint32 operations; /**< Mask of operations allowed for key */
+  uint32 algorithm;  /**< Algorithm key can be used for */
+};
+
+struct IHWKey_policy {
+  IHWKey_operationPolicy opPolicy; /**< Parameters for operational key */
+  uint32 kdfDepth;                 /**< Number of KDF iterations to use when deriving child key */
+  uint32 permissions;              /**< Mask of permissions for key */
+  uint32 keyType;                  /**< Type of key */
+  uint32 destination;              /**< Destination hardware instance */
+};
+
+struct IHWKey_bindings {
+  uint32 bindings;   /**< Device and software state bindings for key */
+  uint32 contextLen; /**< The software context length */
+  uint8[64] context; /**< Software context to be mixed in for key derivation */
+};
+
+/** @endcond */
+
+/** @cond */
+interface IHWKey {
+/** @endcond */
+
+  /**
+    @addtogroup IHWKey
+    @{
+   */
+
+  /** @cond */
+
+
+  /**
+    Key types supported for a key. The keyType field of
+    IHWKey_policy should be one of these values.
+   */
+  const uint32 KEY_TYPE_OPERATIONAL = 2; /**< Key which is to be used to for crypto operations */
+
+  /**
+    The bindings field of IHWKey_bindings
+    should be a mask created by ORing all selected bindings. A key derivation operation
+    using a key will incorporate these bindings as part of the context, so if these
+    bindings change, a different key will be derived, preserving the confidentiality
+    of any keys previously derived.
+   */
+  const uint32 BINDING_RESERVED1         = 0x00000001;
+  const uint32 BINDING_SOCSECBOOTSTATE   = 0x00000002;   
+  const uint32 BINDING_SOCDEBUGSTATE     = 0x00000004;    
+  const uint32 BINDING_TMELIFECYCLESTATE = 0x00000008;    
+  const uint32 BINDING_RESERVED2         = 0x00000010;    
+  const uint32 BINDING_SWCONTEXT         = 0x00000020;    
+  const uint32 BINDING_CHILDKEYPOLICY    = 0x00000040;    
+  const uint32 BINDING_MIXINGKEY         = 0x00000080;    
+  const uint32 BINDING_CHIPUNIQUEID      = 0x00000100;    
+  const uint32 BINDING_CHIPDEVICENUMBER  = 0x00000200;    
+  const uint32 BINDING_TMEPATCHVER       = 0x00000400;    
+  const uint32 BINDING_RESERVED3         = 0x00000800;   
+  const uint32 BINDING_OEMID             = 0x00001000;   
+  const uint32 BINDING_OEMPRODUCTID      = 0x00002000;   
+  const uint32 BINDING_RESERVED4         = 0x00004000;  
+  const uint32 BINDING_RESERVED5         = 0x00008000;   
+  const uint32 BINDING_OEMMRCHASH        = 0x00010000;   
+  const uint32 BINDING_OEMPRODUCTSEED    = 0x00020000;   
+  const uint32 BINDING_RESERVED6         = 0x00040000;   
+  const uint32 BINDING_RESERVED7         = 0x00080000;   
+  const uint32 BINDING_RESERVED8         = 0x00100000;   
+  const uint32 BINDING_OEMLIFECYCLESTATE = 0x00200000;   
+
+  /**
+    Destination HW instance where key can be used
+    WARNING: Using reserved destination values may cause errors
+    and backward compatibility issues and should be avoided
+   */
+  const uint32 DESTINATION_DEFAULT = 0;   /** Key destination defaults to most appropriate for its type */
+  const uint32 DESTINATION_RESERVED1 = 1; /** Reserved destination */
+  const uint32 DESTINATION_RESERVED2 = 2; /** Reserved destination */
+
+  /** @endcond */
+
+
+  /** @} */ /* end_addtogroup IHWKey */
+};
+
+/** @cond */
+interface IHWKeyFactory {
+/** @endcond */
+
+  /**
+    @addtogroup IHWKeyFactory
+    @{
+   */
+
+  /** @cond */
+
+  /**
+    HW source values to be passed to deriveFromHWSource() as the source parameter.
+    WARNING: Using reserved values may cause errors and backward compatibility issues and should be avoided.
+    WARNING: Reserved source values map to keys with values retained by QCOM.
+   */
+  const uint32 HW_SOURCE_RESERVED1 = 1;       /**< Reserved */
+  const uint32 HW_SOURCE_OEM_PRODUCT_SEED = 2;  /**< OEM blown key */
+  const uint32 HW_SOURCE_CHIP_RANDOM_KEY = 3; /**< Unique key per device, randomly generated during manufacturing */
+
+  error ERROR_MISSING_PRIVILEGE;       /**< Client does not have sufficient privilege for requested operation */
+  error ERROR_MISSING_PERMISSION;      /**< Key policy missing permission for requested operation */
+  error ERROR_INVALID_WRAPPING_KEY;    /**< Wrapping key parameter is invalid */
+  error ERROR_INVALID_DERIVATION_KEY;  /**< Derivation key parameter is invalid */
+  error ERROR_INVALID_KEY_TYPE;        /**< Expected different key type than provided */
+  error ERROR_INVALID_SOURCE;          /**< Undefined source value */
+  error ERROR_INVALID_POLICY;          /**< Policy structure contains invalid values */
+  error ERROR_KEY_BLOB_CORRUPTED;      /**< Key blob failed integrity check during unwrap */
+  error ERROR_INVALID_WRAP_KEY_SOURCE; /**< Client has attempted to create a wrapping key from an imported key */
+  error ERROR_NOT_SUPPORTED;           /**< Feature is not supported on this chipset */
+  error ERROR_OUT_OF_KEYSLOT;
+
+  /** @endcond */
+
+
+  /**
+    Derive a hardware key from a deterministic HW source.
+
+    @param [in] policy     Key policy for the resulting key
+    @param [in] bindings   Software and device state bindings for the key
+    @param [in] source     HW source to be used to derive the child key
+    @param [in] mixingKey  Optional argument. Key object to be mixed to the context during key derivation
+    @param [out] key       Output key object
+
+    @return
+    Object_OK on success
+   */
+  method deriveFromHWSource(in IHWKey_policy policy, in IHWKey_bindings bindings, in uint32 source, in uint64 mixingKey, out uint64 key);
+
+  /**
+    Clear the key handle from TMEL software key slots.
+
+    @param [in] keyhandle     Key handle to remove from TMEL internal key slots
+
+    @return
+    Object_OK on success
+   */
+
+  method clearkey(in uint32 keyhandle);
+
+
+  /** @} */ /* end_addtogroup IHWKeyFactory */
+};

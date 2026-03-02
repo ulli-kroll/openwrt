@@ -1,0 +1,21 @@
+--- a/net/ipv6/ip6_input.c
++++ b/net/ipv6/ip6_input.c
+@@ -44,6 +44,9 @@
+ #include <net/inet_ecn.h>
+ #include <net/dst_metadata.h>
+ 
++int ipv6_pass_through_enable = 0;
++EXPORT_SYMBOL(ipv6_pass_through_enable);
++
+ INDIRECT_CALLABLE_DECLARE(void udp_v6_early_demux(struct sk_buff *));
+ INDIRECT_CALLABLE_DECLARE(void tcp_v6_early_demux(struct sk_buff *));
+ static void ip6_rcv_finish_core(struct net *net, struct sock *sk,
+@@ -127,7 +130,7 @@ static struct sk_buff *ip6_rcv_core(stru
+ 	u32 pkt_len;
+ 	struct inet6_dev *idev;
+ 
+-	if (skb->pkt_type == PACKET_OTHERHOST) {
++	if (!ipv6_pass_through_enable && skb->pkt_type == PACKET_OTHERHOST) {
+ 		kfree_skb(skb);
+ 		return NULL;
+ 	}

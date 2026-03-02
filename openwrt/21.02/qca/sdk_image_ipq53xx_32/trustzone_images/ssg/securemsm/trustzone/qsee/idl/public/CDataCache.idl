@@ -1,0 +1,15 @@
+// Copyright (c) 2015 Qualcomm Technologies, Inc.  All Rights Reserved.
+// Qualcomm Technologies Proprietary and Confidential.
+
+/**
+* @addtogroup CDataCache
+* @{
+  Class CDataCache implements \link IDataCache \endlink interface.
+	
+  The class ID `DataCache` is included in the default privilege set, therefore the 
+  CDataCache class is available to every TA.
+*/
+
+const uint32 CDataCache_UID = 19;
+
+/** @} */

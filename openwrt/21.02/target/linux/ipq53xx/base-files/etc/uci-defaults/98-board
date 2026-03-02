@@ -1,0 +1,25 @@
+#!/bin/sh
+
+. /lib/functions/uci-defaults.sh
+. /lib/functions/bdinfo.sh
+. /lib/ipq53xx.sh
+
+board=$(ipq53xx_oem_board_name)
+model=$(get_bdinfo_model)
+
+case "$board" in
+R65)
+	ucidef_set_system_board "$board" "$model" "1" "router"
+	;;
+R86)
+	ucidef_set_system_board "$board" "$model" "4" "router"
+	;;
+R87)
+	ucidef_set_system_board "$board" "$model" "1" "ap"
+	;;
+*)
+	ucidef_set_system_board "$board" "$model" "1" "router"
+	;;
+esac
+
+uci commit system

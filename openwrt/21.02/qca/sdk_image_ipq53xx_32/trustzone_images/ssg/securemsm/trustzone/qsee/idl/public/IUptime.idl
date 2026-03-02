@@ -1,0 +1,37 @@
+/** @file  IUptime.idl */
+
+/* Copyright (c) 2015-2018 Qualcomm Technologies, Inc.  All Rights Reserved.
+   Qualcomm Technologies Proprietary and Confidential. */
+
+/** @cond */
+interface IUptime {
+  /** @endcond */
+
+ /**
+  * @addtogroup IUptime
+  * @{
+  */
+
+  /**
+    Gets the up time from bootup in milliseconds.
+
+    @param[out] upTimeMS Time from bootup in milliseconds.
+
+    @return
+    Object_OK -- Success. \n
+    Object_ERROR -- Any error occurred.
+   */
+  method getUptime(out uint64 upTimeMS);
+
+  /**
+    Gets up time from bootup in microseconds.
+
+    @param[out] upTimeUS Time from bootup in microseconds.
+
+    @return
+    Object_OK -- Success. \n
+    Object_ERROR -- Any error occurred.
+   */
+  method getUptimeUS(out uint64 upTimeUS);
+  /** @} */ /* end_addtogroup IUptime */
+};

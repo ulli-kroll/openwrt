@@ -1,0 +1,22 @@
+--- src/compat/compat.h
++++ src/compat/compat.h
+@@ -1056,6 +1056,7 @@ static inline void skb_reset_redirect(st
+ #include <linux/skbuff.h>
+ #include <linux/ip.h>
+ #include <linux/ipv6.h>
++#if 0
+ static inline __be16 ip_tunnel_parse_protocol(const struct sk_buff *skb)
+ {
+ 	if (skb_network_header(skb) >= skb->head &&
+@@ -1068,8 +1069,11 @@ static inline __be16 ip_tunnel_parse_pro
+ 		return htons(ETH_P_IPV6);
+ 	return 0;
+ }
++#endif
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 1, 0) || defined(ISRHEL8)
++#if 0
+ static const struct header_ops ip_tunnel_header_ops = { .parse_protocol = ip_tunnel_parse_protocol };
++#endif
+ #else
+ #define header_ops hard_header_len
+ #define ip_tunnel_header_ops *(char *)0 - (char *)0

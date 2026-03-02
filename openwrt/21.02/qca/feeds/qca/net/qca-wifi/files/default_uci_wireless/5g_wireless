@@ -1,0 +1,98 @@
+config wifi-device  wifiX
+        option type     qcawificfg80211
+        option channel  auto
+        option macaddr  aa:bb:cc:dd:ee:ff
+        option hwmode   11bea
+        # REMOVE THIS LINE TO ENABLE WIFI:
+        option disabled 1
+
+config wifi-iface
+        option device   wifiX
+        option network  lan
+        option mode     ap
+        option ssid     QSoftAP_5G
+        option encryption psk2+ccmp
+        option key      1234567890
+        option athnewind 1
+        option disabled 1
+
+config wifi-iface
+        option device   wifiX
+        option network  lan
+        option mode     ap
+        option ssid     QSoftAP_5G_1
+        option encryption psk2+ccmp
+        option key      1234567890
+        option athnewind 1
+        option disabled 1
+
+config wifi-iface
+        option device   wifiX
+        option network  lan
+        option mode     ap
+        option ssid     QSoftAP_5G_2
+        option encryption psk2+ccmp
+        option key      1234567890
+        option athnewind 1
+        option disabled 1
+
+config wifi-iface
+        option device   wifiX
+        option network  lan
+        option mode     ap
+        option ssid     QSoftAP_5G_3
+        option encryption psk2+ccmp
+        option key      1234567890
+        option athnewind 1
+        option disabled 1
+
+config wifi-iface
+        option device   wifiX
+        option network  lan
+        option mode     ap
+        option ssid     QSoftAP_5G_4
+        option encryption psk2+ccmp
+        option key      1234567890
+        option athnewind 1
+        option disabled 1
+
+config wifi-iface
+        option device   wifiX
+        option network  lan
+        option mode     ap
+        option ssid     QSoftAP_5G_5
+        option encryption psk2+ccmp
+        option key      1234567890
+        option athnewind 1
+        option disabled 1
+
+config wifi-iface
+        option device   wifiX
+        option network  lan
+        option mode     ap
+        option ssid     QSoftAP_5G_6
+        option encryption psk2+ccmp
+        option key      1234567890
+        option athnewind 1
+        option disabled 1
+
+config wifi-iface
+        option device   wifiX
+        option network  lan
+        option mode     ap_smart_monitor
+        option ssid     QSoftAP_5G_SmartMon
+        option encryption none
+        option key      0
+        option athnewind 1
+        option disabled 1
+
+config wifi-iface
+        option device   wifiX
+        option network  lan
+        option mode     sta
+        option extap    1
+        option ssid     QSoftAP_5G
+        option encryption psk2+ccmp
+        option key      1234567890
+        option disabled 1
+

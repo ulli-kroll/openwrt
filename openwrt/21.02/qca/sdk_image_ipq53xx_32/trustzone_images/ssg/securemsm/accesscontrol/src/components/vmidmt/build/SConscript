@@ -1,0 +1,48 @@
+#===============================================================================
+#
+# AC Libs
+#
+# GENERAL DESCRIPTION
+#    build script
+#
+# Copyright (c) 2014-2017, 2020 by Qualcomm Technologies, Inc.
+# All Rights Reserved.
+# QUALCOMM Proprietary/GTDR
+#
+#-------------------------------------------------------------------------------
+#
+#  $Header: //components/rel/ssg.tzw/1.2/securemsm/accesscontrol/src/components/vmidmt/build/SConscript#3 $
+#  $DateTime: 2021/07/30 01:53:50 $
+#  $Author: pwbldsvc $
+#  $Change: 32117309 $
+#                      EDIT HISTORY FOR FILE
+#
+#  This section contains comments describing changes made to the module.
+#  Notice that changes are listed in reverse chronological order.
+#
+# when       who     what, where, why
+# --------   ---     ---------------------------------------------------------
+# 01/02/20   as      Compiler warnings fix
+#  2/16/17   jr      move xbl_sec from core to ssg
+# 04/03/15   rs      Moved SMEM partition protections to Hypervisor
+# 02/09/12   PS      Initial release
+#===============================================================================
+import os
+Import('env')
+
+#-------------------------------------------------------------------------------
+# Load sub scripts
+#-------------------------------------------------------------------------------
+env.LoadSoftwareUnits()
+if 'USES_RCINIT' in env:
+  RCINIT_IMGS = ['CTZL64_IMAGE', 'TZOS_IMAGE', 'CTZL_IMAGE']
+  env.AddRCInitFunc(
+    RCINIT_IMGS,
+    {
+      'sequence_group'             : 'RCINIT_GROUP_2',
+      'init_name'                  : 'vmidmt_config',
+      'init_function'              : 'tzbsp_vmidmt_config',
+      'dependencies'               : ['clock_init','secboot_misc'], #['saw','vpp','cprh','heap','gpi_drv','i2c','heap']
+      'policy_optin'               : ['default']
+    })
+

@@ -1,0 +1,34 @@
+diff --git a/src/ap/ieee802_11.c b/src/ap/ieee802_11.c
+index a9b3e8c60..3dd88fcef 100644
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -408,7 +408,9 @@ static int send_auth_reply(struct hostapd_data *hapd, struct sta_info *sta,
+ 	 * the addresses.
+ 	 */
+ 	if (hapd->conf->mld_ap && sta && sta->mld_info.mld_sta) {
++#if 0
+ 		sa = hapd->mld_addr;
++#endif
+ 
+ 		ml_resp = hostapd_ml_auth_resp(hapd);
+ 		if (!ml_resp)
+@@ -3229,6 +3231,7 @@ static void handle_auth(struct hostapd_data *hapd,
+ 	dst = mgmt->sa;
+ 	bssid = mgmt->bssid;
+ 
++#if 0
+ #ifdef CONFIG_IEEE80211BE
+ 	 /*
+ 	  * Once a non-AP MLD is added to the driver, the addressing should use
+@@ -3240,7 +3243,7 @@ static void handle_auth(struct hostapd_data *hapd,
+ 		bssid = hapd->mld_addr;
+ 	}
+ #endif /* CONFIG_IEEE80211BE */
+-
++#endif
+ 	reply_res = send_auth_reply(hapd, sta, dst, bssid, auth_alg,
+ 				    auth_alg == WLAN_AUTH_SAE ?
+ 				    auth_transaction : auth_transaction + 1,
+-- 
+2.17.1
+

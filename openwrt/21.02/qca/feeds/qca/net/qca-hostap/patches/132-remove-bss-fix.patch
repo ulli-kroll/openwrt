@@ -1,0 +1,115 @@
+diff --git a/src/ap/hostapd.c b/src/ap/hostapd.c
+index eafaf6043..50d58d361 100644
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -396,7 +396,42 @@ static int hostapd_broadcast_wep_set(struct hostapd_data *hapd)
+ }
+ 
+ #endif /* CONFIG_WEP */
++#ifdef CONFIG_IEEE80211BE
++static void
++hostapd_iface_mld_iterate(struct hostapd_iface *iface,
++			  void (*iter_func)(struct hostapd_iface *iface))
++{
++	unsigned int i;
++	struct hapd_interfaces *interfaces;
++	u8 mld_id;
++	u8 mld_ap = 0;
++
++	if (iface->bss && iface->bss[0] && iface->bss[0]->conf->mld_ap) {
++		mld_ap = 1;
++		mld_id = iface->bss[0]->conf->mld_id;
++		interfaces = iface->interfaces;
++	}
++
++	if (!mld_ap)
++		return;
++
++	for (i = 0; i < interfaces->count; i++) {
++		struct hostapd_iface *partner = interfaces->iface[i];
++
++		if (partner == iface)
++			continue;
++
++		if (!partner || !partner->bss || !partner->bss[0])
++			continue;
+ 
++		if ((!partner->bss[0]->conf->mld_ap) ||
++		    (partner->bss[0]->conf->mld_id != mld_id))
++			continue;
++
++		iter_func(partner);
++	}
++}
++#endif
+ 
+ static void hostapd_clear_drv_priv(struct hostapd_data *hapd)
+ {
+@@ -3533,6 +3568,10 @@ int hostapd_remove_iface(struct hapd_interfaces *interfaces, char *buf)
+ {
+ 	struct hostapd_iface *hapd_iface;
+ 	size_t i, j, k = 0;
++#ifdef CONFIG_IEEE80211BE
++	u8 mld_id;
++	u8 mld_ap = 0;
++#endif
+ 
+ 	for (i = 0; i < interfaces->count; i++) {
+ 		hapd_iface = interfaces->iface[i];
+@@ -3544,6 +3583,16 @@ int hostapd_remove_iface(struct hapd_interfaces *interfaces, char *buf)
+ 				!!(hapd_iface->drv_flags &
+ 				   WPA_DRIVER_FLAGS_AP_TEARDOWN_SUPPORT);
+ 
++#ifdef CONFIG_IEEE80211BE
++			if (hapd_iface->bss && hapd_iface->bss[0] && hapd_iface->bss[0]->conf->mld_ap) {
++				mld_ap = 1;
++				mld_id = hapd_iface->bss[0]->conf->mld_id;
++			}
++#endif
++
++#ifdef CONFIG_IEEE80211BE
++			hostapd_iface_mld_iterate(hapd_iface, hostapd_interface_deinit);
++#endif
+ 			hostapd_interface_deinit_free(hapd_iface);
+ 			k = i;
+ 			while (k < (interfaces->count - 1)) {
+@@ -3552,6 +3601,36 @@ int hostapd_remove_iface(struct hapd_interfaces *interfaces, char *buf)
+ 				k++;
+ 			}
+ 			interfaces->count--;
++#ifdef CONFIG_IEEE80211BE
++			if (mld_ap) {
++				unsigned int i;
++
++				for (i = 0; i < interfaces->count; i++) {
++					struct hostapd_iface *partner = interfaces->iface[i];
++
++					if (partner == hapd_iface)
++						continue;
++
++					if (!partner || !partner->bss || !partner->bss[0])
++						continue;
++
++					if ((!partner->bss[0]->conf->mld_ap) ||
++							(partner->bss[0]->conf->mld_id != mld_id))
++						continue;
++
++					hostapd_interface_free(partner);
++					k = i;
++					while (k < (interfaces->count - 1)) {
++						interfaces->iface[k] =
++							interfaces->iface[k + 1];
++						k++;
++					}
++					interfaces->count--;
++					i--;
++				}
++			}
++#endif
++
+ 			return 0;
+ 		}
+ 
+-- 
+2.17.1
+

@@ -1,0 +1,14 @@
+diff --git a/src/ap/sta_info.c b/src/ap/sta_info.c
+index d87214e..258565f 100644
+--- a/src/ap/sta_info.c
++++ b/src/ap/sta_info.c
+@@ -1186,6 +1186,9 @@ int ap_check_sa_query_timeout(struct hostapd_data *hapd, struct sta_info *sta)
+ 		sta->sa_query_trans_id = NULL;
+ 		sta->sa_query_count = 0;
+ 		eloop_cancel_timeout(ap_sa_query_timer, hapd, sta);
++		wpa_printf(MSG_ERROR,"SA_QUERY timeout send disassoc and remove the sta entry \n");
++		hostapd_drv_sta_disassoc(hapd, sta->addr, WLAN_REASON_PREV_AUTH_NOT_VALID);
++		ap_free_sta(hapd, sta);
+ 		return 1;
+ 	}
+ 

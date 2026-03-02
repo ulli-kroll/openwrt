@@ -1,0 +1,38 @@
+/** @file  IDeviceRegionFinder.idl */
+
+/* Copyright (c) 2018 Qualcomm Technologies, Inc.
+   All Rights Reserved.
+   Confidential and Proprietary - Qualcomm Technologies, Inc.
+*/
+
+include "IMemRegion.idl"
+
+/** @cond */
+interface IDeviceRegionFinder {
+/** @endcond */
+  /**
+   * @addtogroup IDeviceRegionFinder
+   * @{
+   */
+
+  /** @cond */
+  error ERROR_PRIVILEGE;        /**< Application lacks privilege for device id */
+  error ERROR_NOT_FOUND;        /**< No device memory defined for given device id */
+  /** @endcond */
+
+  /**
+   API for trusted applications to retrieve a memory region object for a
+   specified device memory range. The specific device memory is identified by
+   a unique identifier and the trusted application needs the corresponding
+   privilege for this method to succeed.
+
+   @param[in]   id              Mink privilege id for the specific device.
+   @param[out]  memRegionOut    IMemRegion for the device memory
+
+   @return      Object_OK       Indicates success, anything else is a failure.
+                                See error enumerations above.
+   */
+  method getRegion(in uint32 id, out IMemRegion memRegionOut);
+
+  /** @} */ /* end_addtogroup IDeviceRegionFinder */
+};

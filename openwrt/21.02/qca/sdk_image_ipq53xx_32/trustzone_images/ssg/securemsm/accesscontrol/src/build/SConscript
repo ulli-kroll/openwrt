@@ -1,0 +1,31 @@
+#===============================================================================
+#
+# AC Libs
+#
+# GENERAL DESCRIPTION
+#    build script
+#
+# Copyright (c) 2014-2017, 2019,2021-2022 by Qualcomm Technologies, Inc.
+# All Rights Reserved.
+# QUALCOMM Proprietary/GTDR
+#
+#===============================================================================
+import os
+Import('env')
+
+#-------------------------------------------------------------------------------
+# Load sub scripts
+#-------------------------------------------------------------------------------
+env.LoadSoftwareUnits()
+
+if 'USES_RCINIT' in env:
+  RCINIT_IMGS = ['CTZL64_IMAGE', 'TZOS_IMAGE', 'CTZL_IMAGE']
+  env.AddRCInitFunc(
+    RCINIT_IMGS,
+    {
+      'sequence_group'             : 'RCINIT_GROUP_2',
+      'init_name'                  : 'ac_init',
+      'init_function'              : 'ACTzInit',
+      'dependencies'               : ['clock_init', 'vmidmt_config', 'smmu_init_done', 'bam_init', 'security_control_config','gather_platform_info'],
+     'policy_optin'               : ['default']
+   })

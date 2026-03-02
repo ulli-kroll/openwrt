@@ -1,0 +1,56 @@
+;
+; Copyright (c) 2017, 2019 Qualcomm Technologies, Inc.
+; All Rights Reserved.
+; Confidential and Proprietary - Qualcomm Technologies, Inc.
+;
+
+; select CPU and options
+SYStem.Reset
+SYStem.CPU HEXAGONV66
+;SYStem.CPU HEXAGONV56
+;SYStem.JTAGCLOCK CTCK 1MHz
+SYStem.JTAGCLOCK 1MHz
+SYStem.CONFIG SLAVE ON
+;SYStem.CONFIG.COREDEBUG.Base 0x00134000
+;SYStem.CONFIG.COREDEBUG.Base 0x80134000
+;SYStem.CONFIG.COREDEBUG.Base 0x8012c000
+SYStem.CONFIG.ETM.Base 0x8012c000
+SYStem.CONFIG.COREDEBUG.Base 0x8012d000
+;SYStem.CONFIG MEMORYACCESSPORT 0.
+SYStem.CONFIG AXIACCESSPORT 0.
+SYStem.CONFIG DEBUGACCESSPORT  1.
+
+
+SYStem.CONFIG   DAPIRPRE        0.
+SYStem.CONFIG   DAPDRPRE        0.
+SYStem.CONFIG   DAPIRPOST       11.
+SYStem.CONFIG   DAPDRPOST       1.
+
+sys.mode attach
+;SYStem.CONFIG MULTITAP NONE
+
+;SYStem.MEMORYACCESS DAP
+
+;This re-assignment is a workaround for T32 issue.
+;For some reason, T32 does not send Debug port info (JTAG)
+;toTarget unless it switches value from SWD.
+;SYStem.CONFIG SWDP OFF
+;SYStem.CONFIG DEBUGPORTTYPE JTAG
+
+;SYStem.Option.OCPbase  0x3C000000
+;SYStem.Option.OCMemory  0x3E000000--0x3E02FFFF
+
+;sys.o.E little
+
+;RADIX HEX
+;SETUP.VAR %HEX.ON
+;MODE.HLL
+
+;autostore , history
+
+;SYStem.CONFIG SLAVE OFF
+
+;SYStem.STATE
+
+;ENDDO
+

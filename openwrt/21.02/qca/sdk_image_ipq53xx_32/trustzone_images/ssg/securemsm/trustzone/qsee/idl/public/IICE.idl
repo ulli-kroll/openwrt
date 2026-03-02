@@ -1,0 +1,74 @@
+/** @file IICE.idl  */
+/*
+  Copyright (c) 2018 Qualcomm Technologies, Inc.  All Rights Reserved.
+  Qualcomm Technologies Proprietary and Confidential.
+*/
+
+/** @cond */
+interface IICE {
+/** @endcond */
+
+  /**
+   * @addtogroup IICE
+   * @{
+   */
+    
+  /** 
+    Set the ICE Key in the ICE hardware.
+
+    @param[in] index   Contains the key index.
+    @param[in] key     Buffer containing the key. Expected size is 32 bytes.
+    @param[in] salt    Buffer containing the salt. Expected size is 32 bytes.
+
+    @detdesc
+    This method calls into the kernel API which sets the provided key
+    in the Inline Crypto Engine (ICE) hardware. Keys set here have an index
+    range from 0-31.
+
+    @return
+    The return value is Object_OK on success and Object_ERROR otherwise.
+  **/
+
+  method setIceKey (in uint32 index, in buffer key, in buffer salt);
+
+  /** 
+    Clear the ICE Key in the ICE hardware.
+
+    @param[in] index  Contains the key index.
+
+    @detdesc
+    This method is used to invalidate an already set key in the Inline
+    Crypto Engine (ICE).
+
+    @return
+    The return value is Object_OK on success and Object_ERROR otherwise.
+  **/
+
+  method clearIceKey (in uint32 index);
+
+  /** 
+    Gets the wrapped key to be exported to REE.
+
+    @param[in]  key            key to be wrapped. Expects an AES 256 byte key.
+    @param[in]  deCe           Device (DE) '0' or credential encrypted key (CE) '1'.
+                               DE keys are not bound to user credentials and all
+                               keys are wrapped with a key derived from a global
+                               per-boot ephemeral key.
+                               CE keys are bound to user credentials and are stored
+                               in key table to securely evict the keys when an
+                               user is locked.
+                               Once the key table is full CE keys will fallback to
+                               the same mechanism used for DE keys.
+    @param[out] wrappedkey     wrapped key to be returned to REE. Expects a 64 byte buffer.
+
+    @detdesc
+    This method is used to retrieve the wrapped key based on the key type.
+
+    @return
+    The return value is Object_OK on success and Object_ERROR otherwise.
+  **/
+  method getWrappedKey(in buffer key,
+           in uint32 deCe, out buffer wrappedkey);
+  
+  /** @} */ /* end_addtogroup IICE */
+};

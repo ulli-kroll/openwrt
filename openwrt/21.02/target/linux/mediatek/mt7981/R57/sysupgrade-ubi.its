@@ -1,0 +1,18 @@
+
+/dts-v1/;
+
+/ {
+        description = "R57";
+        images {
+				/* the node name ubi is used for uboot upgrade, do not change the name */
+                ubi {
+                        description = "kernel-rootfs image";
+                        data = /incbin/("./openwrt-mediatek-mt7981-R57-squashfs-factory.bin");
+                        type = "firmware";
+                        arch = "arm";
+                        compression = "none";
+                        hash@1 { algo = "crc32"; };
+                };
+
+        };
+};

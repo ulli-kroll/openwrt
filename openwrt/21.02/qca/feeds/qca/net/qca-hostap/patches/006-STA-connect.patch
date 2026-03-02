@@ -1,0 +1,86 @@
+diff --git a/wpa_supplicant/sme.c b/wpa_supplicant/sme.c
+index 233adce5b..c90085ded 100644
+--- a/wpa_supplicant/sme.c
++++ b/wpa_supplicant/sme.c
+@@ -378,7 +378,7 @@ static void sme_auth_handle_rrm(struct wpa_supplicant *wpa_s,
+ }
+ 
+ 
+-static bool wpas_ml_element(struct wpa_supplicant *wpa_s, struct wpa_bss *bss,
++bool wpas_ml_element(struct wpa_supplicant *wpa_s, struct wpa_bss *bss,
+ 			    struct wpa_ssid *ssid)
+ {
+ 	struct wpabuf *mlbuf;
+diff --git a/wpa_supplicant/sme.h b/wpa_supplicant/sme.h
+index c797d2e9e..0de26931a 100644
+--- a/wpa_supplicant/sme.h
++++ b/wpa_supplicant/sme.h
+@@ -11,6 +11,8 @@
+ 
+ #ifdef CONFIG_SME
+ 
++bool wpas_ml_element(struct wpa_supplicant *wpa_s, struct wpa_bss *bss,
++			    struct wpa_ssid *ssid);
+ void sme_authenticate(struct wpa_supplicant *wpa_s,
+ 		      struct wpa_bss *bss, struct wpa_ssid *ssid);
+ void sme_associate(struct wpa_supplicant *wpa_s, enum wpas_mode mode,
+@@ -46,6 +48,12 @@ void sme_external_auth_mgmt_rx(struct wpa_supplicant *wpa_s,
+ 
+ #else /* CONFIG_SME */
+ 
++bool wpas_ml_element(struct wpa_supplicant *wpa_s, struct wpa_bss *bss,
++			    struct wpa_ssid *ssid)
++{
++	return false;
++}
++
+ static inline void sme_authenticate(struct wpa_supplicant *wpa_s,
+ 				    struct wpa_bss *bss,
+ 				    struct wpa_ssid *ssid)
+diff --git a/wpa_supplicant/wpa_supplicant.c b/wpa_supplicant/wpa_supplicant.c
+index 48f9bc506..3619bb6f7 100644
+--- a/wpa_supplicant/wpa_supplicant.c
++++ b/wpa_supplicant/wpa_supplicant.c
+@@ -2596,6 +2596,10 @@ void wpa_supplicant_associate(struct wpa_supplicant *wpa_s,
+ 		return;
+ 	}
+ 
++	if (wpas_ml_element(wpa_s, bss, ssid)) {
++		wpa_printf(MSG_DEBUG, "MLD: In connect");
++	}
++
+ 	if (wpa_s->connect_work) {
+ 		wpa_dbg(wpa_s, MSG_DEBUG, "Reject wpa_supplicant_associate() call since connect_work exist");
+ 		return;
+@@ -4402,6 +4406,31 @@ static void wpas_start_assoc_cb(struct wpa_radio_work *work, int deinit)
+ 	params.sae_pwe = wpa_s->conf->sae_pwe;
+ #endif /* CONFIG_SAE */
+ 
++	if (wpa_s->valid_links) {
++		unsigned int i;
++
++		wpa_printf(MSG_DEBUG,
++			   "MLD: In wpas_start_assoc_cb assoc_link_id=%u, valid_links=0x%x",
++			   wpa_s->mlo_assoc_link_id, wpa_s->valid_links);
++
++		params.mld_params.mld_addr = wpa_s->ap_mld_addr;
++		params.mld_params.valid_links = wpa_s->valid_links;
++		params.mld_params.assoc_link_id = wpa_s->mlo_assoc_link_id;
++		for (i = 0; i < MAX_NUM_MLD_LINKS; i++) {
++			if (!(wpa_s->valid_links & BIT(i)))
++				continue;
++
++			params.mld_params.mld_links[i].bssid =
++				wpa_s->links[i].bssid;
++			params.mld_params.mld_links[i].freq =
++				wpa_s->links[i].freq;
++
++			wpa_printf(MSG_DEBUG, "MLD: id=%u, freq=%d, " MACSTR,
++				   i, wpa_s->links[i].freq,
++				   MAC2STR(wpa_s->links[i].bssid));
++		}
++	}
++
+ 	ret = wpa_drv_associate(wpa_s, &params);
+ 	forced_memzero(psk, sizeof(psk));
+ 	os_free(wpa_ie);

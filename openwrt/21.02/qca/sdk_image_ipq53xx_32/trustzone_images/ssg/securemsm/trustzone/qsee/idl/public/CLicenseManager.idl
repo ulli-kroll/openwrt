@@ -1,0 +1,15 @@
+// Copyright (c) 2018 Qualcomm Technologies, Inc.  All Rights Reserved.
+// Qualcomm Technologies Proprietary and Confidential.
+
+/**
+* @addtogroup CLicenseManager
+* @{
+  Class CLicenseManager implements \link ILicenseManager \endlink interface.
+  
+  The class ID `LicenseManager` is not included in the default privilege set. It needs to be added to the 
+  privileges section in the metadata to allow the TA to use the CLicenseManager class.
+*/
+
+const uint32 CLicenseManager_UID = 80;
+
+/** @} */

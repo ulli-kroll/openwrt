@@ -1,0 +1,70 @@
+// Copyright (c) 2017 Qualcomm Technologies, Inc.  All Rights Reserved.
+// Qualcomm Technologies Proprietary and Confidential.
+
+include "IAppController.idl"
+
+/** @cond */
+interface IAppLoader {
+/** @endcond */
+
+  /**
+   * @addtogroup IAppLoader
+   * @{
+   */
+
+  /**
+   * Error codes
+   */
+  /** @cond */
+  error ERROR_INVALID_BUFFER;                     /**< Buffer is invalid */
+  error ERROR_PIL_ROLLBACK_FAILURE;               /**< TA loading failed due to rollback protection */
+  error ERROR_ELF_SIGNATURE_ERROR;                /**< Error in ELF or signature validation */
+  error ERROR_METADATA_INVALID;                   /**< Invalid metadata */
+  error ERROR_MAX_NUM_APPS;                       /**< Max number of supported apps reached */
+  error ERROR_NO_NAME_IN_METADATA;                /**< Missing name in app metadata */
+  error ERROR_ALREADY_LOADED;                     /**< Already loaded by another client */
+  error ERROR_EMBEDDED_IMAGE_NOT_FOUND;           /**< No such embedded image with name */
+  error ERROR_TZ_HEAP_MALLOC_FAILURE;             /**< TA loading failed due to TZ heap exhaustion */
+  error ERROR_TA_APP_REGION_MALLOC_FAILURE;       /**< TA loading failed due to TA app region exhaustion */
+  /** @endcond */
+
+  /**
+    Loads a trusted application.
+    The application ELF binary is passed as a buffer.
+
+    @param[in]  appElf         Buffer containing ELF image.
+    @param[out] appController  IAppController to access the trusted application.
+
+    @return  Object_OK if successful.
+   */
+  method loadFromBuffer(in buffer appElf,
+                        out IAppController appController);
+
+  /**
+    Loads a trusted application.
+    The application ELF binary is passed as an IMemRegion object.
+
+    @param[in]  appElf         Region containing ELF image.
+    @param[out] appController  IAppController to access the trusted application.
+
+    @return  Object_OK if successful.
+   */
+  method loadFromRegion(in interface appElf,
+                        out IAppController appController);
+
+  /** @cond */
+  /**
+    Loads a trusted application embedded within the QTEE mbn image.
+
+    @param[in]  appName        Application name string to be loaded.
+    @param[out] appController  IAppController to access the trusted application.
+
+    @return  Object_OK if successful.
+   */
+  method loadEmbedded(in buffer appName,
+                      out IAppController appController);
+  /** @endcond */
+
+  /** @} */ /* end_addtogroup IAppLoader */
+
+};

@@ -1,0 +1,74 @@
+#!/bin/sh
+
+. /lib/functions.sh
+. /lib/functions/leds.sh
+
+all_led_slow() {
+	ls_file=$(ls -l /sys/class/leds)
+	for filename in $ls_file
+	do
+		led_timer "$filename" 1000 1000
+	done
+}
+
+all_led_quick() {
+	ls_file=$(ls -l /sys/class/leds)
+	for filename in $ls_file
+	do
+		led_timer "$filename" 100 100
+	done
+}
+
+echo "$(date '+%F %X') reset $ACTION" >> /var/run/reset.btn
+OVERLAY="$( grep ' /overlay ' /proc/mounts )"
+
+case "$ACTION" in
+pressed)
+	[ "$(bdinfo checkuuid)" == OK ] || all_led_quick
+	[ -z "$OVERLAY" ] && return 0
+	[ -f /var/run/config.md5 ] || return 0
+	if [ "$SEEN" -ge 60 ]; then
+		echo "all led slow" >> /dev/console
+		all_led_slow
+	elif [ "$SEEN" -ge 2 ]; then
+		echo "all led quick" >> /dev/console
+		all_led_quick
+	fi
+
+	return 2
+;;
+timeout)
+	. /etc/diag.sh
+	set_state failsafe
+;;
+released)
+	[ -z "$OVERLAY" ] && return 0
+	[ -f /var/run/config.md5 ] || return 0
+	if [ "$SEEN" -lt 2 ]; then
+		[ -f "/etc/rc.button/wps" ] || {
+			echo "start wps" > /dev/console
+			if [ "re" = "$(uci -q get system.board.type)" ]; then
+				ubus call wireless wscon '{"iface":"wlan01"}'
+				ubus call wireless wscon '{"iface":"wlan11"}'
+				ubus call wireless wds '{"iface":"up"}'
+			else
+				ubus call wireless wscon '{"iface":"wlan00"}'
+				ubus call wireless wscon '{"iface":"wlan10"}'
+			fi
+		}
+	elif [ "$SEEN" -ge 60 ]; then
+		if [ x"0" = x"$(uci -q get system.board.firstboot)" ]; then
+			echo "PRESET RESET" >> /dev/console
+			preset restore && reboot &
+		else
+			echo "FACTORY RESET" >> /dev/console
+			jffs2reset -y && reboot &
+		fi
+	elif [ "$SEEN" -ge 2 ]; then
+		echo "PRESET RESET" >> /dev/console
+		preset restore && reboot &
+	fi
+;;
+esac
+
+return 0

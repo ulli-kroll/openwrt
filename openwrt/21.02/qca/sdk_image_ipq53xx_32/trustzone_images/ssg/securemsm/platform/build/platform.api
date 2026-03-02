@@ -1,0 +1,96 @@
+#===============================================================================
+#
+# SSG Platform APIs
+#
+# GENERAL DESCRIPTION
+#    build script
+#
+# Copyright (c) 2013, 2022 by Qualcomm Technologies, Incorporated.
+# All Rights Reserved.
+# QUALCOMM Proprietary/GTDR
+#
+#-------------------------------------------------------------------------------
+#
+#  $Header: //components/rel/ssg.tzw/1.2/securemsm/platform/build/platform.api#2 $
+#  $DateTime: 2022/06/13 07:06:09 $
+#  $Author: pwbldsvc $
+#  $Change: 37810320 $
+#                      EDIT HISTORY FOR FILE
+#                      
+#  This section contains comments describing changes made to the module.
+#  Notice that changes are listed in reverse chronological order.
+#  
+# when       who     what, where, why
+# --------   ---     ---------------------------------------------------------
+#
+#===============================================================================
+import os
+Import('env')
+env = env.Clone()
+
+#Find PLATFORM_CPUS / different ARM/QCOM implemented CPU used in the target.
+env.SConscript('arch.scons', exports='env')
+
+# Public APIs these are accecible by anyone internal or external to Platform
+env.PublishPublicApi('SSGPLATFORM', [
+    '${INC_ROOT}/ssg/api/securemsm/platform/arch',
+    '${INC_ROOT}/ssg/api/securemsm/platform/arch/legacy',
+    '${INC_ROOT}/ssg/api/securemsm/platform/utils',
+    '${INC_ROOT}/ssg/api/securemsm/platform/drivers',
+    '${INC_ROOT}/ssg/api/securemsm/platform/init',
+    '${INC_ROOT}/ssg/api/securemsm/platform/services',
+    '${INC_ROOT}/ssg/api/securemsm/platform/services/legacy',
+    '${INC_ROOT}/ssg/securemsm/platform/services/log/inc',
+    '${INC_ROOT}/ssg/securemsm/platform/init/inc',
+
+])
+
+# Restricted API's supposed to be accessed by ssg platform folders sources only.
+SSGPLATFORM_RESTRICTED_PATH = [
+    '${INC_ROOT}/ssg/api/securemsm/platform/arch',
+    '${INC_ROOT}/ssg/api/securemsm/platform/arch/legacy',
+    '${INC_ROOT}/ssg/api/securemsm/platform/utils',
+    '${INC_ROOT}/ssg/securemsm/platform/init/inc',
+    '${INC_ROOT}/ssg/securemsm/platform/services/log/inc',
+    '${INC_ROOT}/ssg/securemsm/platform/arch/arm/proc/inc',
+]
+
+if 'CVE_2022_23960_WA' in env['PLATFORM_WAS']:
+   SSGPLATFORM_RESTRICTED_PATH += ['${INC_ROOT}/ssg/securemsm/platform/arch/arm/proc/inc/cpu_wa/spectre_bhb/wa',]
+else:
+   SSGPLATFORM_RESTRICTED_PATH += ['${INC_ROOT}/ssg/securemsm/platform/arch/arm/proc/inc/cpu_wa/spectre_bhb/wa_stub',]
+
+if env.has_key('IMAGE_EXEC_MODE'):
+   SSGPLATFORM_RESTRICTED_PATH += [
+       '${INC_ROOT}/ssg/securemsm/platform/arch/arm/${IMAGE_EXEC_MODE}/inc',
+   ]
+
+if os.path.exists(env.subst("${INC_ROOT}/ssg/securemsm/platform/init/cfg/${CHIPSET}")):
+    SSGPLATFORM_RESTRICTED_PATH += ['${INC_ROOT}/ssg/securemsm/platform/init/cfg/${CHIPSET}',]
+else:
+    SSGPLATFORM_RESTRICTED_PATH += ['${INC_ROOT}/ssg/securemsm/platform/init/cfg/stubs',]
+
+env.PublishRestrictedApi('SSGPLATFORM', SSGPLATFORM_RESTRICTED_PATH)
+
+env.PublishRestrictedApi('CCLIB', [
+    '${INC_ROOT}/ssg/securemsm/platform/tools/codecoverage/bullseye/inc'
+])
+
+# Publish tzbsp_target.h as TZCHIPSET API's
+if os.path.exists(env.subst("${INC_ROOT}/ssg/securemsm/platform/init/cfg/${CHIPSET}")):
+   PLATFORM_ARCH_CHIPSET_PATH_API = [
+       '${INC_ROOT}/ssg/securemsm/platform/init/cfg/${CHIPSET}/mmu',
+       '${INC_ROOT}/ssg/securemsm/platform/init/cfg/${CHIPSET}/common',
+       '${INC_ROOT}/ssg/securemsm/platform/init/cfg/${CHIPSET}',
+   ]
+else:
+   PLATFORM_ARCH_CHIPSET_PATH_API = [
+       '${INC_ROOT}/ssg/securemsm/platform/init/cfg/stubs/${IMAGE_EXEC_MODE}/mmu',
+       '${INC_ROOT}/ssg/securemsm/platform/init/cfg/stubs/${IMAGE_EXEC_MODE}/common',
+       '${INC_ROOT}/ssg/securemsm/platform/init/cfg/stubs/${IMAGE_EXEC_MODE}',
+   ]
+
+env.PublishPublicApi('TZCHIPSET', PLATFORM_ARCH_CHIPSET_PATH_API)
+env.PublishRestrictedApi('TZCHIPSET', PLATFORM_ARCH_CHIPSET_PATH_API)
+
+env.LoadAPIUnits()

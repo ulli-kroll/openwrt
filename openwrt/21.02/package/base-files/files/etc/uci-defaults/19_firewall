@@ -1,0 +1,11 @@
+#!/bin/sh
+#
+
+if [ "$(uci -q get system.board.type)" != "router" ]; then
+	[ "$(uci -q get firewall.@zone[1].input)" == "REJECT" ] && {
+		uci -q set firewall.@zone[1].input='ACCEPT'
+		uci commit
+	}
+fi
+
+exit 0

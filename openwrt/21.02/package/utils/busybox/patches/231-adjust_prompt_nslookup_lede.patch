@@ -1,0 +1,36 @@
+--- a/networking/nslookup_lede.c
++++ b/networking/nslookup_lede.c
+@@ -884,6 +884,7 @@ int nslookup_main(int argc, char **argv)
+ 
+ 	printf("\n");
+ 
++	int queries_count = 0;
+ 	for (rc = 0; rc < n_queries; rc++) {
+ 		if (stats) {
+ 			printf("Query #%d completed in %lums:\n", rc, queries[rc].latency);
+@@ -912,15 +913,22 @@ int nslookup_main(int argc, char **argv)
+ 			}
+ 		}
+ 
+-		if (c == 0)
+-			printf("*** Can't find %s: No answer\n", queries[rc].name);
+-		else if (c < 0)
++		if (c > 0)
++			queries_count += c;
++		
++		//if (c == 0)
++			//printf("*** Can't find %s: No answer\n", queries[rc].name);
++		//else if (c < 0)
++		if (c < 0)
+ 			printf("*** Can't find %s: Parse error\n", queries[rc].name);
+ 
+ 		if (!bb_style_counter)
+ 			printf("\n");
+ 	}
+ 
++	if (queries_count == 0)
++		printf("*** Can't find. No answer\n");
++	
+ 	rc = 0;
+ 
+ out:

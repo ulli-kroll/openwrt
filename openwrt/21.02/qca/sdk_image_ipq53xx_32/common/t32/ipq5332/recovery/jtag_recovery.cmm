@@ -1,0 +1,219 @@
+;
+; Copyright (c) 2017, 2019, 2021-2022 Qualcomm Technologies, Inc.
+; All Rights Reserved.
+; Confidential and Proprietary - Qualcomm Technologies, Inc.
+;
+
+local &cwd
+local &BootBuildPath
+local &Cdtbin
+local &BoardType
+local &serialnum
+local &vol &vol_code &pow_sel
+local &MP5496_LDO3
+
+&MP5496_LDO3=0x9
+
+entry &BootBuildPath &BoardType
+
+&cwd=os.pwd()
+
+winclear
+area.reset
+gosub SetupMainWindow
+Break.Delete
+
+SYStem.Option.EnReset ON
+sys.d
+sys.u
+
+; Enable L2 TCM
+D.S ZSD:0xB110010 %LE %Long 0x08000001
+; Qtimer - Init
+D.S ZSD:0x4A1000 %LE %Long 0x00000001
+D.S ZSD:0xB120000 %LE %Long 0x16E3600
+D.S ZSD:0xB120040 %LE %Long 0x0000003F
+D.S ZSD:0xB120044 %LE %Long 0x0000003F
+D.S ZSD:0xB12102C %LE %Long 0x00000002
+D.S ZSD:0xB12302C %LE %Long 0x00000002
+
+;clear crashdump magic
+D.S ZSD:0x193d100 %LE %LONG 0x0
+
+print "Choose the Image folder in dialog box."
+
+if (("&BootBuildPath"=="")||("&BoardType"==""))
+(
+    DIALOG.view
+    (
+             NAME "BootImage"
+             HEADER "Select the Boot loader image folder"
+             POS 1. 1. 43. 1.
+
+             POS 1. 0. 38. 1.
+             TEXT "Select Image Path"
+    Browse:  EDIT "" ""
+             POS 40. 1. 3. 1.
+             BUTTON "..."
+             (
+                 DIALOG.SetDIR Browse c:\t32\demo\*
+             )
+
+             POS 1. 3. 27. 1.
+             TEXT "Select the board"
+
+    BOARD.SEL:  DEFCOMBOBOX "MI-EMU,AP-MI01.2,AP-MI01.2-QCN9160-C1,AP-MI01.3,AP-MI01.4,AP-MI01.6,AP-MI01.9,AP-MI03.1,AP-MI04.1,DB-MI01.1,DB-MI02.1,DB-MI03.1" ""
+
+             POS 30. 4. 5. 1.
+             DEFBUTTON "OK" "CONTinue"
+    )
+
+    ;set default selections
+    if ("&BootBuildPath"!="")
+    (
+        DIALOG.set Browse "&BootBuildPath"
+    )
+
+    DIALOG.SET BOARD.SEL "AP-MI01.2"
+
+    WinRESIZE 45. 7. BootImage
+    STOP
+
+    &BootBuildPath=DIALOG.STRing(Browse)
+    ;get the string from the EDIT box
+
+    &BoardType=DIALOG.STRing(BOARD.SEL)
+
+    DIALOG.END
+    ;and then close the dialog
+)
+
+print "Loading SBL elf....."
+
+cd &BootBuildPath
+d.load.elf XBLLoader.dll
+
+if "&BoardType"=="MI-EMU"
+(
+	if OS.FILE("cdt-MI-EMU_512M16_DDR4.bin")
+		&Cdtbin="cdt-MI-EMU_512M16_DDR4.bin"
+	else if OS.FILE("cdt-MI-EMU_512M16_DDR4_LM512.bin")
+		&Cdtbin="cdt-MI-EMU_512M16_DDR4_LM512.bin"
+)
+if "&BoardType"=="AP-MI01.2"
+(
+	if OS.FILE("cdt-AP-MI01.2_512M16_DDR4.bin")
+		&Cdtbin="cdt-AP-MI01.2_512M16_DDR4.bin"
+	else if OS.FILE("cdt-AP-MI01.2_512M16_DDR4_LM512.bin")
+		&Cdtbin="cdt-AP-MI01.2_512M16_DDR4_LM512.bin"
+)
+if "&BoardType"=="AP-MI01.2-QCN9160-C1"
+(
+	if OS.FILE("cdt-AP-MI01.2-QCN9160-C1_512M16_DDR4.bin")
+		&Cdtbin="cdt-AP-MI01.2-QCN9160-C1_512M16_DDR4.bin"
+	else if OS.FILE("cdt-AP-MI01.2-QCN9160-C1_512M16_DDR4_LM512.bin")
+		&Cdtbin="cdt-AP-MI01.2-QCN9160-C1_512M16_DDR4_LM512.bin"
+)
+if "&BoardType"=="AP-MI01.3"
+(
+	if OS.FILE("cdt-AP-MI01.3_512M16_DDR4.bin")
+		&Cdtbin="cdt-AP-MI01.3_512M16_DDR4.bin"
+	else if OS.FILE("cdt-AP-MI01.3_512M16_DDR4_LM512.bin")
+		&Cdtbin="cdt-AP-MI01.3_512M16_DDR4_LM512.bin"
+)
+if "&BoardType"=="AP-MI01.4"
+(
+	if OS.FILE("cdt-AP-MI01.4_256M16_DDR4.bin")
+		&Cdtbin="cdt-AP-MI01.4_256M16_DDR4.bin"
+	else if OS.FILE("cdt-AP-MI01.4_256M16_DDR4_LM512.bin")
+		&Cdtbin="cdt-AP-MI01.4_256M16_DDR4_LM512.bin"
+)
+if "&BoardType"=="AP-MI01.6"
+(
+	if OS.FILE("cdt-AP-MI01.6_512M16_DDR4.bin")
+		&Cdtbin="cdt-AP-MI01.6_512M16_DDR4.bin"
+	else if OS.FILE("cdt-AP-MI01.6_512M16_DDR4_LM512.bin")
+		&Cdtbin="cdt-AP-MI01.6_512M16_DDR4_LM512.bin"
+)
+if "&BoardType"=="AP-MI01.9"
+(
+        if OS.FILE("cdt-AP-MI01.9_512M16_DDR4.bin")
+                &Cdtbin="cdt-AP-MI01.9_512M16_DDR4.bin"
+        else if OS.FILE("cdt-AP-MI01.9_512M16_DDR4_LM512.bin")
+                &Cdtbin="cdt-AP-MI01.9_512M16_DDR4_LM512.bin"
+)
+if "&BoardType"=="AP-MI03.1"
+(
+	if OS.FILE("cdt-AP-MI03.1_128M16_DDR3.bin")
+		&Cdtbin="cdt-AP-MI03.1_128M16_DDR3.bin"
+	else if OS.FILE("cdt-AP-MI03.1_128M16_DDR3_LM512.bin")
+		&Cdtbin="cdt-AP-MI03.1_128M16_DDR3_LM512.bin"
+)
+if "&BoardType"=="AP-MI04.1"
+(
+        if OS.FILE("cdt-AP-MI04.1_256M16_DDR4.bin")
+                &Cdtbin="cdt-AP-MI04.1_256M16_DDR4.bin"
+        else if OS.FILE("cdt-AP-MI04.1_256M16_DDR4_LM512.bin")
+                &Cdtbin="cdt-AP-MI04.1_256M16_DDR4_LM512.bin"
+)
+if "&BoardType"=="DB-MI01.1"
+(
+	if OS.FILE("cdt-DB-MI01.1_512M16_DDR4.bin")
+		&Cdtbin="cdt-DB-MI01.1_512M16_DDR4.bin"
+	else if OS.FILE("cdt-DB-MI01.1_512M16_DDR4_LM512.bin")
+		&Cdtbin="cdt-DB-MI01.1_512M16_DDR4_LM512.bin"
+)
+if "&BoardType"=="DB-MI02.1"
+(
+	if OS.FILE("cdt-DB-MI02.1_256M16_DDR3.bin")
+		&Cdtbin="cdt-DB-MI02.1_256M16_DDR3.bin"
+	else if OS.FILE("cdt-DB-MI02.1_256M16_DDR3_LM512.bin")
+		&Cdtbin="cdt-DB-MI02.1_256M16_DDR3_LM512.bin"
+)
+if "&BoardType"=="DB-MI03.1"
+(
+	if OS.FILE("cdt-DB-MI03.1_128M16_DDR3.bin")
+		&Cdtbin="cdt-DB-MI03.1_128M16_DDR3.bin"
+	else if OS.FILE("cdt-DB-MI03.1_128M16_DDR3_LM512.bin")
+		&Cdtbin="cdt-DB-MI03.1_128M16_DDR3_LM512.bin"
+)
+
+print "Successfully Loaded SBL elf....."
+
+go sbl1_main_ctl
+
+V jtag_recovery = 1
+
+; CDT loading
+
+go boot_update_config_data_table /o
+
+wait !STATE.RUN()
+
+print "Loading CDT binary..."
+d.load.Binary &Cdtbin var.value(cdt_info_ptr->cdt_ptr) /noclear
+v cdt_contains_ddr_cdb = 1
+print "Successfully loaded CDT binary..."
+go boot_apt_test /o
+
+wait !STATE.RUN()
+
+print "Loading U-boot elf....."
+d.load.elf openwrt-ipq5332-u-boot.elf
+
+print "Successfully Loaded U-boot elf....."
+print "Stop at the u-boot prompt."
+
+go
+
+enddo
+
+;****************************************************************************
+; Setup main window
+;****************************************************************************
+SetupMainWindow:
+  WINPOS 0% 50% 68% 50% 0. 0. W001
+  Area.create MAIN
+  Area.view MAIN
+  Area.select MAIN
+  return ;SetupMainWindow

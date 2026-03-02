@@ -1,0 +1,17 @@
+// Copyright (c) 2015 Qualcomm Technologies, Inc.  All Rights Reserved.
+// Qualcomm Technologies Proprietary and Confidential.
+
+/**
+* @addtogroup CCipher
+* @{
+  Class CCipher implements \link ICipher \endlink interface.
+	
+  The class IDs `CipherAES128`, `CipherAES256` and `CipherTripleDES` are included 
+  in the default privilege set, therefore the CCipher class is available to every TA. 
+*/
+
+const uint32 CCipherAES128_UID = 35;
+const uint32 CCipherAES256_UID = 36;
+const uint32 CCipherTripleDES_UID = 37;
+
+/** @} */

@@ -1,0 +1,39 @@
+#===============================================================================
+#
+# GENERAL DESCRIPTION
+#    QUP Access Control Settings
+#
+# Copyright (c) 2016-2019 Qualcomm Technologies, Inc.
+# All Rights Reserved.
+# Qualcomm Technologies, Inc. Confidential and Proprietary.
+#
+#-------------------------------------------------------------------------------
+#                      EDIT HISTORY FOR FILE
+#
+#  This section contains comments describing changes made to the module.
+#  Notice that changes are listed in reverse chronological order.
+#
+# when       who     what, where, why
+# --------   ---     ---------------------------------------------------------
+# 01/30/19   dpk     Updated the rule to identify the targets and its families.
+# 12/12/18   DPK     Added proper support for Bruin family.
+# 03/20/18   VG      Added support for sdx24 & bear
+# 05/12/17   MJS     Initial version.
+#===============================================================================
+import os
+Import('env')
+
+#-------------------------------------------------------------------------------
+# Load sub scripts
+#-------------------------------------------------------------------------------
+
+if env['TARGET_FAMILY'] in ['bear']:
+   env.LoadSoftwareUnits(dir_patterns='../blsp/xpuv2/build')
+elif env['TARGET_FAMILY'] in ['hoya', 'bruin']:
+   if any([env['CHIPSET'].startswith(prefix) for prefix in ['sdx', 'mdm']]):   
+      env.LoadSoftwareUnits(dir_patterns='../blsp/xpuv3/build')
+   else:
+      env.LoadSoftwareUnits(dir_patterns='../qupv3/build')
+else:
+   env.LoadSoftwareUnits(dir_patterns='../qupv3/build')
+

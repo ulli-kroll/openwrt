@@ -1,0 +1,11 @@
+--- a/interface.c
++++ b/interface.c
+@@ -575,6 +575,8 @@
+ 	for (ifa = ifap; ifa; ifa = ifa->ifa_next) {
+ 		if (strcmp(ifa->ifa_name, name))
+ 			continue;
++		if (ifa->ifa_flags & IFF_POINTOPOINT)
++			continue;
+ 		if (ifa->ifa_addr->sa_family == AF_INET && !v4) {
+ 			struct sockaddr_in *sa;
+ 

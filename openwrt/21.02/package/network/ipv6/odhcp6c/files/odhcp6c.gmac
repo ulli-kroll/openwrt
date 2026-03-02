@@ -1,0 +1,21 @@
+#!/bin/sh
+
+[ "router" = "$(uci -q get system.board.type)" ] || exit 0
+[ "1" = "$(uci -q get network.lan.ipv6)" ] || exit 0
+
+dev_switch=$(uci -q get network.@switch_vlan[0].device)
+wan_vlan=$(uci -q get network.@switch_vlan[1].vlan)
+wan_port=$(swconfig dev $dev_switch vlan $wan_vlan show | grep ports | awk '{print $2 }')
+if [ x"$wan_port" = x"$PORTNUM" -a "$ACTION" = "linkup" ]; then
+	ifup wan6
+fi
+
+PHY_BASEADDR=32
+wan_phy=$(uci -q get system.board.wan_phy)
+[ -n "$wan_phy" ] && {
+	wan_phy_num=$(($PHY_BASEADDR+$wan_phy))
+	if [ x"$wan_phy_num" = x"$PORTNUM" -a "$ACTION" = "linkup" ]; then
+		ifup wan6
+	fi
+}
+

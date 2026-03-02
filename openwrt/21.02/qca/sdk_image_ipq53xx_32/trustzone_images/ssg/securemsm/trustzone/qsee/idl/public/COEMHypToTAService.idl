@@ -1,0 +1,11 @@
+// Copyright (c) 2018 Qualcomm Technologies, Inc.  All Rights Reserved.
+// Qualcomm Technologies Proprietary and Confidential.
+
+/**
+ * This class can be implemented by a OEM TA to provide
+ * services used by TZ_HYP_TO_TA_SVC_FWD syscall to route
+ * requests from EL2 to an OEM TA.
+ * This is required due to lack of invoke driver in EL2 and guest VMs.
+ * This class implements `IGenericService`.
+ */
+const uint32 COEMHypToTAService_UID = 1028;

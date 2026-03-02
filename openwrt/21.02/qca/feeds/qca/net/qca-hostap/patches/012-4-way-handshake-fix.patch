@@ -1,0 +1,36 @@
+diff --git a/src/ap/wpa_auth.c b/src/ap/wpa_auth.c
+index 9d153da7d..8dba55b63 100644
+--- a/src/ap/wpa_auth.c
++++ b/src/ap/wpa_auth.c
+@@ -3195,6 +3195,7 @@ static int wpa_auth_validate_ml_kdes_m2(struct wpa_state_machine *sm,
+ 		n_links++;
+ 	}
+ 
++#if 0
+ 	/* Must have the same number of MLO links (excluding the local one) */
+ 	if (n_links != sm->n_mld_affiliated_links) {
+ 		wpa_printf(MSG_DEBUG,
+@@ -3202,6 +3203,7 @@ static int wpa_auth_validate_ml_kdes_m2(struct wpa_state_machine *sm,
+ 			   sm->n_mld_affiliated_links, n_links);
+ 		return -1;
+ 	}
++#endif
+ #endif /* CONFIG_IEEE80211BE */
+ 
+ 	return 0;
+diff --git a/src/ap/wpa_auth_glue.c b/src/ap/wpa_auth_glue.c
+index c810619a4..c2d4ef7ec 100644
+--- a/src/ap/wpa_auth_glue.c
++++ b/src/ap/wpa_auth_glue.c
+@@ -1683,6 +1683,8 @@ int hostapd_setup_wpa(struct hostapd_data *hapd)
+ 
+ 	_conf.secure_ltf =
+ 		!!(hapd->iface->drv_flags2 & WPA_DRIVER_FLAGS2_SEC_LTF_AP);
++    /* Disable secure_ltf */
++    _conf.secure_ltf = 0;
+ 	_conf.secure_rtt =
+ 		!!(hapd->iface->drv_flags2 & WPA_DRIVER_FLAGS2_SEC_RTT_AP);
+ 	_conf.prot_range_neg =
+-- 
+2.17.1
+

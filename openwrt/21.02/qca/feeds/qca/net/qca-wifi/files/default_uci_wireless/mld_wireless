@@ -1,0 +1,4 @@
+config wifi-mld mldX
+        option mld_macaddr aa:bb:cc:dd:ee:ff
+        option mld_ssid QSoftAP_MLD
+        option mld_ref  0

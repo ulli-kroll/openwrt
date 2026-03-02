@@ -1,0 +1,39 @@
+diff --git a/hostapd/ctrl_iface.c b/hostapd/ctrl_iface.c
+index f90eb22..efb9355 100644
+--- a/hostapd/ctrl_iface.c
++++ b/hostapd/ctrl_iface.c
+@@ -3481,6 +3481,9 @@ static int hostapd_ctrl_iface_receive_process(struct hostapd_data *hapd,
+ 	} else if (os_strcmp(buf, "RELOAD_BSS") == 0) {
+ 		if (hostapd_ctrl_iface_reload_bss(hapd))
+ 			reply_len = -1;
++	} else if (os_strcmp(buf, "RELOAD_CONFIG") == 0) {
++		if (hostapd_reload_config(hapd->iface))
++			reply_len = -1;
+ 	} else if (os_strncmp(buf, "RELOAD", 6) == 0) {
+ 		if (hostapd_ctrl_iface_reload(hapd->iface))
+ 			reply_len = -1;
+diff --git a/hostapd/hostapd_cli.c b/hostapd/hostapd_cli.c
+index 646dfc5..d841e44 100644
+--- a/hostapd/hostapd_cli.c
++++ b/hostapd/hostapd_cli.c
+@@ -1227,6 +1227,11 @@ static int hostapd_cli_cmd_reload_bss(struct wpa_ctrl *ctrl, int argc,
+ 	return wpa_ctrl_command(ctrl, "RELOAD_BSS");
+ }
+ 
++static int hostapd_cli_cmd_reload_config(struct wpa_ctrl *ctrl, int argc,
++                                               char *argv[])
++{
++       return wpa_ctrl_command(ctrl, "RELOAD_CONFIG");
++}
+ 
+ static int hostapd_cli_cmd_disable(struct wpa_ctrl *ctrl, int argc,
+ 				      char *argv[])
+@@ -1592,6 +1597,8 @@ static const struct hostapd_cli_cmd hostapd_cli_commands[] = {
+ 	  "= get MIB variables (dot1x, dot11, radius)" },
+ 	{ "relog", hostapd_cli_cmd_relog, NULL,
+ 	  "= reload/truncate debug log output file" },
++	{ "reload_config", hostapd_cli_cmd_reload_config, NULL,
++	  "= reload conf for current interface" },
+ 	{ "close_log", hostapd_cli_cmd_close_log, NULL,
+ 	  "= disable debug log output file" },
+ 	{ "status", hostapd_cli_cmd_status, NULL,

@@ -1,0 +1,36 @@
+;
+; Copyright (c) 2017, 2019, 2021-2022 Qualcomm Technologies, Inc.
+; All Rights Reserved.
+; Confidential and Proprietary - Qualcomm Technologies, Inc.
+;
+
+; select CPU and options
+;SYStem.Reset
+SYStem.CPU HEXAGONV73L_1
+;SYStem.CPU HEXAGONV67L
+SYStem.JTAGCLOCK 1MHz
+;SYStem.CONFIG SLAVE ON
+
+SYStem.CONFIG MEMORYACCESSPORT 0.
+SYStem.CONFIG DEBUGACCESSPORT  1.
+SYStem.CONFIG AXIACCESSPORT 0.
+SYStem.CONFIG APBACCESSPORT 1.
+
+;SYStem.CONFIG DAPIRPRE 30.
+;SYStem.CONFIG DAPDRPRE 4.
+;SYStem.CONFIG DAPIRPOST 11.
+;SYStem.CONFIG DAPDRPOST 1.
+
+SYStem.CONFIG   DAPIRPRE        0.
+SYStem.CONFIG   DAPDRPRE        0.
+SYStem.CONFIG   DAPIRPOST       11.
+SYStem.CONFIG   DAPDRPOST       1.
+
+
+SYStem.CONFIG.COREDEBUG.BASE 0X85029000
+SYStem.CONFIG.ETM.BASE 0X85028000
+
+sys.mode attach
+
+;break
+

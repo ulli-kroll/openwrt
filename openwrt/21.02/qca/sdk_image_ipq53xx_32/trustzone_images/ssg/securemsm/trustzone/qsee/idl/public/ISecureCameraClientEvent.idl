@@ -1,0 +1,36 @@
+/* Copyright (c) 2017 Qualcomm Technologies, Inc.  All Rights Reserved.
+   Qualcomm Technologies Proprietary and Confidential. */
+
+/** @cond */
+interface ISecureCameraClientEvent
+{
+/** @endcond */
+
+  /**
+   * @addtogroup ISecureCameraClientEvent
+   * @{
+   */
+
+  /**
+    - Called by QTEE kernel when camera PHYs are protected.
+    - Implementation must be present in TAs that use secure camera functionality.
+
+    @param[in] state     Reserved for future use.
+
+    @return
+    Object_OK on success.
+  */
+  method phyProtectEvent(in uint32[] state);
+
+  /**
+    - Called by QTEE kernel when secure camera PHYs are unprotected.
+    - Implementation must be present in TAs that use secure camera functionality.
+
+    @param[in] state     Reserved for future use.
+
+    @return
+    Object_OK on success.
+  */
+  method phyUnprotectEvent(in uint32[] state);
+  /* @} */ /* end_addtogroup ISecureCameraClientEvent */
+};

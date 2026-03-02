@@ -1,0 +1,44 @@
+;***********************************************************************************
+;
+; Copyright (c) 2017, 2019, 2021-2022 Qualcomm Technologies, Inc.
+; All Rights Reserved.
+; Confidential and Proprietary - Qualcomm Technologies, Inc.
+;
+;***********************************************************************************
+Area.view
+WINPAGE.RESET
+RESET
+SYStem.CPU RV32
+SYSTEM.JtagClock 200.kHZ
+
+
+SYStem.CONFIG DAPIRPRE 0.
+SYStem.CONFIG DAPDRPRE 0.
+SYStem.CONFIG DAPIRPOST 11.
+SYStem.CONFIG DAPDRPOST 1.
+
+SYStem.CONFIG AHBAP1.Port 0.
+SYStem.CONFIG APBAP1.Port 1.
+;SYStem.config DEBUGACCESSPORT 1
+;SYStem.config AXIACCESSPORT 0
+;SYStem.config MEMORYACCESSPORT 0
+
+;SYStem.CONFIG.COREDEBUG.BASE    APB:0x85034000    // P2R0
+SYStem.CONFIG.COREDEBUG.BASE    APB:0x85060000   // After P2R0
+;SYStem.CONFIG.COREDEBUG.BASE    0x800B8000
+;SYStem.CONFIG.ETM.BASE          0x00293000
+;SYStem.CONFIG.CTI.BASE          0x00291000
+
+;sys.option ResetMode NDMRST
+System.State
+sys.mode attach
+
+;sys.up
+;wait 10.ms
+break
+;;; add for the CTRL reg setting for RISCV
+Data.Set MD:0x30FFB000 %LE %Long 0x63311
+
+;Data.Set MD:0x30811000 %LE %Long 0x63311
+
+ENDDO

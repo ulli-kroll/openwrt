@@ -1,0 +1,75 @@
+// Copyright (c) 2015 Qualcomm Technologies, Inc.  All Rights Reserved.
+// Qualcomm Technologies Proprietary and Confidential.
+
+/** @cond */
+interface IMacchiato {
+/** @endcond */
+
+  /**
+   * @addtogroup IMacchiato
+   * @{
+   */
+
+  /**
+    Signs service data with device Macchiato private key.
+
+    @param[in]  serviceData               Buffer that contains service data
+                                          to be signed.
+    @param[out] signedServiceData         Buffer (also allocated by the calling
+                                          app) to fill signature output.
+    @param[out] pu32SignedServiceDataLen  Signature output length (in bytes).
+    @param[out] retErrCode                Macchiato specific return code.
+
+    @return
+    Object_OK on success.
+  */
+  method signServiceData(in buffer serviceData, out buffer signedServiceData, out uint32 pu32SignedServiceDataLen, out uint32 retErrCode);
+
+  /**
+    Authenticates device using challenge response with Macchiato private key.
+
+    @param[in]  serviceNonce                    Buffer containing authentication
+                                                challenge.
+    @param[in]  deviceNonce                     Buffer containing device nonce.
+    @param[in]  opaqueData                      Buffer containing additional opaque data
+                                                to be signed (optional).
+    @param[out] signedChallengeResponse         Buffer (also allocated by calling app)
+                                                to fill the challenge response output.
+    @param[out] pu32SignedChallengeResponseLen  Challenge response output length 
+                                                (in bytes).
+    @param[out] retErrCode                      Macchiato-specific return code.
+
+    @return
+    Object_OK on success.
+  */
+  method authenticate_device(in buffer serviceNonce, in buffer deviceNonce, in buffer opaqueData, out buffer signedChallengeResponse, out uint32 pu32SignedChallengeResponseLen, out uint32 retErrCode);
+
+  /**
+    Gets unwrapped service key from the Macchiato provisioning message.
+
+    @param[in]  provisionMsg         Buffer containing provisioning message.
+    @param[out] unwrappedKey         Buffer to contain unwrapped service key (maximum
+                                     size should be known to the calling application).
+    @param[out] pu32UnwarppedKeyLen  Unwrapped service key length.
+    @param[in]  deviceNonce          Device nonce. Passed in to compare with the nonce embedded in provision message.
+    @param[out] retErrCode           Macchiato-specific return code.
+
+    @return
+    Object_OK on success.
+  */
+  method provision_service_key(in buffer provisionMsg, out buffer unwrappedKey, out uint32 pu32UnwarppedKeyLen, in buffer deviceNonce, out uint32 retErrCode);
+
+  /**
+    Gets the public key point.
+
+    @param[out] PublicKeyData     Buffer to contain public signing key point.
+    @param[out] PublicKeyDataLen  Output public key data length.
+    @param[in]  PubKeyType        Public key type to be obtained.
+    @param[out] retErrCode        Macchiato-specific return code.
+
+    @return
+    Object_OK on success.
+  */
+  method getPublicKeyPoint(out buffer PublicKeyData, out uint32 PublicKeyDataLen, in uint32 PubKeyType, out uint32 retErrCode);
+  /* @} */ /* end_addtogroup IMacchiato */
+};

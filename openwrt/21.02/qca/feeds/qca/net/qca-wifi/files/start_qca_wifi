@@ -1,0 +1,113 @@
+#!/bin/sh
+#
+# Copyright (c) 2021-2022 Qualcomm Technologies, Inc.
+# All Rights Reserved.
+# Confidential and Proprietary - Qualcomm Technologies, Inc.
+#
+# qca-wifi init.d script
+
+export MODULE_BASE=/lib/modules/`uname -r`/
+set -e
+
+case "$1" in
+	start)
+		# Set board_name to be used in qcawifi scripts
+		if [ $(cat /sys/firmware/devicetree/base/model | grep -c Pine) = 0 ];then
+			echo "QCA-WIFI driver not supported" > /dev/kmsg
+			exit 0
+		fi
+		mkdir -p /tmp/sysinfo/
+		if [ $(cat /sys/firmware/devicetree/base/model | grep -c "1x Pine") = 1 ];then
+			echo "ap-sdxlemur-qcn9000_1x" > /tmp/sysinfo/sdk_board_name
+		elif [ $(cat /sys/firmware/devicetree/base/model | grep -c "2x Pine") = 1 ];then
+			echo "ap-sdxlemur-qcn9000_2x" > /tmp/sysinfo/sdk_board_name
+		fi
+
+		# Create softlinks for IPQ binaries
+		mkdir -p /systemrw/wlan/bin/
+		ln -sf /usr/sbin/ipq/* /systemrw/wlan/bin/
+		ln -sf /usr/bin/ipq/* /systemrw/wlan/bin/
+
+		# Touch wifi lock files
+		touch /var/run/wifilock
+		chmod 666 /var/run/wifilock
+		touch /var/run/scanwifi_lock
+		chmod 666 /var/run/scanwifi_lock
+
+		echo "LOADING QCA-WIFI" > /dev/kmsg
+		if [ $(lsmod | grep -c ipq_cnss2) = 0 ];then
+			echo "Loading ipq_cnss2" > /dev/kmsg
+			insmod $MODULE_BASE/extra/ipq_cnss2.ko log_level=4
+		fi
+
+		if [ ! -z "$cnssdaemon_log_file" ];then
+			cnssd_args=" -dddd -f $cnssdaemon_log_file"
+		else
+			cnssd_args=" -s"
+		fi
+		/usr/bin/cnssdaemon $cnssd_args &
+
+		[ -e /tmp/.wifi-config-done ] && {
+			echo -n "Wifi modules already loaded" > /dev/kmsg
+			exit 0
+		}
+
+		/sbin/wifi detect > /tmp/sysinfo/wireless.tmp
+		[ -s /tmp/sysinfo/wireless.tmp  ] && {
+			cat /tmp/sysinfo/wireless.tmp >> /etc/config/wireless
+		}
+		rm -f /tmp/sysinfo/wireless.tmp
+		touch /tmp/.wifi-config-done
+
+		echo "done loading WLAN modules" > /dev/kmsg
+
+		# Start sigma-dut
+		if [ -e /etc/init.d/sigma-dut ];then
+			/etc/init.d/sigma-dut start
+		else
+			echo "/etc/init.d/sigma-dut file not found." > /dev/kmsg
+		fi
+	;;
+	stop)
+		# Stop sigma-dut
+		if [ -e /etc/init.d/sigma-dut ];then
+			/etc/init.d/sigma-dut stop
+		else
+			echo "/etc/init.d/sigma-dut file not found." > /dev/kmsg
+		fi
+
+		echo "Unloading QCA-WIFI" > /dev/kmsg
+		/sbin/wifi unload
+		rm /tmp/.wifi-config-done
+	;;
+	restart)
+		$0 stop
+		$0 start
+	;;
+	load)
+		/sbin/wifi load_only
+	;;
+	unload)
+		/sbin/wifi unload_only
+	;;
+	up)
+		/sbin/wifi up $2
+	;;
+	down)
+		/sbin/wifi down $2
+	;;
+	multi_up)
+		shift
+		/sbin/wifi multi_up $@
+	;;
+	multi_down)
+		shift
+		/sbin/wifi multi_down $@
+	;;
+	*)
+		echo "Usage { start | stop | restart | load | unload | up | down | multi_up | multi_down }" >&2
+		exit 1
+	;;
+esac
+
+exit 0

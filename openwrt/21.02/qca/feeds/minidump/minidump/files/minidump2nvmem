@@ -1,0 +1,114 @@
+#!/bin/sh /etc/rc.common
+: '
+Copyright (c) 2024 Qualcomm Technologies, Inc.
+All Rights Reserved.
+Confidential and Proprietary - Qualcomm Technologies, Inc.
+
+'
+
+START=99
+
+. /lib/upgrade/platform.sh
+
+start() {
+	cmdline="$(cat /proc/cmdline)"
+	echo $cmdline
+
+	REMOTE="minidump2mem.bin"
+	SERVER=$(fw_printenv serverip | cut -c10-24);
+
+	if [ ! -n "$SERVER" ]; then
+		printf "%s\n" "Wrong configuaration SERVER = $SERVER" > /dev/console
+		exit 0
+	fi
+
+	NETSTAT=0
+
+	if [[ "$cmdline" == *"collect_minidump"* ]]; then
+		echo "[minidump-collect] Initiating minidump collection " > /dev/console
+
+		while [ $NETSTAT -ne 1 ]; do
+			ping -c 3 $SERVER
+			if [ $? -eq  0 ]; then
+				NETSTAT=1;
+			else
+				sleep 10
+			fi
+		done
+
+		if [[ "$cmdline" == *"ubi_rootfs"* ]]; then
+			flash_type="nand"
+		else
+			flash_type="emmc"
+		fi
+
+		part_name="$(fw_printenv | grep dump_to_nvmem)"
+		part_name=${part_name:14}
+
+		echo "[minidump-collect] flash_type: $flash_type part_name: $part_name " > /dev/console
+		case $flash_type in
+			"nand")
+				mtd_dev="$(cat /proc/mtd | grep -w $part_name | awk '{ print $1 }')"
+				if [ -z "$mtd_dev" ]; then
+					echo "[minidump-collect] unable to find the mtd block for $part_name partition" > /dev/console
+					exit 1
+				fi
+
+				mtd_dev=${mtd_dev:0:-1}
+				echo "[minidump-collect] flash_type: $mtd_dev " > /dev/console
+
+				nanddump -f /tmp/$REMOTE --bb=skipbad /dev/$mtd_dev
+				echo "[minidump-collect] Saving $REMOTE dump in /tmp directory" > /dev/console
+				if [ $? -ne  0 ]; then
+					echo "[minidump-collect] failed to write" > /dev/console
+					rm -rf /tmp/$REMOTE
+					sync
+					exit 1
+				fi
+
+				mtd erase /dev/$mtd_dev
+				;;
+
+			"emmc")
+				mmc_dev="$(grep $part_name -wrns /sys/block/*)"
+				if [ -z "$mmc_dev" ]; then
+					echo "[minidump-collect] unable to find the mmc block for $part_name partition" > /dev/console
+					exit 1
+				fi
+
+				mmc_dev="$(grep $part_name -wrns /sys/block/* | cut -d '/' -f 5)"
+				echo "[minidump-collect] flash_type: $mmc_dev " > /dev/console
+
+				dd if=/dev/$mmc_dev of=/tmp/$REMOTE
+				echo "[minidump-collect] Saving $REMOTE dump in /tmp directory" > /dev/console
+				if [ $? -ne  0 ]; then
+					echo "[minidump-collect] failed to write" > /dev/console
+					rm -rf /tmp/$REMOTE
+					sync
+					exit 1
+				fi
+
+				dd if=/dev/zero of=/dev/$mmc_dev bs=512 count=2048
+				;;
+
+			*)
+				echo "[minidump-collect] Invalid flash_type " > /dev/console
+				;;
+		esac
+
+		echo "[minidump-collect] Collecting $REMOTE dump in $SERVER" > /dev/console
+		$(tftp -l /tmp/$REMOTE -r $REMOTE -p $SERVER 2>&1)
+		if [ $? -eq 0 ]; then
+			echo "[minidump-collect] $REMOTE dump collected in $SERVER" > /dev/console
+		else
+			echo "[minidump-collect] $REMOTE dump collection failed in $SERVER" > /dev/console
+			rm -rf /tmp/$REMOTE
+			sync
+			exit 1
+		fi
+
+		rm -rf /tmp/$REMOTE
+		sync
+		exit 0
+	fi
+}

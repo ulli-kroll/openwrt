@@ -1,0 +1,70 @@
+// Copyright (c) 2017 Qualcomm Technologies, Inc.  All Rights Reserved.
+// Qualcomm Technologies Proprietary and Confidential.
+
+include "IOPS.idl"
+
+/**
+  HDCP Transmitter applications call IHdcpTransmitter
+  to report HDCP encryption levels and downstream device topology.
+  By implementing these functions, Output Protection Service (OPS) can track
+  all HDCP Transmitters and their topologies.
+*/
+/** @cond **/
+interface IHdcpTransmitter {
+/** @endcond */
+
+  /**
+   * @addtogroup IHdcpTransmitter
+   * @{
+   */
+
+  /** @cond **/
+  /** error codes */
+
+  /** Revoked devices found in downstream topology */
+  error ERROR_SRM_CHECK_FAILED;
+
+  /** Topology validation failed */
+  error ERROR_TOPOLOGY_INVALID;
+  /** @endcond */
+
+  /**
+    Sets HDCP Topology for a device.
+
+    @param[in] receiverIdList  Downstream device ID list.
+    @param[in] hdcpTopology    Device topology information.
+
+    @return
+    Object_OK on success.
+  */
+  method setDeviceTopology(in uint8[] receiverIdList,
+                           in HdcpTopology hdcpTopology);
+
+  /**
+    Sets the HDCP encryption level supported by the display device.
+    Wireless HDCP transmitters call this function.
+
+    @param[in] dpl  HDCP encryption level for the device.
+
+    @return
+    Object_OK on success.
+  */
+  method setDeviceProtectionLevel(in uint8 dpl);
+
+  /**
+    HDCP Transmitter TAs call this function to update Output
+    Protection Service with the new Content Protection Level.
+
+    Whenever content's protection level changes, OPS ensures that the HDCP
+    Transmitter honors the new level by receiving the update. If this
+    update is not received within a time limit, HDCP Tx receives an error
+    through IHdcpNotify.
+
+    @param[in] cpl  New content protection level.
+
+    @return
+    Object_OK on success.
+  */
+  method contentProtectionLevelUpdated(in uint8 cpl);
+  /** @} */ /* end_addtogroup IHdcpTransmitter */
+};

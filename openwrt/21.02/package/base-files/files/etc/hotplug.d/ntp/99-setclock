@@ -1,0 +1,19 @@
+#!/bin/sh
+
+if [ "$ACTION" = stratum ]; then
+	logger -t ntp "net time sync"
+	[ -f /tmp/.timeclock ] || {
+		touch /tmp/.timeclock
+		/etc/init.d/firewall reload
+	}
+	touch /etc/rom_version
+fi
+
+if [ "$ACTION" = setclock ]; then
+	logger -t ntp "local time sync"
+	[ -f /tmp/.timeclock ] || {
+		touch /tmp/.timeclock
+		/etc/init.d/firewall reload
+	}
+	touch /etc/rom_version
+fi

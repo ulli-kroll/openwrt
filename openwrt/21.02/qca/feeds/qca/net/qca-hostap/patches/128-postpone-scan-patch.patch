@@ -1,0 +1,174 @@
+diff --git a/wpa_supplicant/events.c b/wpa_supplicant/events.c
+index 6ff235e..474a45f 100644
+--- a/wpa_supplicant/events.c
++++ b/wpa_supplicant/events.c
+@@ -1884,13 +1884,18 @@ int wpa_supplicant_connect(struct wpa_supplicant *wpa_s,
+ 	       0) ||
+ 	      (is_zero_ether_addr(wpa_s->pending_bssid) &&
+ 	       ssid != wpa_s->current_ssid)))) {
++		bool flag = false;
+ 		if (wpa_supplicant_scard_init(wpa_s, ssid)) {
+ 			wpa_supplicant_req_new_scan(wpa_s, 10, 0);
+ 			return 0;
+ 		}
+ 		wpa_msg(wpa_s, MSG_DEBUG, "Request association with " MACSTR,
+ 			MAC2STR(selected->bssid));
+-		wpa_supplicant_associate(wpa_s, selected, ssid);
++		wpa_supplicant_associate(wpa_s, selected, ssid, &flag);
++		if (flag) {
++			wpa_supplicant_req_new_scan(wpa_s, 10, 0);
++			return 0;
++		}
+ 	} else {
+ 		wpa_dbg(wpa_s, MSG_DEBUG, "Already associated or trying to "
+ 			"connect with the selected AP");
+@@ -2438,7 +2443,7 @@ static int wpas_select_network_from_last_scan(struct wpa_supplicant *wpa_s,
+ 		ssid = wpa_supplicant_pick_new_network(wpa_s);
+ 		if (ssid) {
+ 			wpa_dbg(wpa_s, MSG_DEBUG, "Setup a new network");
+-			wpa_supplicant_associate(wpa_s, NULL, ssid);
++			wpa_supplicant_associate(wpa_s, NULL, ssid, NULL);
+ 			if (new_scan)
+ 				wpa_supplicant_rsn_preauth_scan_results(wpa_s);
+ 		} else if (own_request) {
+diff --git a/wpa_supplicant/scan.c b/wpa_supplicant/scan.c
+index c3984a4..73bb44c 100644
+--- a/wpa_supplicant/scan.c
++++ b/wpa_supplicant/scan.c
+@@ -175,7 +175,7 @@ static void wpa_supplicant_assoc_try(struct wpa_supplicant *wpa_s,
+ 		/* Start from the beginning of the SSID list. */
+ 		wpa_s->prev_scan_ssid = WILDCARD_SSID_SCAN;
+ 	}
+-	wpa_supplicant_associate(wpa_s, NULL, ssid);
++	wpa_supplicant_associate(wpa_s, NULL, ssid, NULL);
+ }
+ 
+ 
+@@ -1079,7 +1079,7 @@ static void wpa_supplicant_scan(void *eloop_ctx, void *timeout_ctx)
+ 		if (ssid) {
+ 			wpa_printf(MSG_DEBUG, "Start a pre-selected network "
+ 				   "without scan step");
+-			wpa_supplicant_associate(wpa_s, NULL, ssid);
++			wpa_supplicant_associate(wpa_s, NULL, ssid, NULL);
+ 			return;
+ 		}
+ 	}
+diff --git a/wpa_supplicant/sme.c b/wpa_supplicant/sme.c
+index f5176f9..16c712c 100644
+--- a/wpa_supplicant/sme.c
++++ b/wpa_supplicant/sme.c
+@@ -379,7 +379,7 @@ static void sme_auth_handle_rrm(struct wpa_supplicant *wpa_s,
+ 
+ 
+ bool wpas_ml_element(struct wpa_supplicant *wpa_s, struct wpa_bss *bss,
+-			    struct wpa_ssid *ssid)
++			    struct wpa_ssid *ssid, bool *fail)
+ {
+ 	struct wpabuf *mlbuf;
+ 	const u8 *rnr_ie, *pos, *rsn_ie;
+@@ -517,6 +517,9 @@ bool wpas_ml_element(struct wpa_supplicant *wpa_s, struct wpa_bss *bss,
+ 			} else {
+ 				wpa_printf(MSG_DEBUG,
+ 					   "MLD: Neighbor not found in scan");
++				ret = false;
++				*fail = true;
++				goto out;
+ 			}
+ 		}
+ 
+@@ -634,7 +637,7 @@ static void sme_send_authentication(struct wpa_supplicant *wpa_s,
+ 	params.ssid_len = bss->ssid_len;
+ 	params.p2p = ssid->p2p_group;
+ 
+-	if (wpas_ml_element(wpa_s, bss, ssid)) {
++	if (wpas_ml_element(wpa_s, bss, ssid, NULL)) {
+ 		wpa_printf(MSG_DEBUG, "MLD: In authentication");
+ 		params.mld = true;
+ 		params.mld_link_id = wpa_s->mlo_assoc_link_id;
+@@ -2095,7 +2098,7 @@ void sme_event_auth(struct wpa_supplicant *wpa_s, union wpa_event_data *data)
+ 
+ 			wpa_dbg(wpa_s, MSG_DEBUG, "SME: Trying SHARED auth");
+ 			wpa_supplicant_associate(wpa_s, wpa_s->current_bss,
+-						 wpa_s->current_ssid);
++						 wpa_s->current_ssid, NULL);
+ 			return;
+ 
+ 		case WLAN_AUTH_SHARED_KEY:
+@@ -2103,7 +2106,7 @@ void sme_event_auth(struct wpa_supplicant *wpa_s, union wpa_event_data *data)
+ 
+ 			wpa_dbg(wpa_s, MSG_DEBUG, "SME: Trying LEAP auth");
+ 			wpa_supplicant_associate(wpa_s, wpa_s->current_bss,
+-						 wpa_s->current_ssid);
++						 wpa_s->current_ssid, NULL);
+ 			return;
+ 
+ 		default:
+diff --git a/wpa_supplicant/sme.h b/wpa_supplicant/sme.h
+index 0de2693..6c5694f 100644
+--- a/wpa_supplicant/sme.h
++++ b/wpa_supplicant/sme.h
+@@ -12,7 +12,7 @@
+ #ifdef CONFIG_SME
+ 
+ bool wpas_ml_element(struct wpa_supplicant *wpa_s, struct wpa_bss *bss,
+-			    struct wpa_ssid *ssid);
++			    struct wpa_ssid *ssid, bool *fail);
+ void sme_authenticate(struct wpa_supplicant *wpa_s,
+ 		      struct wpa_bss *bss, struct wpa_ssid *ssid);
+ void sme_associate(struct wpa_supplicant *wpa_s, enum wpas_mode mode,
+@@ -49,7 +49,7 @@ void sme_external_auth_mgmt_rx(struct wpa_supplicant *wpa_s,
+ #else /* CONFIG_SME */
+ 
+ bool wpas_ml_element(struct wpa_supplicant *wpa_s, struct wpa_bss *bss,
+-			    struct wpa_ssid *ssid)
++			    struct wpa_ssid *ssid, bool *fail)
+ {
+ 	return false;
+ }
+diff --git a/wpa_supplicant/wpa_supplicant.c b/wpa_supplicant/wpa_supplicant.c
+index fec1303..3db8f56 100644
+--- a/wpa_supplicant/wpa_supplicant.c
++++ b/wpa_supplicant/wpa_supplicant.c
+@@ -2426,10 +2426,11 @@ static void wpas_start_assoc_cb(struct wpa_radio_work *work, int deinit);
+  * This function is used to request %wpa_supplicant to associate with a BSS.
+  */
+ void wpa_supplicant_associate(struct wpa_supplicant *wpa_s,
+-			      struct wpa_bss *bss, struct wpa_ssid *ssid)
++			      struct wpa_bss *bss, struct wpa_ssid *ssid, bool *flag)
+ {
+ 	struct wpa_connect_work *cwork;
+ 	enum wpas_mac_addr_style rand_style;
++	bool fail = false;
+ 
+ 	wpa_s->own_disconnect_req = 0;
+ 	wpa_s->own_reconnect_req = 0;
+@@ -2573,10 +2574,15 @@ void wpa_supplicant_associate(struct wpa_supplicant *wpa_s,
+ 		return;
+ 	}
+ 
+-	if (wpas_ml_element(wpa_s, bss, ssid)) {
++	if (wpas_ml_element(wpa_s, bss, ssid, &fail)) {
+ 		wpa_printf(MSG_DEBUG, "MLD: In connect");
++	} else if (fail) {
++		wpa_printf(MSG_DEBUG, "MLD: Missing Link");
++		*flag = true;
++		return;
+ 	}
+ 
++
+ 	if (wpa_s->connect_work) {
+ 		wpa_dbg(wpa_s, MSG_DEBUG, "Reject wpa_supplicant_associate() call since connect_work exist");
+ 		return;
+diff --git a/wpa_supplicant/wpa_supplicant_i.h b/wpa_supplicant/wpa_supplicant_i.h
+index c44413e..d6cc19a 100644
+--- a/wpa_supplicant/wpa_supplicant_i.h
++++ b/wpa_supplicant/wpa_supplicant_i.h
+@@ -1601,7 +1601,7 @@ int wpa_supplicant_set_suites(struct wpa_supplicant *wpa_s,
+ int wpas_restore_permanent_mac_addr(struct wpa_supplicant *wpa_s);
+ void wpa_supplicant_associate(struct wpa_supplicant *wpa_s,
+ 			      struct wpa_bss *bss,
+-			      struct wpa_ssid *ssid);
++			      struct wpa_ssid *ssid, bool *flag);
+ void wpa_supplicant_set_non_wpa_policy(struct wpa_supplicant *wpa_s,
+ 				       struct wpa_ssid *ssid);
+ void wpa_supplicant_initiate_eapol(struct wpa_supplicant *wpa_s);

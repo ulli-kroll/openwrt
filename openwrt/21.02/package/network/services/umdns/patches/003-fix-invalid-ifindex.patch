@@ -1,0 +1,42 @@
+--- a/interface.c
++++ b/interface.c
+@@ -189,7 +189,7 @@
+ 	struct msghdr msg;
+ 	socklen_t len;
+ 	struct sockaddr_in from;
+-	int flags = 0, ifindex = -1;
++	int flags = 0;
+ 	uint8_t ttl = 0;
+ 	struct in_pktinfo *inp = NULL;
+ 
+@@ -250,9 +250,7 @@
+ 		fprintf(stderr, "  ttl %u\n", ttl);
+ 	}
+ 
+-	if (inp->ipi_ifindex != iface->ifindex)
+-		fprintf(stderr, "invalid iface index %d != %d\n", ifindex, iface->ifindex);
+-	else if (!interface_valid_src((void *) &iface->v4_addr, (void *) &iface->v4_netmask, (void *) &from.sin_addr, 4))
++	if (!interface_valid_src((void *) &iface->v4_addr, (void *) &iface->v4_netmask, (void *) &from.sin_addr, 4))
+ 		dns_handle_packet(iface, (struct sockaddr *) &from, ntohs(from.sin_port), buffer, len);
+ }
+ 
+@@ -267,7 +265,7 @@
+ 	struct msghdr msg;
+ 	socklen_t len;
+ 	struct sockaddr_in6 from;
+-	int flags = 0, ifindex = -1;
++	int flags = 0;
+ 	int ttl = 0;
+ 	struct in6_pktinfo *inp = NULL;
+ 
+@@ -326,9 +324,7 @@
+ 		fprintf(stderr, "  ttl %u\n", ttl);
+ 	}
+ 
+-	if (inp->ipi6_ifindex != iface->ifindex)
+-		fprintf(stderr, "invalid iface index %d != %d\n", ifindex, iface->ifindex);
+-	else if (!interface_valid_src((void *) &iface->v6_addr, (void *) &iface->v6_netmask, (void *) &from.sin6_addr, 16))
++	if (!interface_valid_src((void *) &iface->v6_addr, (void *) &iface->v6_netmask, (void *) &from.sin6_addr, 16))
+ 		dns_handle_packet(iface, (struct sockaddr *) &from, ntohs(from.sin6_port), buffer, len);
+ }
+ 

@@ -1,0 +1,28 @@
+;
+; Copyright (c) 2017, 2019, 2021 Qualcomm Technologies, Inc.
+; All Rights Reserved.
+; Confidential and Proprietary - Qualcomm Technologies, Inc.
+;
+
+Area.view
+WINPAGE.RESET
+RESET
+SYStem.CPU RV32
+SYSTEM.JtagClock 200.kHZ
+
+SYStem.CONFIG	DAPIRPRE	0.
+SYStem.CONFIG	DAPDRPRE	0.
+SYStem.CONFIG	DAPIRPOST	11.
+SYStem.CONFIG	DAPDRPOST	1.
+
+SYSTEM.CONFIG.AHBAP1.Port 0.
+SYSTEM.CONFIG.APBAP1.Port 1.
+
+SYStem.CONFIG.COREDEBUG.BASE    APB:0x86234000
+
+System.State
+sys.mode attach
+; sys.option ResetMode NDMRST
+break
+
+ENDDO

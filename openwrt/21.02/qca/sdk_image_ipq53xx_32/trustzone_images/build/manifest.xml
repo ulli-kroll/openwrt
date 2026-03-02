@@ -1,0 +1,10 @@
+<config>
+  <image_tree>
+    <name>TZ.WNS.5.3</name>
+    <build_id>TZ.WNS.5.3-00297-IPQ90xxAAAAANAZT-1</build_id>
+    <branch_point_revision/>
+    <revision>00297</revision>
+    <spin>1</spin>
+    <client>IPQ90xxAAAAANAZT</client>
+  </image_tree>
+</config>

@@ -1,0 +1,357 @@
+---  a/drivers/mtd/nand/spi/core.c
++++  b/drivers/mtd/nand/spi/core.c
+@@ -20,6 +20,29 @@
+ #include <linux/spi/spi.h>
+ #include <linux/spi/spi-mem.h>
+ 
++extern int flash_uuid_init(u8 *uuid, int len);
++static int F50L1G41LB_nandflash_uid_detect(struct spinand_device *spinand, u8* uuid);
++static int F50L2G41XA_nandflash_uid_detect(struct spinand_device *spinand, u8* uuid);
++
++struct nand_flash_dev_uid {
++	char *name;
++	union {
++		struct {
++			uint8_t mfr_id;
++			uint8_t dev_id;
++		};
++		uint8_t id[SPINAND_MAX_ID_LEN];
++	};
++	uint16_t id_len;
++	int (*flash_uid_detect)(struct spinand_device *spinand, u8* uuid);
++};
++
++struct nand_flash_dev_uid nand_flash_uids[] = {
++	{"F50L1G41LB(2M) SPI NAND 1G", { .id = {0xc8, 0x01} }, 2, F50L1G41LB_nandflash_uid_detect},
++	{"F50L2G41XA(2B) SPI NAND 2G", { .id = {0x2c, 0x24} }, 2, F50L2G41XA_nandflash_uid_detect},
++	{NULL}
++};
++
+ static int spinand_read_reg_op(struct spinand_device *spinand, u8 reg, u8 *val)
+ {
+ 	struct spi_mem_op op = SPINAND_GET_FEATURE_OP(reg,
+@@ -986,6 +1009,25 @@ int spinand_match_and_init(struct spinan
+ 	return -ENOTSUPP;
+ }
+ 
++static u8 nand_flash_id[SPINAND_MAX_ID_LEN] = {0}; 
++
++static void nand_set_flash_id(struct spinand_device *spinand)
++{
++	int i = 0;
++	u8 devid_len = spinand->manufacturer->chips->devid.len;
++	
++	nand_flash_id[0] = spinand->manufacturer->id;
++	for (i=0; (i<devid_len)&&(i<SPINAND_MAX_ID_LEN-1); i++)
++	{
++		nand_flash_id[i+1] = spinand->manufacturer->chips->devid.id[i];
++	}
++}
++
++u8* nand_get_flash_id(void)
++{
++	return nand_flash_id;
++}
++
+ static int spinand_detect(struct spinand_device *spinand)
+ {
+ 	struct device *dev = &spinand->spimem->spi->dev;
+@@ -1010,7 +1052,13 @@ static int spinand_detect(struct spinand
+ 	}
+ 
+ 	dev_info(&spinand->spimem->spi->dev,
+-		 "%s SPI NAND was found.\n", spinand->manufacturer->name);
++		 "%s SPI NAND was found. Flash Model: %s, ID: %02X%02X\n", spinand->manufacturer->name, 
++		 spinand->manufacturer->chips->model,
++		 spinand->manufacturer->id, 
++		 spinand->manufacturer->chips->devid.id[0]);
++
++	nand_set_flash_id(spinand);
++	
+ 	dev_info(&spinand->spimem->spi->dev,
+ 		 "%llu MiB, block size: %zu KiB, page size: %zu, OOB size: %u\n",
+ 		 nanddev_size(nand) >> 20, nanddev_eraseblock_size(nand) >> 10,
+@@ -1043,6 +1091,274 @@ static const struct mtd_ooblayout_ops sp
+ 	.free = spinand_noecc_ooblayout_free,
+ };
+ 
++void nandflash_uid_detect(struct spinand_device *spinand)
++{
++	u8* nandflash_id;
++	u8 uuid[129] = {0};
++	struct nand_flash_dev_uid *type = nand_flash_uids;
++
++	nandflash_id = nand_get_flash_id();
++
++	for (; type->name != NULL; type++)
++	{
++		if (type->id_len && !strncmp(type->id, nandflash_id, type->id_len))
++		{
++			memset(uuid, 0, sizeof(uuid));
++			if (!type->flash_uid_detect(spinand, uuid))
++			{
++				flash_uuid_init(uuid, sizeof(uuid));
++				break;
++			}	
++		}
++	}
++}
++
++static int F50L1G41LB_nandflash_uid_detect(struct spinand_device *spinand, u8* uuid)
++{
++	struct device *dev = &spinand->spimem->spi->dev;	
++	u8 val;
++	int page_addr = 0x0;
++	uint8_t page_buf[SZ_2K+64] = {0}; //pagesize + oobsize
++	int step = 0, i = 0, ret=0, uid_error = 0;
++	bool enable_ecc = false;
++	u8* nandflash_id;
++	u8 tmp[64] = {0};
++	int j=0;
++
++	nandflash_id = nand_get_flash_id();
++
++	struct nand_pos pos = {
++		.target = 0,
++		.lun = 0,
++		.plane = 0,
++		.eraseblock = 0,
++		.page = page_addr,		
++	};
++	
++	struct nand_page_io_req req = {
++		.pos = pos,
++		.datalen = 512,
++		.databuf.in = page_buf,
++		.mode = MTD_OPS_RAW,
++
++	};
++
++	if (spinand->eccinfo.ooblayout)
++		enable_ecc = true;
++
++	//read uid step 1: Set Feature command to enable OTP_EN.
++	ret = spinand_upd_cfg(spinand, CFG_OTP_ENABLE, CFG_OTP_ENABLE);
++	if (ret)
++	{
++		dev_err(dev, "Error in setting feature enable OTP_EN. (err = %d)\n", ret);
++		return ret;	
++	}
++
++	//read uid step 2: Get Feature command and check if the OTP_EN is enable
++	ret = spinand_get_cfg(spinand, &val);
++	if (ret)
++	{
++		dev_err(dev, "Error in getting feature OTP_EN. (err = %d)\n", ret);
++		return ret;	
++	}
++	if ( !(val&CFG_OTP_ENABLE) )
++	{
++		dev_err(dev, "OTP_EN is still disabled, setting error. (err = %d)\n", ret);
++		return ret; 
++	}
++
++	//read uid step 3: Page read to cache with page address 0x0, read data from page cache
++	ret = spinand_read_page(spinand, &req, enable_ecc);
++	if (ret)
++	{
++		dev_err(dev, "read page for uid error. (err = %d)\n", ret);
++		return ret;	
++	}
++
++	//read uid step 4: Set Feature command to disable OTP_EN
++	ret = spinand_upd_cfg(spinand, CFG_OTP_ENABLE, 0);
++	if (ret)
++	{
++		dev_err(dev, "Error in setting feature disable OTP_EN. (err = %d)\n", ret);
++		return ret;	
++	}
++
++	//read uid step 5: read data to set uuid
++#if 0
++	printk("nand flash unique id: \n");
++	j = 0;
++	for (i=0; i<16; i++)
++		{
++		printk("%d: %02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X\n", 
++		i, 
++		page_buf[j],page_buf[j+1],page_buf[j+2],page_buf[j+3],page_buf[j+4],page_buf[j+5],page_buf[j+6],page_buf[j+7],
++		page_buf[j+8],page_buf[j+9],page_buf[j+10],page_buf[j+11],page_buf[j+12],page_buf[j+13],page_buf[j+14],page_buf[j+15],
++		page_buf[j+16],page_buf[j+17],page_buf[j+18],page_buf[j+19],page_buf[j+20],page_buf[j+21],page_buf[j+22],page_buf[j+23],
++		page_buf[j+24],page_buf[j+25],page_buf[j+26],page_buf[j+27],page_buf[j+28],page_buf[j+29],page_buf[j+30],page_buf[j+31]
++		);
++
++		j+=32;
++	}
++#endif
++
++	step = 0;
++	uid_error = 1;
++	for (i=0; i<16; i++)
++	{
++		for (j=0; j<16; j++) 
++		{
++			//If the XOR of the UID and its bit-wise complement is all ones, then the UID is valid
++			if ((page_buf[step+j] ^ page_buf[step+j+16]) != 0xFF)
++			{
++				uid_error = 1;
++				break;
++			}
++			uid_error = 0;
++		}
++
++		if (uid_error == 0)
++			break;
++
++		step += 32;
++	}
++
++	if (uid_error==1)
++	{
++		dev_err(dev, "ESMT Flash Device read UID error\n");
++		return -1;
++	}
++
++	sprintf(uuid, "%02X%02X-", nandflash_id[0], nandflash_id[1]);
++
++	for (i=step; i<step+32; i++)
++	{
++		sprintf(tmp, "%02X", page_buf[i]);
++		strcat(uuid, tmp);
++	}
++
++	#if 0
++	sprintf(tmp, "%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X",
++			page_buf[step+10],page_buf[step+11],page_buf[step+12],page_buf[step+13],page_buf[step+14],page_buf[step+15],page_buf[step+16],
++			page_buf[step+26],page_buf[step+27],page_buf[step+28],page_buf[step+29],page_buf[step+30],page_buf[step+31]);
++	strcat(uuid, tmp);
++	#endif
++	
++	return 0;
++}
++
++static int F50L2G41XA_nandflash_uid_detect(struct spinand_device *spinand, u8* uuid)
++{
++	struct device *dev = &spinand->spimem->spi->dev;	
++	u8 val;
++	int page_addr = 0x0;
++	uint8_t page_buf[SZ_2K+128] = {0}; //pagesize + oobsize
++	int step = 0, i = 0, ret=0, uid_error = 0;
++	bool enable_ecc = false;
++	u8* nandflash_id;
++	u8 tmp[64] = {0};
++	int j;
++
++	nandflash_id = nand_get_flash_id();
++
++	struct nand_pos pos = {
++		.target = 0,
++		.lun = 0,
++		.plane = 0,
++		.eraseblock = 0,
++		.page = page_addr,		
++	};
++	
++	struct nand_page_io_req req = {
++		.pos = pos,
++		.datalen = 512,
++		.databuf.in = page_buf,
++		.mode = MTD_OPS_RAW,
++
++	};
++
++	if (spinand->eccinfo.ooblayout)
++		enable_ecc = true;
++
++	//read uid step 1: Set Feature command to enable OTP_EN.
++	ret = spinand_upd_cfg(spinand, CFG_OTP_ENABLE, CFG_OTP_ENABLE);
++	if (ret)
++	{
++		dev_err(dev, "Error in setting feature enable OTP_EN. (err = %d)\n", ret);
++		return ret;	
++	}
++
++	//read uid step 2: Get Feature command and check if the OTP_EN is enable
++	ret = spinand_get_cfg(spinand, &val);
++	if (ret)
++	{
++		dev_err(dev, "Error in getting feature OTP_EN. (err = %d)\n", ret);
++		return ret;	
++	}
++	if ( !(val&CFG_OTP_ENABLE) )
++	{
++		dev_err(dev, "OTP_EN is still disabled, setting error. (err = %d)\n", ret);
++		return ret; 
++	}
++
++	//read uid step 3: Page read to cache with page address 0x0, read data from page cache
++	ret = spinand_read_page(spinand, &req, enable_ecc);
++	if (ret)
++	{
++		dev_err(dev, "read page for uid error. (err = %d)\n", ret);
++		return ret;	
++	}
++
++	//read uid step 4: Set Feature command to disable OTP_EN
++	ret = spinand_upd_cfg(spinand, CFG_OTP_ENABLE, 0);
++	if (ret)
++	{
++		dev_err(dev, "Error in setting feature disable OTP_EN. (err = %d)\n", ret);
++		return ret;	
++	}
++
++#if 0
++	for (i=0; i<64; i++)
++		printk("%02X\n", page_buf[i]);
++#endif 
++
++	//read uid step 5: read data to set /proc/sys/dev/flash_uuid
++	step = 0;
++	uid_error = 1;
++	for (i=0; i<16; i++)
++	{
++		for (j=0; j<16; j++) 
++	{
++		//If the XOR of the UID and its bit-wise complement is all ones, then the UID is valid
++			if ((page_buf[step+j] ^ page_buf[step+j+16]) != 0xFF)
++		{
++			uid_error = 1;
++			break;
++		}
++			uid_error = 0;
++	}
++
++		if (uid_error == 0)
++				break;
++
++		step += 32;
++	}
++
++	if (uid_error==1)
++	{
++		dev_err(dev, "ESMT Flash Device read UID error\n");
++		return -1;
++	}
++
++	sprintf(uuid, "%02X%02X-", nandflash_id[0], nandflash_id[1]);
++	for (i=step; i <step+16; i++)
++	{
++		sprintf(tmp, "%02X", page_buf[i]);
++		strcat(uuid, tmp);
++	}
++
++	return 0;
++}
++
+ static int spinand_init(struct spinand_device *spinand)
+ {
+ 	struct device *dev = &spinand->spimem->spi->dev;
+@@ -1151,6 +1467,8 @@ static int spinand_init(struct spinand_d
+ 	mtd->ecc_strength = nand->eccreq.strength;
+ 	mtd->ecc_step_size = nand->eccreq.step_size;
+ 
++	nandflash_uid_detect(spinand);
++
+ 	return 0;
+ 
+ err_cleanup_nanddev:

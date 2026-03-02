@@ -1,0 +1,14 @@
+n=6
+1	BL2			0x0		0x40000		bl2.img
+2	u-boot-env		0x40000		0x10000
+3	Factory			0x50000		0x10000
+4	bdinfo			0x60000		0x10000	factory.bin
+5	FIP			0x70000		0x80000		openwrt-mediatek-mt7981-R36-uboot-atf-mtk.bin
+6	firmware			0xf0000		0xF10000	openwrt-mediatek-mt7981-R36-squashfs-sysupgrade.bin
+
+
+#第一列：序号
+#第二列：分区名
+#第三列：分区基地址
+#第四列：分区大小
+#第五列：分区文件；为空，表示该分区不需要烧进Flash文件

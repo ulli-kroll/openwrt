@@ -1,0 +1,15 @@
+// Copyright (c) 2016 Qualcomm Technologies, Inc.  All Rights Reserved.
+// Qualcomm Technologies Proprietary and Confidential.
+
+/**
+* @addtogroup CSPCOM
+* @{
+  Class CSPCOM implements \link ISPCOM \endlink interface.
+  
+  The class ID `SPCOM` is not included in the default privilege set. It needs to be added to the 
+  privileges section in the metadata to allow the TA to use the CSPCOM class.
+*/
+
+const uint32 CSPCOM_UID = 55;
+
+/** @} */

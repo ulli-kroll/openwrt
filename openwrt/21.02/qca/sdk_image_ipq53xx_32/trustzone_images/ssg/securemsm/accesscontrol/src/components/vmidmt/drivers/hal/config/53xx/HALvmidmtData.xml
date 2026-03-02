@@ -1,0 +1,119 @@
+//=============================================================================
+//
+// FILE:        HALvmidmtData.xml
+//
+// DESCRIPTION: This file contains the HAL XML properties for the VMIDMT driver.
+//
+// Copyright (c) 2019-2020, 2022 Qualcomm Technologies, Inc.
+// All Rights Reserved.
+// Qualcomm Technologies, Inc. - Confidential and Proprietary
+//
+//=============================================================================
+//
+//                             Edit History
+//
+// $Header:  $
+// $DateTime: $
+// $Author: $
+// $Change: $
+//
+// when         who     what, where, why
+// ----------   ---     -------------------------------------------------------
+// 07/05/2022   sp      Added new VMIDMTs for Miami (53xx)
+// 07/05/2022   sp      Update VMIDMT for Miami (53xx)
+// 04/09/2020   as      code cleanup
+// 10/25/2018   as      Updated for 60xx 
+// 12/07/2016   ps      Updated for 845
+// 01/15/2016   dh      Updated for 8998
+// 07/14/2014   sc      Updated for 8996
+// 09/10/2013   sc      Initial revision
+//
+//=============================================================================
+#include "HALvmidmt.h"
+#include "HALvmidmtInfoImpl.h"
+#include <HALhwio.h>
+#include "HALvmidmtHWIOTarget.h"
+
+<driver name="NULL">
+  <device id="/dev/vmidmt">
+    <props id=VMIDMT_QPIC type="HAL_vmidmt_InfoType">
+      {HWIO_ADDR(QPIC_QPIC_VMIDMT_SCR0), {10, 0, 0, 0, 0, FALSE}}
+    </props>
+
+    <props id=VMIDMT_BLSP_BAM type="HAL_vmidmt_InfoType">
+      {HWIO_ADDR(BLSP_BLSP_BAM_VMIDMT_SCR0), {11, 0, 0, 0, 0, FALSE}}
+    </props>
+
+    <props id=VMIDMT_QDSS_VMIDETR type="HAL_vmidmt_InfoType">
+      {HWIO_ADDR(QDSS_CFG_VMIDETR_VMIDMT_SCR0), {2, 0, 0, 0, 0, FALSE}}
+    </props>
+
+    <props id=VMIDMT_QDSS_VMIDDAP type="HAL_vmidmt_InfoType">
+      {HWIO_ADDR(QDSS_CFG_VMIDDAP_VMIDMT_SCR0), {2, 0, 0, 0, 0, FALSE}}
+    </props>
+
+    <props id=VMIDMT_LPASS type="HAL_vmidmt_InfoType">
+      {HWIO_ADDR(LPASS_VMIDMT_VMIDMT_SCR0), {32, 0, 0, 0, 0, FALSE}}
+    </props>
+
+    <props id=VMIDMT_NSS type="HAL_vmidmt_InfoType">
+      {HWIO_ADDR(NSS_VMIDMT_VMIDMT_SCR0), {2, 0, 0, 0, 0, FALSE}}
+    </props>
+
+    <props id=VMIDMT_WCSS type="HAL_vmidmt_InfoType">
+      {HWIO_ADDR(WCSS_VMIDMT_VMIDMT_SCR0), {2, 0, 0, 0, 0, FALSE}}
+    </props>
+
+    <props id=VMIDMT_SDCC type="HAL_vmidmt_InfoType">
+      {HWIO_ADDR(SDCC_VMIDMT_VMIDMT_SCR0), {1, 0, 0, 0, 0, FALSE}}
+    </props>
+
+    <props id=VMIDMT_PCIE0_R type="HAL_vmidmt_InfoType">
+      {HWIO_ADDR(PCIE0_VMIDMT_R_VMIDMT_SCR0), {4, 0, 0, 0, 0, FALSE}}
+    </props>
+
+    <props id=VMIDMT_PCIE0_W type="HAL_vmidmt_InfoType">
+      {HWIO_ADDR(PCIE0_VMIDMT_W_VMIDMT_SCR0), {4, 0, 0, 0, 0, FALSE}}
+    </props>
+
+    <props id=VMIDMT_PCIE2_R type="HAL_vmidmt_InfoType">
+      {HWIO_ADDR(PCIE2_VMIDMT_R_VMIDMT_SCR0), {4, 0, 0, 0, 0, FALSE}}
+    </props>
+
+    <props id=VMIDMT_PCIE2_W type="HAL_vmidmt_InfoType">
+      {HWIO_ADDR(PCIE2_VMIDMT_W_VMIDMT_SCR0), {4, 0, 0, 0, 0, FALSE}}
+    </props>
+
+    <props id=VMIDMT_WCSS_CE_R type="HAL_vmidmt_InfoType">
+      {HWIO_ADDR(CE_VMIDMT_R_VMIDMT_SCR0), {2, 0, 0, 0, 0, FALSE}}
+    </props>
+
+    <props id=VMIDMT_WCSS_CE_W type="HAL_vmidmt_InfoType">
+      {HWIO_ADDR(CE_VMIDMT_W_VMIDMT_SCR0), {2, 0, 0, 0, 0, FALSE}}
+    </props>
+
+    <props id=VMIDMT_WCSS_EDPD type="HAL_vmidmt_InfoType">
+      {HWIO_ADDR(EDPD_VMIDMT_VMIDMT_SCR0), {2, 0, 0, 0, 0, FALSE}}
+    </props>
+
+    <props id=VMIDMT_APSS_R type="HAL_vmidmt_InfoType">
+      {HWIO_ADDR(APSS_VMIDMT_R_VMIDMT_SCR0), {2, 0, 0, 0, 0, FALSE}}
+    </props>
+
+    <props id=VMIDMT_APSS_W type="HAL_vmidmt_InfoType">
+      {HWIO_ADDR(APSS_VMIDMT_W_VMIDMT_SCR0), {2, 0, 0, 0, 0, FALSE}}
+    </props>
+
+    <props id=VMIDMT_USB30 type="HAL_vmidmt_InfoType">
+      {HWIO_ADDR(USB_VMIDMT_VMIDMT_SCR0), {1, 0, 0, 0, 0, FALSE}}
+    </props>
+
+    <props id=VMIDMT_PCIE1_R type="HAL_vmidmt_InfoType">
+      {HWIO_ADDR(PCIE1_VMIDMT_R_VMIDMT_SCR0), {4, 0, 0, 0, 0, FALSE}}
+    </props>
+
+    <props id=VMIDMT_PCIE1_W type="HAL_vmidmt_InfoType">
+      {HWIO_ADDR(PCIE1_VMIDMT_W_VMIDMT_SCR0), {4, 0, 0, 0, 0, FALSE}}
+    </props>
+  </device>
+</driver>

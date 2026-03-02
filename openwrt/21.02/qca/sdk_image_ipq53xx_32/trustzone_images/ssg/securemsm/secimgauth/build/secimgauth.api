@@ -1,0 +1,88 @@
+#===============================================================================
+#
+# SecureMSM APIs
+#
+# GENERAL DESCRIPTION
+#    build script
+#
+# Copyright (c) 2013-2019,2022 by QUALCOMM Technologies, Incorporated.
+# All Rights Reserved.
+# QUALCOMM Proprietary/GTDR
+#
+#-------------------------------------------------------------------------------
+#
+#  $Header: //components/rel/ssg.tzw/1.2/securemsm/secimgauth/build/secimgauth.api#3 $
+#  $DateTime: 2022/06/01 05:49:19 $
+#  $Author: pwbldsvc $
+#  $Change: 37564638 $
+#                      EDIT HISTORY FOR FILE
+#                      
+#  This section contains comments describing changes made to the module.
+#  Notice that changes are listed in reverse chronological order.
+#  
+# when       who     what, where, why
+# --------   ---     ---------------------------------------------------------
+# 06/09/2017 sm      Create new *.api file.
+#===============================================================================
+import os
+Import('env')
+
+BUILD_IMG = env['IMAGE_NAME'].lower()
+if (BUILD_IMG == 'xbl_sec' or BUILD_IMG == 'qc_sec'):
+  IMG_ENV_FOLDER = 'xbl_sec'
+else:
+  IMG_ENV_FOLDER = 'tz'
+
+#-------------------------------------------------------------------------------
+# Publish Restricted APIs
+#-------------------------------------------------------------------------------
+sec_roots_folder = 'stubs'
+if env['CHIPSET'] in ['nicobar', 'qcs405','ipq60xx', 'sdm1000', 'sdm855', 'sm6150', 'sm8250', 'sm7150','ipq90xx','ipq53xx']:
+  sec_roots_folder = 'v1'
+elif env['CHIPSET'] in ['sdx24', 'sdx55']:
+  sec_roots_folder = 'v2'
+elif env['CHIPSET'] in ['sdm670', 'sdm845']:
+  sec_roots_folder = 'v3'
+elif env['CHIPSET'] in ['mdm9205']:
+  sec_roots_folder = 'v4'
+ 
+secimgauth_chipset = "${INC_ROOT}/ssg/securemsm/secimgauth/chipset/" + sec_roots_folder
+
+env.PublishRestrictedApi('SECUREMSM', [
+   "${INC_ROOT}/ssg/securemsm/secimgauth/misc",
+   secimgauth_chipset,
+   "${INC_ROOT}/ssg/securemsm/secimgauth/inc/common",
+   ])
+
+env.PublishPublicApi('SECUREMSM', [
+  "${INC_ROOT}/ssg/securemsm/secimgauth/inc/common",
+])
+
+# Only xbl-sec in two targets uses v2 header. others (including xbl-sec and tz) use v3 header
+if (env['CHIPSET'] in ['sdm845', 'sdm670']) and (env.get('IMAGE_ALIASES')[0] == 'xbl_sec' or env.get('IMAGE_ALIASES')[0] == 'qc_sec'):
+  env.PublishRestrictedApi('SECUREMSM', [
+    "${INC_ROOT}/ssg/securemsm/secimgauth/inc/v2",
+    "${INC_ROOT}/ssg/securemsm/secimgauth/inc/env/v2",
+  ])
+else:
+  env.PublishRestrictedApi('SECUREMSM', [
+   "${INC_ROOT}/ssg/securemsm/secimgauth/inc/",
+   "${INC_ROOT}/ssg/securemsm/secimgauth/inc/env/" + IMG_ENV_FOLDER,
+  ])
+
+# Only xbl-sec in two targets uses v2 header. others (including xbl-sec and tz) use v3 header
+if (env['CHIPSET'] in ['sdm845', 'sdm670']) and (env.get('IMAGE_ALIASES')[0] == 'xbl_sec' or env.get('IMAGE_ALIASES')[0] == 'qc_sec'):
+  env.PublishPublicApi('SECUREMSM', [
+    "${INC_ROOT}/ssg/securemsm/secimgauth/inc/v2",
+    "${INC_ROOT}/ssg/securemsm/secimgauth/inc/env/v2",
+  ])
+else:
+  env.PublishPublicApi('SECUREMSM', [
+    "${INC_ROOT}/ssg/securemsm/secimgauth/inc/",
+    "${INC_ROOT}/ssg/securemsm/secimgauth/inc/env/" + IMG_ENV_FOLDER,
+  ])
+
+env.Deploy('secimgauth.api')
+
+env.LoadAPIUnits()
+

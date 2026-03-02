@@ -1,0 +1,25 @@
+diff --git a/wpa_supplicant/driver_i.h b/wpa_supplicant/driver_i.h
+index dcf576487..b365de6a1 100644
+--- a/wpa_supplicant/driver_i.h
++++ b/wpa_supplicant/driver_i.h
+@@ -375,10 +375,16 @@ static inline int wpa_drv_tx_control_port(struct wpa_supplicant *wpa_s,
+ 					  const u8 *buf, size_t len,
+ 					  int no_encrypt)
+ {
++	int link_id = -1;
++
+ 	if (!wpa_s->driver->tx_control_port)
+ 		return -1;
++
++	if (wpa_s->valid_links)
++		link_id  = wpa_s->mlo_assoc_link_id;
++
+ 	return wpa_s->driver->tx_control_port(wpa_s->drv_priv, dest, proto,
+-					      buf, len, no_encrypt, -1);
++					      buf, len, no_encrypt, link_id);
+ }
+ 
+ static inline int wpa_drv_hapd_send_eapol(struct wpa_supplicant *wpa_s,
+-- 
+2.17.1
+

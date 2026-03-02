@@ -1,0 +1,29 @@
+// Copyright (c) 2018 Qualcomm Technologies, Inc.  All Rights
+// Reserved.  Qualcomm Technologies Proprietary and Confidential.
+
+
+/** @cond */
+interface IRTICDtb {
+/** @endcond */
+
+  /**
+   * @addtogroup IRTICDtb
+   * @{
+   */
+
+  /** @cond */
+  /** @endcond */
+
+  /**
+    Retrieve the contents of the DTB that is sent by APPS BL.
+    
+    @param[out] KernelPhysBaseAddr       Kernel physical base address.
+    @param[out] DTBAddress               Dtb struct address.
+    @param[out] rtic_dtb                 Buffer containing DTB sent by APPS BL.
+
+    @return
+    Object_OK on success.
+  */
+  method getDtb(out uint64 KernelPhysBaseAddr, out uint64 DTBAddress, out buffer rtic_dtb);
+
+};

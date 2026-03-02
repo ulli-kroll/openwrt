@@ -1,0 +1,28 @@
+#!/bin/sh
+
+. /lib/functions/uci-defaults.sh
+. /lib/functions/system.sh
+. /lib/functions/bdinfo.sh
+
+board=$(system_board_name)
+model=$(get_bdinfo_model)
+
+case "$board" in
+R2 | R9 | R19 | R25)
+	ucidef_set_system_board "$board" "$model" "3" "router"
+	;;
+MT7621 | R4 | R7 | R10 | R11 | R13 | R15 | R16 | R17 | R22 | R23 | R26 | R28 | R29 | R30 | R33 | R40 | R45)
+	ucidef_set_system_board "$board" "$model" "4" "router"
+	;;
+R14 | R18 | R27 | R36)
+	ucidef_set_system_board "$board" "$model" "4" "re"
+	;;
+R49 | R51)
+	ucidef_set_system_board "$board" "$model" "1" "ap"
+	;;
+*)
+	ucidef_set_system_board "$board" "$model" "0" "router"
+	;;
+esac
+
+uci commit system

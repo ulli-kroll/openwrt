@@ -1,0 +1,25 @@
+#===============================================================================
+#
+# Settings API Registration
+#
+# GENERAL DESCRIPTION
+#    Settings API Registration
+#
+# Copyright (c) 2017 by Qualcomm Technologies, Incorporated.
+# All Rights Reserved.
+# QUALCOMM Proprietary/GTDR
+#
+#-------------------------------------------------------------------------------
+#
+#  $Header: //components/rel/core.tzw/1.2/settings/mproc/build/mproc.api#1 $
+#  $DateTime: 2020/11/02 23:11:51 $
+#  $Author: pwbldsvc $
+#  $Change: 27014929 $
+#===============================================================================
+
+Import('env')
+
+# --------------------------------------------------------------------------- #
+# Search for additional APIs                                                  #
+# --------------------------------------------------------------------------- #
+env.LoadAPIUnits()

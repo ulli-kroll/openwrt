@@ -1,0 +1,68 @@
+// Copyright (c) 2015-2017 Qualcomm Technologies, Inc.  All Rights Reserved.
+// Qualcomm Technologies Proprietary and Confidential.
+
+/** @cond */
+interface IHmac {
+/** @endcond */
+
+  /** @cond */
+  const int32 PARAM_KEY  = 1;
+  const int32 PARAM_INVALID = -1;
+
+  const int32 SIZE_SHA1 = 20;
+  const int32 SIZE_SHA256 = 32;
+  const int32 SIZE_SHA384 = 48;
+  const int32 SIZE_SHA512 = 64;
+  const int32 SIZE_INVALID = -1;
+
+  const int32 DIGEST_SIZE_SHA1 = 20;
+  const int32 DIGEST_SIZE_SHA256 = 32;
+  const int32 DIGEST_SIZE_SHA384 = 48;
+  const int32 DIGEST_SIZE_SHA512 = 64;
+  /** @endcond */
+
+  /**
+   * @addtogroup IHmac
+   * @{
+   */
+
+  /**
+    Updates HMAC per @xhyperref{FIPS198,FIPS PUB 198-1}, using the
+    configured hash algorithm.
+
+    @param[in] msg Pointer to message to be authenticated.
+
+    @return
+    Object_OK -- Successful. \n
+    Object_ERROR -- Any error encountered.
+  */
+  method update(in buffer msg);
+
+  /**
+    Final operation for HMAC per @xhyperref{FIPS198,FIPS PUB 198-1} using
+    the specified hash algorithm.
+
+    @param[out] digest    Pointer to message digest (memory provided by caller).
+
+    @return
+    Object_OK -- Successful. \n
+    Object_ERROR -- Any error encountered.
+  */
+  method final(out buffer digest);
+
+  /**
+    Modifies parameters for a given HMAC operation.
+
+    @param[in] paramID Parameter to modify.
+    @param[in] param   Parameter value to set.
+
+    @return
+    Object_OK -- Successful. \n
+    Object_ERROR -- Any error encountered.
+  */
+  method setParamAsData(in int32 paramID, in buffer param);
+
+  /** @} */ /* end_addtogroup IHmac */
+};
+
+

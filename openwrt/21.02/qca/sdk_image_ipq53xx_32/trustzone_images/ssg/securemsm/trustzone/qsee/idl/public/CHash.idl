@@ -1,0 +1,19 @@
+// Copyright (c) 2015-2017 Qualcomm Technologies, Inc.  All Rights Reserved.
+// Qualcomm Technologies Proprietary and Confidential.
+
+/**
+* @addtogroup CHash
+* @{
+  Class CHash implements \link IHash \endlink interface.
+	
+  The class IDs `HashNone`, `HashSHA1`, `CHashSHA256`, `HashSHA384` and `HashSHA512`
+  are included in the default privilege set, therefore the CHash class is available to every TA. 
+*/
+
+const uint32 CHashNone_UID = 38;
+const uint32 CHashSHA1_UID = 39;
+const uint32 CHashSHA256_UID = 40;
+const uint32 CHashSHA384_UID = 46;
+const uint32 CHashSHA512_UID = 47;
+
+/** @} */

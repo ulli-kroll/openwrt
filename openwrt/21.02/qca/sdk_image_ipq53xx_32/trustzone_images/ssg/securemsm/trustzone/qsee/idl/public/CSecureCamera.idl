@@ -1,0 +1,15 @@
+// Copyright (c) 2016 Qualcomm Technologies, Inc.  All Rights Reserved.
+// Qualcomm Technologies Proprietary and Confidential.
+
+/**
+* @addtogroup CSecureCamera
+* @{
+  Class CSecureCamera implements \link ISecureCamera \endlink interface.
+  
+  The class ID `SecureCamera` is not included in the default privilege set. It needs to be added to the 
+  privileges section in the metadata to allow the TA to use the CSecureCamera class.
+*/
+
+const uint32 CSecureCamera_UID = 56;
+
+/** @} */

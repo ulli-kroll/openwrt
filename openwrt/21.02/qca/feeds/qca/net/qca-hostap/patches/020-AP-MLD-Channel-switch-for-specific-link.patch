@@ -1,0 +1,129 @@
+diff --git a/hostapd/ctrl_iface.c b/hostapd/ctrl_iface.c
+index 8b01eda6d..f9a78651c 100644
+--- a/hostapd/ctrl_iface.c
++++ b/hostapd/ctrl_iface.c
+@@ -2568,6 +2568,12 @@ static int hostapd_ctrl_iface_chan_switch(struct hostapd_iface *iface,
+ 	if (ret)
+ 		return ret;
+ 
++	settings.link_id = -1;
++#ifdef CONFIG_IEEE80211BE
++	if (iface->num_bss && iface->bss[0]->conf->mld_ap)
++		settings.link_id = iface->bss[0]->mld_link_id;
++#endif /* CONFIG_IEEE80211BE */
++
+ 	ret = hostapd_ctrl_check_freq_params(&settings.freq_params,
+ 					     settings.punct_bitmap);
+ 	if (ret) {
+diff --git a/src/ap/dfs.c b/src/ap/dfs.c
+index 9a5d3c80a..18cb355a7 100644
+--- a/src/ap/dfs.c
++++ b/src/ap/dfs.c
+@@ -983,6 +983,11 @@ static int hostapd_dfs_request_channel_switch(struct hostapd_iface *iface,
+ 	os_memset(&csa_settings, 0, sizeof(csa_settings));
+ 	csa_settings.cs_count = 5;
+ 	csa_settings.block_tx = 1;
++	csa_settings.link_id = -1;
++#ifdef CONFIG_IEEE80211BE
++	if (iface->bss[0]->conf->mld_ap)
++		csa_settings.link_id = iface->bss[0]->mld_link_id;
++#endif /* CONFIG_IEEE80211BE */
+ #ifdef CONFIG_MESH
+ 	if (iface->mconf)
+ 		ieee80211_mode = IEEE80211_MODE_MESH;
+diff --git a/src/ap/hostapd.c b/src/ap/hostapd.c
+index 145463d04..6a9b07e86 100644
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -4008,6 +4008,11 @@ static int hostapd_fill_csa_settings(struct hostapd_data *hapd,
+ 	settings->counter_offset_presp[0] = hapd->cs_c_off_proberesp;
+ 	settings->counter_offset_beacon[1] = hapd->cs_c_off_ecsa_beacon;
+ 	settings->counter_offset_presp[1] = hapd->cs_c_off_ecsa_proberesp;
++	settings->link_id = -1;
++#ifdef CONFIG_IEEE80211BE
++	if (hapd->conf->mld_ap)
++		settings->link_id = hapd->mld_link_id;
++#endif /* CONFIG_IEEE80211BE */
+ 
+ 	return 0;
+ }
+diff --git a/src/drivers/driver.h b/src/drivers/driver.h
+index 68a88e963..5c0e4b15c 100644
+--- a/src/drivers/driver.h
++++ b/src/drivers/driver.h
+@@ -2709,6 +2709,7 @@ struct beacon_data {
+  * @counter_offset_beacon: Offset to the count field in beacon's tail
+  * @counter_offset_presp: Offset to the count field in probe resp.
+  * @punct_bitmap - Preamble puncturing bitmap
++ * @link_id: Link ID to determine the link for MLD; -1 for non-MLD
+  */
+ struct csa_settings {
+ 	u8 cs_count;
+@@ -2722,6 +2723,7 @@ struct csa_settings {
+ 	u16 counter_offset_presp[2];
+ 
+ 	u16 punct_bitmap;
++	int link_id;
+ };
+ 
+ /**
+diff --git a/src/drivers/driver_nl80211.c b/src/drivers/driver_nl80211.c
+index c5af62a3f..1a8ca5a0d 100644
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -11121,7 +11121,7 @@ static int nl80211_switch_channel(void *priv, struct csa_settings *settings)
+ 	int i;
+ 
+ 	wpa_printf(MSG_DEBUG,
+-		   "nl80211: Channel switch request (cs_count=%u block_tx=%u freq=%d channel=%d sec_channel_offset=%d width=%d cf1=%d cf2=%d puncturing_bitmap=0x%04x%s%s%s)",
++		   "nl80211: Channel switch request (cs_count=%u block_tx=%u freq=%d channel=%d sec_channel_offset=%d width=%d cf1=%d cf2=%d puncturing_bitmap=0x%04x link_id=%d%s%s%s)",
+ 		   settings->cs_count, settings->block_tx,
+ 		   settings->freq_params.freq,
+ 		   settings->freq_params.channel,
+@@ -11130,6 +11130,7 @@ static int nl80211_switch_channel(void *priv, struct csa_settings *settings)
+ 		   settings->freq_params.center_freq1,
+ 		   settings->freq_params.center_freq2,
+ 		   settings->punct_bitmap,
++		   settings->link_id,
+ 		   settings->freq_params.ht_enabled ? " ht" : "",
+ 		   settings->freq_params.vht_enabled ? " vht" : "",
+ 		   settings->freq_params.he_enabled ? " he" : "");
+@@ -11203,7 +11204,9 @@ static int nl80211_switch_channel(void *priv, struct csa_settings *settings)
+ 	     nla_put_flag(msg, NL80211_ATTR_CH_SWITCH_BLOCK_TX)) ||
+ 	    (settings->punct_bitmap &&
+ 	     nla_put_u32(msg, NL80211_ATTR_PUNCT_BITMAP,
+-			 settings->punct_bitmap)))
++			 settings->punct_bitmap)) ||
++	    (settings->link_id != NL80211_DRV_LINK_ID_NA &&
++	     nla_put_u8(msg, NL80211_ATTR_MLO_LINK_ID, settings->link_id)))
+ 		goto error;
+ 
+ 	/* beacon_after params */
+diff --git a/wpa_supplicant/ap.c b/wpa_supplicant/ap.c
+index b6e666a7d..2d30ce409 100644
+--- a/wpa_supplicant/ap.c
++++ b/wpa_supplicant/ap.c
+@@ -1846,6 +1846,8 @@ int ap_ctrl_iface_chanswitch(struct wpa_supplicant *wpa_s, const char *pos)
+ 	if (ret)
+ 		return ret;
+ 
++	settings.link_id = -1;
++
+ 	return ap_switch_channel(wpa_s, &settings);
+ }
+ #endif /* CONFIG_CTRL_IFACE */
+diff --git a/wpa_supplicant/p2p_supplicant.c b/wpa_supplicant/p2p_supplicant.c
+index 3f9c2142e..6193fe13b 100644
+--- a/wpa_supplicant/p2p_supplicant.c
++++ b/wpa_supplicant/p2p_supplicant.c
+@@ -9796,6 +9796,7 @@ static int wpas_p2p_move_go_csa(struct wpa_supplicant *wpa_s)
+ 	os_memset(&csa_settings, 0, sizeof(csa_settings));
+ 	csa_settings.cs_count = P2P_GO_CSA_COUNT;
+ 	csa_settings.block_tx = P2P_GO_CSA_BLOCK_TX;
++	csa_settings.link_id = -1;
+ 	csa_settings.freq_params.freq = params.freq;
+ 	csa_settings.freq_params.sec_channel_offset = conf->secondary_channel;
+ 	csa_settings.freq_params.ht_enabled = conf->ieee80211n;
+-- 
+2.17.1
+

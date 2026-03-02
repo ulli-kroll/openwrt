@@ -1,0 +1,35 @@
+// Copyright (c) 2017 Qualcomm Technologies, Inc.  All Rights Reserved.
+// Qualcomm Technologies Proprietary and Confidential.
+
+/**
+ * INotifyHdcp provides functions that report HDCP authentication
+ * level changes from OPS to HDCP Tx TAs.
+ *
+ */
+/** @cond */
+interface INotifyHdcp {
+/** @endcond */
+
+  /**
+   * @addtogroup INotifyHdcp
+   * @{
+   */
+
+  /** @cond */
+  /**
+   * Error Codes
+   */
+   error HDCP_ERROR_AUTH_TIMEOUT;
+  /** @endcond */
+
+  /**
+    Notifies HDCP Authentication level errors.
+
+    @param[in] hdcpError  HDCP Error.
+
+    @return
+    Object_OK on success.
+  */
+  method HdcpNotifyError(in int32 hdcpError);
+  /* @} */ /* end_addtogroup INotifyHdcp */
+};

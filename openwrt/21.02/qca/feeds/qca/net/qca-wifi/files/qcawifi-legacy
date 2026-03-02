@@ -1,0 +1,15 @@
+#!/bin/sh /etc/rc.common
+#
+# Copyright (c) 2023 Qualcomm Technologies, Inc.
+# All Rights Reserved.
+# Confidential and Proprietary - Qualcomm Technologies, Inc.
+#
+
+START=22
+
+start () {
+
+	ubus -t 30 wait_for network.interface
+	/sbin/wifi reload_legacy "" "network_reload_legacy"
+	echo "Bringup wifi " > /dev/kmsg
+}

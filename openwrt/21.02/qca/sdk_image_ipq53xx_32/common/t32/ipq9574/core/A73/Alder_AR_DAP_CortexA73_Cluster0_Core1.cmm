@@ -1,0 +1,48 @@
+;
+; Copyright (c) 2017, 2019, 2021 Qualcomm Technologies, Inc.
+; All Rights Reserved.
+; Confidential and Proprietary - Qualcomm Technologies, Inc.
+;
+
+SYStem.Reset
+
+SYStem.CPU KRYO2XXG
+
+SYSTEM.JtagClock 25MHZ
+SYStem.CONFIG SLAVE OFF
+SYStem.Option MemStatusCheck ON
+
+global &t32_intercom_port_base
+global &t32_intercom_port
+&t32_intercom_port_base=20000.
+&t32_intercom_port=&t32_intercom_port_base+1.
+
+&cur_dir=os.ppd()    	; directory where this script is running from
+
+; select CPU and options
+
+;;ntimescc  ; time out ignored only for debugging
+SYStem.Option EnReset OFF
+; TrOnchip.Set reset OFF
+
+SYStem.CONFIG	DAPIRPRE	0.
+SYStem.CONFIG	DAPDRPRE	0.
+SYStem.CONFIG	DAPIRPOST	11.
+SYStem.CONFIG	DAPDRPOST	1.
+
+SYStem.CONFIG CTICONFIG ARMV8V1
+
+SYStem.config AXIACCESSPORT 0
+SYStem.config MEMORYACCESSPORT 0
+SYStem.config DEBUGACCESSPORT 1
+
+SYStem.CONFIG.COREDEBUG.BASE	0x294000
+SYStem.CONFIG.ETM.BASE		0x297000
+SYStem.CONFIG.CTI.BASE		0x295000
+
+ETM.OFF
+sys.attach
+
+autostore , history
+ENDDO
+

@@ -1,0 +1,37 @@
+// Copyright (c) 2017 Qualcomm Technologies, Inc.  All Rights
+// Reserved.  Qualcomm Technologies Proprietary and Confidential.
+
+/** @cond */
+interface INSSystemReg {
+/** @endcond */
+
+  /**
+   * @addtogroup INSSystemReg
+   * @{
+   */
+
+  /** @cond */
+  /** Returned when an unsupported System Register type is passed to
+      GetNSSystemReg() */
+  error ERROR_UNSUPPORTED_SYS_REG_TYPE;
+
+  /**
+   * Supported System Registers
+   */
+  const uint32 VBAR_EL1  = 0x0;
+  /** @endcond */
+
+  /**
+    Retrieves value of requested NS System Register.
+
+    @param[in]  SysReg  Describes the System Register that should be
+                        retrieved.
+    @param[out] val     System Register value.
+
+    @return
+    Object_OK on success.
+  */
+  method GetNSSystemReg(in  uint32 SysReg,
+                        out uint64 val);
+  /** @} */ /* end_addtogroup INSSystemReg */
+};

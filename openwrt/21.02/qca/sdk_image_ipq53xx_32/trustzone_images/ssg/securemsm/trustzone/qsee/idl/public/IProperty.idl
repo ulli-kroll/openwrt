@@ -1,0 +1,45 @@
+// Copyright (c) 2016 Qualcomm Technologies, Inc.  All Rights Reserved.
+// Qualcomm Technologies Proprietary and Confidential.
+
+/** @cond */
+interface IProperty {
+/** @endcond */
+
+  /**
+   * @addtogroup IProperty
+   * @{
+   */
+
+  /** @cond */
+  /* IProperty Error Codes */
+  error INVALID_PARAMETERS;
+  error UNKNOWN_NAME;
+  error UNSUPPORTED;
+  error CONFIG_ERROR;
+  error MAP_ERROR;
+  /** @endcond */
+
+  /**
+    Gets the value of the named property.
+
+    @param[in]  name     Property name.
+    @param[out] dest     Requested property value.
+
+    @return
+    Object_OK on success.
+  */
+  method getProperty(in buffer name, out buffer dest);
+
+  /**
+    Sets the value of the named property.
+
+    @param[in] name      Property name.
+    @param[in] src       Value to be assigned to the named property.
+
+    @return
+    Object_OK on success.
+  */
+  method setProperty(in buffer name, in buffer src);
+  /* @} */ /* end_addtogroup IProperty */
+};
+

@@ -1,0 +1,40 @@
+#!/bin/sh
+#
+# This file is interpreted as shell script.
+# Put your custom openvpn action here, they will
+# be executed with each opevnp event.
+#
+# $ACTION
+#      <down>    down action is generated after the TUN/TAP device is closed
+#      <up>      up action is generated after the TUN/TAP device is opened
+# $INSTANCE  Name of the openvpn instance which went up or down
+
+. /lib/functions.sh
+
+ifname="$2"
+remote="$5"
+
+case "$ACTION" in
+up)
+	[ x"$(uci -q get network.vpn.ifname)" == x"$ifname" ] || {
+		uci set network.vpn.ifname="$ifname"
+		uci commit network
+		ubus call network.interface.vpn add_device "{ \"name\": \"$ifname\" }"
+	}
+	uci_set_state vpn config ifname "$ifname"
+	policy=$(uci -q get vpn.config.policy)
+	[ x"$policy" = x"domain" -o x"$policy" = x"killswitch" ] && {
+		dnsservers=$(uci -q get vpn.config.dns)
+		for dnsserver in $dnsservers; do
+			ip route add $dnsserver/32 dev "$ifname" via "$remote"
+		done
+	}
+	ip route add default dev "$ifname" via "$remote" table vpn
+	ip route flush cache
+	fw3 -q reload
+	;;
+down)
+	uci_revert_state vpn config ifname
+	fw3 -q reload
+	;;
+esac

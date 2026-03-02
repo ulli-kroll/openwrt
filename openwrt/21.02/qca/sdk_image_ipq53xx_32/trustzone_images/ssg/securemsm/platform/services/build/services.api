@@ -1,0 +1,22 @@
+Import('env')
+
+debug_v1 = ['845','670', '855', '1000', '24', '6150', '7150', 'nicobar']
+debug_v2 = ['405', '9205']
+if env['MSM_ID'] in debug_v1:
+    env.Replace(DEBUG_VERSION = 'v1')
+elif env['MSM_ID'] in debug_v2:
+    env.Replace(DEBUG_VERSION = 'v2')
+else:
+    # stubs default to v1
+    env.Replace(DEBUG_VERSION = 'v1')
+
+
+# Restricted APIs supposed to be accessed by ssg platform folders sources only.
+
+env.PublishRestrictedApi('SSGPLATFORM_SERVICES', [
+    '${INC_ROOT}/ssg/securemsm/platform/services/debug/inc',
+    '${INC_ROOT}/ssg/securemsm/platform/services/debug/inc/${DEBUG_VERSION}',
+    '${INC_ROOT}/ssg/securemsm/platform/services/interrupts/inc',
+])
+
+env.LoadAPIUnits()

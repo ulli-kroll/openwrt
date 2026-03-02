@@ -1,0 +1,44 @@
+diff --git a/src/ap/hostapd.c b/src/ap/hostapd.c
+index 966030d57..106d3bf1b 100644
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -3021,6 +3021,26 @@ static void hostapd_deinit_driver(const struct wpa_driver_ops *driver,
+ 	}
+ }
+ 
++#ifdef CONFIG_IEEE80211BE
++static void hostapd_driver_init_mlo_partners(struct hostapd_data *hapd)
++{
++	int i;
++	for (i = 0; hapd->conf->mld_ap && (i < hapd->iface->interfaces->count);
++	     i++) {
++		struct hostapd_iface *iface = hapd->iface->interfaces->iface[i];
++
++		if (hapd->iface == iface || !iface)
++			continue;
++
++		if (!iface->bss || !iface->bss[0] ||
++		    !iface->bss[0]->conf->mld_ap ||
++		    (iface->bss[0]->conf->mld_id != hapd->conf->mld_id))
++			continue;
++
++		hapd->iface->interfaces->driver_init(iface);
++	}
++}
++#endif
+ 
+ int hostapd_enable_iface(struct hostapd_iface *hapd_iface)
+ {
+@@ -3053,6 +3073,9 @@ int hostapd_enable_iface(struct hostapd_iface *hapd_iface)
+ 	    hapd_iface->interfaces->driver_init(hapd_iface))
+ 		return -1;
+ 
++#ifdef CONFIG_IEEE80211BE
++	hostapd_driver_init_mlo_partners(hapd_iface->bss[0]);
++#endif
+ 	if (hostapd_setup_interface(hapd_iface)) {
+ 		hostapd_deinit_driver(hapd_iface->bss[0]->driver,
+ 				      hapd_iface->bss[0]->drv_priv,
+-- 
+2.17.1
+

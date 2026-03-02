@@ -1,0 +1,18 @@
+--- a/cache.c
++++ b/cache.c
+@@ -393,11 +393,14 @@
+ 		switch (r->type) {
+ 		case TYPE_TXT:
+ 			if (r->txt && strlen(r->txt)) {
++				void* arr;
++				arr = blobmsg_open_array(buf, "txt");
+ 				txt = r->txt;
+ 				do {
+-					blobmsg_add_string(buf, "txt", txt);
++					blobmsg_add_string(buf, NULL, txt);
+ 					txt = &txt[strlen(txt) + 1];
+ 				} while (*txt);
++				blobmsg_close_array(buf, arr);
+ 			}
+ 			break;
+ 

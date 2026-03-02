@@ -1,0 +1,10 @@
+<config>
+  <image_tree>
+    <name>WLAN.WBE.1.1.r7</name>
+    <build_id>WLAN.WBE.1.1.r7-00022-QCAHKSWPL_SILICONZ-1</build_id>
+    <branch_point_revision>None</branch_point_revision>
+    <revision>00022</revision>
+    <spin>1</spin>
+    <client>QCAHKSWPL_SILICONZ</client>
+  </image_tree>
+</config>

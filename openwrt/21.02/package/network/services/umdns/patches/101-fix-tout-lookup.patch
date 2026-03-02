@@ -1,0 +1,11 @@
+--- a/service.c
++++ b/service.c
+@@ -115,7 +115,7 @@
+ 	dns_add_answer(TYPE_SRV, mdns_buf, len, ttl);
+ }
+ 
+-#define TOUT_LOOKUP	60
++#define TOUT_LOOKUP	1   /* 60 */
+ 
+ static time_t
+ service_timeout(struct service *s)

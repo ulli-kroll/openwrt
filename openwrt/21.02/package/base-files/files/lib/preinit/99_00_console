@@ -1,0 +1,26 @@
+#!/bin/sh
+#
+
+console_login_fixup() {
+	if [ "$1" -eq 0 ]; then
+		sed -i "/::askconsole:/d" /etc/inittab
+		sync
+	else
+		local initline="::askconsole:"
+
+		grep -qs "^$initline" /etc/inittab || {
+			cp /rom/etc/inittab /etc/inittab
+			sync
+		}
+	fi
+}
+
+console_login() {
+	if [ -f /etc/rom_release ]; then
+		console_login_fixup "0"
+	else
+		console_login_fixup "1"
+	fi
+}
+
+boot_hook_add preinit_main console_login

@@ -1,0 +1,15 @@
+<driver name="NULL">
+	<global_def>
+	</global_def>
+	<device id="/kp/general">
+		<props name="enable_kp" type=DALPROP_ATTR_TYPE_UINT32>
+#ifdef USES_WINDOWS_OVERRIDES
+                                    0
+#else
+                                    1
+#endif
+		</props>
+	</device>
+</driver>
+
+

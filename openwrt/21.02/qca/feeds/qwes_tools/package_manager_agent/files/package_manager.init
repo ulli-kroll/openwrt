@@ -1,0 +1,19 @@
+#!/bin/sh /etc/rc.common
+#
+
+START=55
+
+NAME=package_manager_agent
+PROG=/usr/bin/package_manager_agent
+
+# For procd version
+start_service() {
+    procd_open_instance
+    procd_set_param command "$PROG"
+    procd_close_instance
+}
+
+start() {
+    service_start $PROG
+}
+

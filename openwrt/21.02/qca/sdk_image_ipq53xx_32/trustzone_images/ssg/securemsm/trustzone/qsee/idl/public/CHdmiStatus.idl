@@ -1,0 +1,15 @@
+// Copyright (c) 2015 Qualcomm Technologies, Inc.  All Rights Reserved.
+// Qualcomm Technologies Proprietary and Confidential.
+
+/**
+* @addtogroup CHdmiStatus
+* @{
+  Class CHdmiStatus implements \link IHdmiStatus \endlink interface.
+	
+  The class ID `HdmiStatus` is not included in the default privilege set. It needs to be added to the 
+  privileges section in the metadata to allow the TA to use the CHdmiStatus class.
+*/
+
+const uint32 CHdmiStatus_UID = 13;
+
+/** @} */

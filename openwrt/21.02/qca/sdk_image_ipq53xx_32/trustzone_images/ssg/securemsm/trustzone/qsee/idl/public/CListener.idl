@@ -1,0 +1,15 @@
+// Copyright (c) 2015 Qualcomm Technologies, Inc.  All Rights Reserved.
+// Qualcomm Technologies Proprietary and Confidential.
+
+/**
+* @addtogroup CListener
+* @{
+  Class CListener implements \link IListener \endlink interface.
+	
+  The class ID `Listener` is included in the default privilege set, therefore the 
+  CListener class is available to every TA. 
+*/
+
+const uint32 CListener_UID = 48;
+
+/** @} */

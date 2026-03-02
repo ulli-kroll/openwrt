@@ -1,0 +1,3 @@
+bdwlan.b12
+bdwlan.b16
+regdb.bin

@@ -1,0 +1,164 @@
+<driver name="NULL">
+  
+  <device id="qcom.tz.tpm">
+
+    <!--
+        determine what TPM is going to use, dTPM or fTPM  
+        0x6454504D  ( 'd', 'T', 'P', 'M')  
+        0x6654504D  ( 'f', 'T', 'P', 'M')
+        0x7854504D  ( 'x', 'T', 'P', 'M')
+
+        if fTPM is selected, you are done with the configuration, ignore other
+        configuration fields
+
+        if dTPM is selected, please go to SPI section and continue configuration.
+
+        if xTPM is selected, please go to both GPIO section and SPI section and 
+        continue configuration.
+        xTPM is a wrapper of fTPM and dTPM, it allows one configuration file to 
+        work on two different devices, fTPM device and dTPM device. The price for
+        xTPM is to have a GPIO pin to indicate the device type, either fTPM device
+        or dTPM device.
+
+        For OEMs: Please replace existing configuration with what you want, 
+        for example, if you want dTPM, you can do:
+
+           <props name="tpm_type" type=DALPROP_ATTR_TYPE_UINT32>
+              0x6454504D
+           </props>
+
+        to replace the existing configuration:
+
+           <props name="tpm_type" type=DALPROP_ATTR_TYPE_UINT32>
+             #ifdef USES_DTPM
+                0x6454504D
+             #else
+                0x6654504D
+             #endif
+           </props>
+    -->  
+    <props name="tpm_type" type=DALPROP_ATTR_TYPE_UINT32>
+       #ifdef USES_DTPM
+          0x6454504D
+       #else
+          0x6654504D
+       #endif
+    </props>
+
+    <!--
+                         GPIO section
+
+       OEM should fill all GPIO info if xTPM is configured.
+
+        OEM needs to define the exact name of "tpm_type_gpio" in TLMMChipset.xml,
+        so when tpm driver queries gpio_id, the correct gpio_id can be returned.
+    -->
+
+    <!--
+       gpio pull type:
+           0:  NO_PULL,
+           1:  PULL_DOWN,
+           2:  KEEPER,
+           3:  PULL_UP,
+
+       OEM needs to define this if xTPM is configured.
+    -->
+    <props name="tpm_type_gpio_pull_type" type=DALPROP_ATTR_TYPE_UINT32>
+       3
+    </props>
+
+    <!--
+       gpio_signal_for_dTPM can have two options( 0 or 1):
+          0: reading gpio low means dTPM is installed on board      
+          1: reading gpio high means dTPM is installed on board 
+
+     OEM needs to define this if xTPM is configured.
+    -->
+    <props name="tpm_type_gpio_for_dTPM" type=DALPROP_ATTR_TYPE_UINT32>
+       0
+    </props>
+
+
+    <!--
+                         SPI section 
+
+      OEM should modify some of SPI section if dTPM is selected, 
+      based on dTPM data sheet from vendors
+    -->
+
+    <!-- 
+       "tpm_spi_dev_id" property specifies qsee spi device id
+       for the gpio pins to be used for spi communication from MSM to QBT ASIC.
+       for poipu reference design, QSEE_SPI_DEVICE_15 is used, its value is 14
+
+       QCom owns this field, please don NOT modify
+    -->
+    <props name="tpm_spi_dev_id" type=DALPROP_ATTR_TYPE_UINT32>
+      14
+    </props>
+
+    <!-- 
+       "tpm_spi_bits_per_word" property specifies word size
+       for spi communication from MSM to third parth tpm chip 
+
+       OEM needs to modify this field based on the dTPM data sheet
+    -->
+    <props name="tpm_spi_bits_per_word" type=DALPROP_ATTR_TYPE_UINT32>
+      8
+    </props>
+    
+    <!--
+       "tpm_spi_slave_speed" property specifies spi bus speed in HZ
+       for spi communication from MSM to third parth tpm chip 
+      
+       OEM needs to modify this field based on the dTPM data sheet
+
+       nuvoton:54Mhz
+       nationz:24Mhz
+
+    -->
+    <props name="tpm_spi_slave_speed" type=DALPROP_ATTR_TYPE_UINT32>
+      24*1000*1000
+    </props>
+ 
+    <!--
+       "tpm_interface_used"
+          0   TIS      Not fully supported
+          1   PTP FIFO  
+          2   PTP CRB  Not supported
+    -->
+    <props name="tpm_interface_type" type=DALPROP_ATTR_TYPE_UINT32>
+      1
+    </props>
+   
+    <!-- 
+       "tpm_tranfer_bus_type"
+         0   LPC  Not supported
+         1   I2C  Not supported
+         2   SPI 
+    -->
+    <props name="tpm_bus_type" type=DALPROP_ATTR_TYPE_UINT32>
+      2
+    </props>
+
+    <!-- 
+       "tpm_interrupt_channel"
+       Depending on TPM vendor, it may not be used
+       Currently not supported  
+    -->
+    <props name="tpm_interrupt_channel" type=DALPROP_ATTR_TYPE_UINT32>
+      1
+    </props>
+    
+    <!-- 
+       "tpm_nv_store_size in Byte" 
+
+       OEM needs to modify this field based on the dTPM data sheet
+    -->
+    <props name="tpm_nv_store_size" type=DALPROP_ATTR_TYPE_UINT32>
+      19*1024
+    </props>    
+
+  </device>
+
+</driver>

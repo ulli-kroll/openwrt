@@ -1,0 +1,14 @@
+#!/bin/sh
+
+uci -q batch <<-EOF >/dev/null
+	delete firewall.umdns
+	add firewall rule 
+	rename firewall.@rule[-1]="umdns"
+	set firewall.@rule[-1].name="Allow-mDNS"
+	set firewall.@rule[-1].target="ACCEPT"
+	set firewall.@rule[-1].src="wan"
+	set firewall.@rule[-1].proto="udp"
+	set firewall.@rule[-1].src_port="5353"
+	set firewall.@rule[-1].dest_port="5353"
+	commit firewall
+EOF

@@ -1,0 +1,647 @@
+<?xml version="1.0" ?>
+<contents>
+  <product_info>
+    <product_name>IPQ5322.ILQ.12.2.r5</product_name>
+    <hlos_type cmm_var="HLOS_TYPE">LE</hlos_type>
+    <chipid cmm_var="CHIPID">ipq5322</chipid>
+  </product_info>
+  <builds_flat>
+    <build>
+      <name>common</name>
+      <role>common</role>
+      <chipset>ipq5322</chipset>
+      <build_id>IPQ5322.ILQ.12.2.r5-00012-P-3</build_id>
+      <windows_root_path>.\</windows_root_path>
+      <linux_root_path>./</linux_root_path>
+      <image_dir>common</image_dir>
+      <release_path/>
+    </build>
+    <build>
+      <name>boot</name>
+      <role>boot</role>
+      <chipset>ipq5322</chipset>
+      <build_id>BOOT.XF.0.3.1.1-00086-IPQ90xxLZB-2</build_id>
+      <windows_root_path>.\</windows_root_path>
+      <linux_root_path>./</linux_root_path>
+      <image_dir>boot_images</image_dir>
+      <release_path>HY11_CompileTest</release_path>
+      <file_ref flash_file="true">
+        <file_name>xbl.elf</file_name>
+        <file_path>boot_images/QcomPkg/IPQ5332Pkg/Bin/5332/LA/RELEASE/sign/default/sbl1</file_path>
+      </file_ref>
+      <file_ref flash_file="true">
+        <file_name>xbl_nand.elf</file_name>
+        <file_path>boot_images/QcomPkg/IPQ5332Pkg/Bin/5332/LA/RELEASE/NAND/sign/default/sbl1</file_path>
+      </file_ref>
+      <file_ref flash_file="true">
+        <file_name>xbl_emmc.elf</file_name>
+        <file_path>boot_images/QcomPkg/IPQ5332Pkg/Bin/5332/LA/RELEASE/EMMC/sign/default/sbl1</file_path>
+      </file_ref>
+      <file_ref flash_file="true">
+        <file_name>xbl_nand_4K.elf</file_name>
+        <file_path>boot_images/QcomPkg/IPQ5332Pkg/Bin/5332/LA/RELEASE/NAND/sign/default/sbl1</file_path>
+      </file_ref>
+      <file_ref flash_file="true">
+        <file_name>xbl_nor.elf</file_name>
+        <file_path>boot_images/QcomPkg/IPQ5332Pkg/Bin/5332/LA/RELEASE/NOR/sign/default/sbl1</file_path>
+      </file_ref>
+      <file_ref flash_file="true">
+        <file_name>partition_tool</file_name>
+        <file_path>boot_images/QcomPkg/IPQ5332Pkg/Tools/</file_path>
+      </file_ref>
+      <file_ref flash_file="true">
+        <file_name>bootconfig_tool</file_name>
+        <file_path>boot_images/QcomPkg/IPQ5332Pkg/Tools/</file_path>
+      </file_ref>
+      <file_ref flash_file="true">
+        <file_name>XBLLoader.dll</file_name>
+        <file_path>boot_images/Build/IPQ5332_Loader/RELEASE_CLANG40LINUX/ARM/QcomPkg/XBLLoader/XBLLoader/DEBUG</file_path>
+      </file_ref>
+      <file_ref flash_file="true">
+        <file_name>QSaharaServer.exe</file_name>
+        <file_path>boot_images/QcomPkg/Tools/storage/fh_loader</file_path>
+      </file_ref>
+      <file_ref flash_file="true">
+        <file_name>Gen_xbl_nand_elf.py</file_name>
+        <file_path>boot_images/QcomPkg</file_path>
+      </file_ref>
+      <file_ref flash_file="true">
+        <file_name>prog_firehose_lite.elf</file_name>
+        <file_path>boot_images/QcomPkg/IPQ5332Pkg/Bin/5332/LA/RELEASE/sign/default/ENPRG</file_path>
+      </file_ref>
+      <file_ref flash_file="true">
+        <file_name>xbl_flashless.elf</file_name>
+        <file_path>boot_images/QcomPkg/IPQ5332Pkg/Bin/5332/LA/RELEASE/FLASHLESS/sign/default/sbl1</file_path>
+      </file_ref>
+      <file_ref flash_file="true">
+        <file_name>xbl_nand_noPreamble.elf</file_name>
+        <file_path>boot_images/QcomPkg/IPQ5332Pkg/Bin/5332/LA/RELEASE/NAND/sign/default/sbl1</file_path>
+      </file_ref>
+      <file_ref flash_file="true">
+        <file_name>prog_firehose_lite.elf</file_name>
+        <file_path>HK11/boot_images/QcomPkg/IPQ5332Pkg/Bin/5332/LA/RELEASE/EMMC/sign/default/ENPRG</file_path>
+      </file_ref>
+      <file_ref flash_64_file="true">
+        <file_name>prog_firehose_lite.elf</file_name>
+        <file_path>HK11/boot_images/QcomPkg/IPQ5332Pkg/Bin/5332/LA/RELEASE/EMMC/sign/default/ENPRG</file_path>
+      </file_ref>
+      <file_ref flash_64_file="true">
+        <file_name>xbl.elf</file_name>
+        <file_path>boot_images/QcomPkg/IPQ5332Pkg/Bin/5332/LA/RELEASE/sign/default/sbl1</file_path>
+      </file_ref>
+      <file_ref flash_64_file="true">
+        <file_name>xbl_nand.elf</file_name>
+        <file_path>boot_images/QcomPkg/IPQ5332Pkg/Bin/5332/LA/RELEASE/NAND/sign/default/sbl1</file_path>
+      </file_ref>
+      <file_ref flash_64_file="true">
+        <file_name>xbl_emmc.elf</file_name>
+        <file_path>boot_images/QcomPkg/IPQ5332Pkg/Bin/5332/LA/RELEASE/EMMC/sign/default/sbl1</file_path>
+      </file_ref>
+      <file_ref flash_64_file="true">
+        <file_name>xbl_nand_4K.elf</file_name>
+        <file_path>boot_images/QcomPkg/IPQ5332Pkg/Bin/5332/LA/RELEASE/NAND/sign/default/sbl1</file_path>
+      </file_ref>
+      <file_ref flash_64_file="true">
+        <file_name>xbl_nor.elf</file_name>
+        <file_path>boot_images/QcomPkg/IPQ5332Pkg/Bin/5332/LA/RELEASE/NOR/sign/default/sbl1</file_path>
+      </file_ref>
+      <file_ref flash_64_file="true">
+        <file_name>partition_tool</file_name>
+        <file_path>boot_images/QcomPkg/IPQ5332Pkg/Tools/</file_path>
+      </file_ref>
+      <file_ref flash_64_file="true">
+        <file_name>bootconfig_tool</file_name>
+        <file_path>boot_images/QcomPkg/IPQ5332Pkg/Tools/</file_path>
+      </file_ref>
+      <file_ref flash_64_file="true">
+        <file_name>XBLLoader.dll</file_name>
+        <file_path>boot_images/Build/IPQ5332_Loader/RELEASE_CLANG40LINUX/ARM/QcomPkg/XBLLoader/XBLLoader/DEBUG</file_path>
+      </file_ref>
+      <file_ref flash_64_file="true">
+        <file_name>QSaharaServer.exe</file_name>
+        <file_path>boot_images/QcomPkg/Tools/storage/fh_loader</file_path>
+      </file_ref>
+      <file_ref flash_64_file="true">
+        <file_name>Gen_xbl_nand_elf.py</file_name>
+        <file_path>boot_images/QcomPkg</file_path>
+      </file_ref>
+      <file_ref flash_64_file="true">
+        <file_name>prog_firehose_lite.elf</file_name>
+        <file_path>boot_images/QcomPkg/IPQ5332Pkg/Bin/5332/LA/RELEASE/sign/default/ENPRG</file_path>
+      </file_ref>
+      <file_ref flash_64_file="true">
+        <file_name>xbl_flashless.elf</file_name>
+        <file_path>boot_images/QcomPkg/IPQ5332Pkg/Bin/5332/LA/RELEASE/FLASHLESS/sign/default/sbl1</file_path>
+      </file_ref>
+      <file_ref flash_64_file="true">
+        <file_name>xbl_nand_noPreamble.elf</file_name>
+        <file_path>boot_images/QcomPkg/IPQ5332Pkg/Bin/5332/LA/RELEASE/NAND/sign/default/sbl1</file_path>
+      </file_ref>
+      <buildfile_path>python/</buildfile_path>
+      <build_command>python -u boot_images/QcomPkg/buildit.py --variant LA -r RELEASE -t IPQ9574Pkg -f atf &amp;&amp; rm -f boot_images/Conf/* &amp;&amp; python -u boot_images/QcomPkg/buildit.py --variant LA -r RELEASE -t IPQ5332Pkg -f atf &amp;&amp; rm -f boot_images/Conf/* &amp;&amp; python boot_images/packit.py -t IPQ5332,IPQ9574 --variant LZB --pack-dir HY11_ATF --binary-dir HK11_ATF &amp;&amp; python -u boot_images/QcomPkg/buildit.py --variant LA -r RELEASE -t IPQ5332Pkg --build_flags=&quot;cleanall&quot; &amp;&amp; python -u boot_images/QcomPkg/buildit.py --variant LA -r RELEASE -t IPQ9574Pkg &amp;&amp; rm -f boot_images/Conf/* &amp;&amp; python -u boot_images/QcomPkg/buildit.py --variant LA -r RELEASE -t IPQ5332Pkg &amp;&amp; rm -f boot_images/Conf/* &amp;&amp; python boot_images/packit.py -t IPQ5332,IPQ9574 --variant LZB</build_command>
+    </build>
+    <build>
+      <name>tz</name>
+      <role>tz</role>
+      <chipset>ipq5322</chipset>
+      <build_id>TZ.WNS.5.3-00297-IPQ90xxAAAAANAZT-1</build_id>
+      <windows_root_path>.\</windows_root_path>
+      <linux_root_path>./</linux_root_path>
+      <image_dir>trustzone_images</image_dir>
+      <release_path>HY11_CompileTest</release_path>
+      <file_ref flash_file="true">
+        <file_name>tz.mbn</file_name>
+        <file_path>trustzone_images/build/ms/bin/MAPAANAA</file_path>
+      </file_ref>
+      <file_ref flash_file="true">
+        <file_name>devcfg.mbn</file_name>
+        <file_path>trustzone_images/build/ms/bin/MAPAANAA</file_path>
+      </file_ref>
+      <file_ref flash_file="true">
+        <file_name>devcfg_noac.mbn</file_name>
+        <file_path>trustzone_images/build/ms/bin/MAPAANAA</file_path>
+      </file_ref>
+      <file_ref flash_file="true">
+        <file_name>devcfg_nosmmu.mbn</file_name>
+        <file_path>trustzone_images/build/ms/bin/MAPAANAA</file_path>
+      </file_ref>
+      <file_ref flash_file="true">
+        <file_name>apdp.mbn</file_name>
+        <file_path>trustzone_images/ssg</file_path>
+      </file_ref>
+      <file_ref flash_64_file="true">
+        <file_name>tz.mbn</file_name>
+        <file_path>trustzone_images/build/ms/bin/MAPAANAA</file_path>
+      </file_ref>
+      <file_ref flash_64_file="true">
+        <file_name>devcfg.mbn</file_name>
+        <file_path>trustzone_images/build/ms/bin/MAPAANAA</file_path>
+      </file_ref>
+      <file_ref flash_64_file="true">
+        <file_name>devcfg_noac.mbn</file_name>
+        <file_path>trustzone_images/build/ms/bin/MAPAANAA</file_path>
+      </file_ref>
+      <file_ref flash_64_file="true">
+        <file_name>apdp.mbn</file_name>
+        <file_path>trustzone_images/ssg</file_path>
+      </file_ref>
+      <file_ref flash_64_file="true">
+        <file_name>devcfg_nosmmu.mbn</file_name>
+        <file_path>trustzone_images/build/ms/bin/MAPAANAA</file_path>
+      </file_ref>
+      <file_ref sectool="true">
+        <file_name>Miami_tz_security_profile.xml</file_name>
+        <file_path>trustzone_images/ssg</file_path>
+      </file_ref>
+      <buildfile_path>python/</buildfile_path>
+      <build_command>python trustzone_images/build/ms/build_all.py CHIPSET=ipq90xx --branch TZ.WNS.5.3 --tree=prune &amp;&amp; python trustzone_images/build/ms/build_all.py CHIPSET=ipq90xx --branch TZ.WNS.5.3 --cbt='xbl_sec' &amp;&amp;python trustzone_images/build/ms/build_all.py CHIPSET=ipq90xx --branch TZ.WNS.5.3 --cbt='xbl_sec' USES_ATF_ONLY=1 &amp;&amp; python trustzone_images/build/ms/build_all.py CHIPSET=ipq53xx --branch TZ.WNS.5.3 --tree=prune  &amp;&amp; python trustzone_images/build/ms/build_all.py CHIPSET=ipq53xx --branch TZ.WNS.5.3 --cbt='xbl_sec' &amp;&amp; python trustzone_images/build/ms/build_all.py CHIPSET=ipq53xx --branch TZ.WNS.5.3 --cbt='xbl_sec' USES_ATF_ONLY=1 &amp;&amp; mkdir -p HK11 HY11_1 HY11_CompileTest &amp;&amp; cp -rf deploy_OAPAANAA/HK11/* HK11 &amp;&amp; cp -rf deploy_OAPAANAA/HY11_1/* HY11_1 &amp;&amp; cp -rf deploy_OAPAANAA_verify/HY11_1 HY11_CompileTest &amp;&amp; cp -rf deploy_MAPAANAA/HK11/* HK11 &amp;&amp; cp -rf deploy_MAPAANAA/HY11_1/* HY11_1 &amp;&amp; cp -rf deploy_MAPAANAA_verify/HY11_1 HY11_CompileTest</build_command>
+    </build>
+    <build>
+      <name>apps</name>
+      <role>apps</role>
+      <chipset>ipq5322</chipset>
+      <build_id>NHSS.QSDK.12.2.r6-00023-P-1</build_id>
+      <windows_root_path>.\</windows_root_path>
+      <linux_root_path>./</linux_root_path>
+      <image_dir>apss_proc</image_dir>
+      <release_path>HY11_CompileTest</release_path>
+      <file_ref flash_apss_64_prem_d3_file="true">
+        <file_name>openwrt*</file_name>
+        <file_path>apss_proc/out/ipq53xx_64_premium_draft3_0/</file_path>
+      </file_ref>
+      <file_ref flash_apss_64_prem_d3_file="true">
+        <file_name>bl*</file_name>
+        <file_path>apss_proc/out/ipq53xx_64_premium_draft3_0/</file_path>
+      </file_ref>
+      <file_ref flash_apss_64_prem_d3_file="true">
+        <file_name>*</file_name>
+        <file_path>apss_proc/out/ipq53xx_64_premium_draft3_0/dtbs/</file_path>
+      </file_ref>
+      <file_ref flash_apss_64_prem_d3_file="true">
+        <file_name>openwrt*.elf</file_name>
+        <file_path>apss_proc/out/ipq53xx_32_premium_draft3_0/</file_path>
+      </file_ref>
+      <file_ref flash_apss_64_file="true">
+        <file_name>openwrt*</file_name>
+        <file_path>apss_proc/out/ipq53xx_64/</file_path>
+      </file_ref>
+      <file_ref flash_apss_64_file="true">
+        <file_name>bl*</file_name>
+        <file_path>apss_proc/out/ipq53xx_64/</file_path>
+      </file_ref>
+      <file_ref flash_apss_64_file="true">
+        <file_name>*</file_name>
+        <file_path>apss_proc/out/ipq53xx_64/dtbs/</file_path>
+      </file_ref>
+      <file_ref flash_apss_64_file="true">
+        <file_name>openwrt*.elf</file_name>
+        <file_path>apss_proc/out/ipq53xx_32/</file_path>
+      </file_ref>
+      <file_ref flash_apss_minent_64_file="true">
+        <file_name>openwrt*</file_name>
+        <file_path>apss_proc/out/ipq53xx_64_minent_debug/</file_path>
+      </file_ref>
+      <file_ref flash_apss_minent_64_file="true">
+        <file_name>bl*</file_name>
+        <file_path>apss_proc/out/ipq53xx_64_minent_debug/</file_path>
+      </file_ref>
+      <file_ref flash_apss_minent_64_file="true">
+        <file_name>*</file_name>
+        <file_path>apss_proc/out/ipq53xx_64_minent_debug/dtbs/</file_path>
+      </file_ref>
+      <file_ref flash_apss_64_minent_d3_file="true">
+        <file_name>openwrt*</file_name>
+        <file_path>apss_proc/out/ipq53xx_64_minent_draft3_0_debug/</file_path>
+      </file_ref>
+      <file_ref flash_apss_64_minent_d3_file="true">
+        <file_name>bl*</file_name>
+        <file_path>apss_proc/out/ipq53xx_64_minent_draft3_0_debug/</file_path>
+      </file_ref>
+      <file_ref flash_apss_64_minent_d3_file="true">
+        <file_name>*</file_name>
+        <file_path>apss_proc/out/ipq53xx_64_minent_draft3_0_debug/dtbs/</file_path>
+      </file_ref>
+      <file_ref flash_apss_ent_64_file="true">
+        <file_name>openwrt*.elf</file_name>
+        <file_path>apss_proc/out/ipq53xx_32/</file_path>
+      </file_ref>
+      <file_ref flash_apss_prem_64_file="true">
+        <file_name>openwrt*.elf</file_name>
+        <file_path>apss_proc/out/ipq53xx_32/</file_path>
+      </file_ref>
+      <file_ref cmm_file_var="APSS_ELF" minimized="true" secondary_boot="true">
+        <file_name>*vmlinux.elf</file_name>
+        <file_path>apss_proc/out/ipq53xx_64/</file_path>
+      </file_ref>
+      <file_ref cmm_file_var="APSS_ELF" minimized="true" secondary_boot="true">
+        <file_name>*vmlinux.elf</file_name>
+        <file_path>apss_proc/out/ipq53xx_32/</file_path>
+      </file_ref>
+      <file_ref cmm_file_var="APSS_ELF" minimized="true" secondary_boot="true">
+        <file_name>*vmlinux.elf</file_name>
+        <file_path>apss_proc/out/ipq53xx_64_minent_debug/</file_path>
+      </file_ref>
+      <file_ref flash_apss_64_debug_file="true">
+        <file_name>openwrt-*</file_name>
+        <file_path>apss_proc/out/ipq53xx_64_premium_debug/</file_path>
+      </file_ref>
+      <file_ref flash_apss_64_debug_file="true">
+        <file_name>*</file_name>
+        <file_path>apss_proc/out/ipq53xx_64_premium_debug/dtbs/</file_path>
+      </file_ref>
+      <file_ref flash_apss_64_debug_file="true">
+        <file_name>openwrt*.elf</file_name>
+        <file_path>apss_proc/out/ipq53xx_32_premium_debug/</file_path>
+      </file_ref>
+      <file_ref flash_apss_64_kasan_debug_file="true">
+        <file_name>openwrt-*</file_name>
+        <file_path>apss_proc/out/ipq53xx_64_premium_debug_kasan/</file_path>
+      </file_ref>
+      <file_ref flash_apss_64_kasan_debug_file="true">
+        <file_name>*</file_name>
+        <file_path>apss_proc/out/ipq53xx_64_premium_debug_kasan/dtbs/</file_path>
+      </file_ref>
+      <file_ref flash_apss_64_kasan_debug_file="true">
+        <file_name>openwrt*.elf</file_name>
+        <file_path>apss_proc/out/ipq53xx_32_premium_debug/</file_path>
+      </file_ref>
+      <file_ref flash_apss_file="true">
+        <file_name>openwrt*</file_name>
+        <file_path>apss_proc/out/ipq53xx_32/</file_path>
+      </file_ref>
+      <file_ref flash_apss_file="true">
+        <file_name>bl*</file_name>
+        <file_path>apss_proc/out/ipq53xx_32/</file_path>
+      </file_ref>
+      <file_ref flash_apss_file="true">
+        <file_name>*</file_name>
+        <file_path>apss_proc/out/ipq53xx_32/dtbs</file_path>
+      </file_ref>
+      <file_ref flash_apss_512_d3_file="true">
+        <file_name>openwrt*</file_name>
+        <file_path>apss_proc/out/ipq53xx_32_512_draft3_0/</file_path>
+      </file_ref>
+      <file_ref flash_apss_512_d3_file="true">
+        <file_name>bl*</file_name>
+        <file_path>apss_proc/out/ipq53xx_32_512_draft3_0/</file_path>
+      </file_ref>
+      <file_ref flash_apss_512_d3_file="true">
+        <file_name>*</file_name>
+        <file_path>apss_proc/out/ipq53xx_32_512_draft3_0/dtbs</file_path>
+      </file_ref>
+      <file_ref flash_apss_prem_32_d3_0_file="true">
+        <file_name>openwrt*</file_name>
+        <file_path>apss_proc/out/ipq53xx_32_premium_draft3_0/</file_path>
+      </file_ref>
+      <file_ref flash_apss_prem_32_d3_0_file="true">
+        <file_name>bl*</file_name>
+        <file_path>apss_proc/out/ipq53xx_32_premium_draft3_0/</file_path>
+      </file_ref>
+      <file_ref flash_apss_prem_32_d3_0_file="true">
+        <file_name>*</file_name>
+        <file_path>apss_proc/out/ipq53xx_32_premium_draft3_0/dtbs</file_path>
+      </file_ref>
+      <file_ref flash_apss_prem_32_d3_0_file="true">
+        <file_name>openwrt*</file_name>
+        <file_path>apss_proc/out/ipq53xx_32_512_draft3_0/</file_path>
+      </file_ref>
+      <file_ref flash_apss_prem_32_d3_0_file="true">
+        <file_name>bl*</file_name>
+        <file_path>apss_proc/out/ipq53xx_32_512_draft3_0/</file_path>
+      </file_ref>
+      <file_ref flash_apss_prem_32_d3_0_file="true">
+        <file_name>*</file_name>
+        <file_path>apss_proc/out/ipq53xx_32_512_draft3_0/dtbs</file_path>
+      </file_ref>
+      <file_ref flash_apss_debug_file="true">
+        <file_name>openwrt-*</file_name>
+        <file_path>apss_proc/out/ipq53xx_32_premium_debug/</file_path>
+      </file_ref>
+      <file_ref flash_apss_debug_file="true">
+        <file_name>*</file_name>
+        <file_path>apss_proc/out/ipq53xx_32_premium_debug/dtbs/</file_path>
+      </file_ref>
+      <file_ref flash_apss_lm512_debug_file="true">
+        <file_name>openwrt-*</file_name>
+        <file_path>apss_proc/out/ipq53xx_32_512_debug/</file_path>
+      </file_ref>
+      <file_ref flash_apss_lm512_debug_file="true">
+        <file_name>*</file_name>
+        <file_path>apss_proc/out/ipq53xx_32_512_debug/dtbs/</file_path>
+      </file_ref>
+      <file_ref cmm_file_var="APSS_ELF" minimized="true" secondary_boot="true">
+        <file_name>*vmlinux.elf</file_name>
+        <file_path>apss_proc/out/ipq53xx_32_premium_debug/</file_path>
+      </file_ref>
+      <file_ref cmm_file_var="APSS_ELF" minimized="true" secondary_boot="true">
+        <file_name>*vmlinux.elf</file_name>
+        <file_path>apss_proc/out/ipq53xx_64_premium_debug/</file_path>
+      </file_ref>
+      <file_ref cmm_file_var="APSS_ELF" minimized="true" secondary_boot="true">
+        <file_name>*vmlinux.elf</file_name>
+        <file_path>apss_proc/out/ipq53xx_64_premium_debug_kasan/</file_path>
+      </file_ref>
+      <file_ref cmm_file_var="APSS_ELF" minimized="true" secondary_boot="true">
+        <file_name>*vmlinux.elf</file_name>
+        <file_path>apss_proc/out/ipq53xx_32_512_debug/</file_path>
+      </file_ref>
+      <file_ref cmm_file_var="APSS_ELF" minimized="true" secondary_boot="true">
+        <file_name>*vmlinux.elf</file_name>
+        <file_path>apss_proc/out/ipq53xx_32_premium_draft3_0/</file_path>
+      </file_ref>
+      <file_ref cmm_file_var="APSS_ELF" minimized="true" secondary_boot="true">
+        <file_name>*vmlinux.elf</file_name>
+        <file_path>apss_proc/out/ipq53xx_64_premium_draft3_0/</file_path>
+      </file_ref>
+      <file_ref cmm_file_var="APSS_ELF" minimized="true" secondary_boot="true">
+        <file_name>*vmlinux.elf</file_name>
+        <file_path>apss_proc/out/ipq53xx_32_512_draft3_0/</file_path>
+      </file_ref>
+      <file_ref cmm_file_var="APSS_ELF" minimized="true" secondary_boot="true">
+        <file_name>*vmlinux.elf</file_name>
+        <file_path>apss_proc/out/ipq53xx_64_minent_draft3_0_debug/</file_path>
+      </file_ref>
+      <buildfile_path>./</buildfile_path>
+      <build_command>create_BuildProducts ./create_BuildProducts</build_command>
+    </build>
+    <build>
+      <name>tmel</name>
+      <role>tmel</role>
+      <chipset>ipq5322</chipset>
+      <build_id>TMEL.WNS.1.1-00082-IPQ53xxAAAAANAZT-2</build_id>
+      <windows_root_path>.\</windows_root_path>
+      <linux_root_path>./</linux_root_path>
+      <image_dir>tmel_images</image_dir>
+      <release_path/>
+      <file_ref flash_file="true">
+        <file_name>*</file_name>
+        <file_path>BIN/patch/signed/</file_path>
+      </file_ref>
+      <file_ref flash_64_file="true">
+        <file_name>*</file_name>
+        <file_path>BIN/patch/signed/</file_path>
+      </file_ref>
+      <file_ref sectool="true">
+        <file_name>miami_tme_security_profile.xml</file_name>
+        <file_path>tmel_images/tmefw/sources/secboot/security_profile/</file_path>
+      </file_ref>
+      <buildfile_path>/</buildfile_path>
+      <build_command> </build_command>
+    </build>
+    <build>
+      <name>wlan_wbe</name>
+      <role>wlan_wbe</role>
+      <chipset>ipq5322</chipset>
+      <build_id>WLAN.WBE.1.1.r7-00022-QCAHKSWPL_SILICONZ-1</build_id>
+      <windows_root_path>.\</windows_root_path>
+      <linux_root_path>./</linux_root_path>
+      <image_dir>wlan_proc</image_dir>
+      <release_path>BIN</release_path>
+      <file_ref flash_file="true">
+        <file_name>*</file_name>
+        <file_path>wlan_proc/build/ms/bin/5332.wlanfw.eval/FW_IMAGES</file_path>
+      </file_ref>
+      <file_ref flash_file="true">
+        <file_name>*</file_name>
+        <file_path>wlan_proc/build/ms/bin/5332.wlanfw2.miami_york_eval/FW_IMAGES</file_path>
+      </file_ref>
+      <file_ref flash_64_file="true">
+        <file_name>*</file_name>
+        <file_path>wlan_proc/build/ms/bin/5332.wlanfw.eval/FW_IMAGES</file_path>
+      </file_ref>
+      <file_ref flash_64_file="true">
+        <file_name>*</file_name>
+        <file_path>wlan_proc/build/ms/bin/5332.wlanfw2.miami_york_eval/FW_IMAGES</file_path>
+      </file_ref>
+      <buildfile_path>/</buildfile_path>
+      <build_command> </build_command>
+    </build>
+    <build>
+      <name>wlan</name>
+      <role>wlan</role>
+      <chipset>ipq5322</chipset>
+      <build_id>WLAN.WBE.1.1.r7-00022-QCAHKSWPL_SILICONZ-1</build_id>
+      <windows_root_path>.\</windows_root_path>
+      <linux_root_path>./</linux_root_path>
+      <image_dir>wlan_proc</image_dir>
+      <release_path>BIN</release_path>
+      <file_ref flash_file="true">
+        <file_name>*</file_name>
+        <file_path>wlan_proc/build/ms/bin/5332.wlanfw.eval/FW_IMAGES</file_path>
+      </file_ref>
+      <file_ref flash_file="true">
+        <file_name>*</file_name>
+        <file_path>wlan_proc/build/ms/bin/5332.wlanfw2.miami_york_eval/FW_IMAGES</file_path>
+      </file_ref>
+      <file_ref flash_64_file="true">
+        <file_name>*</file_name>
+        <file_path>wlan_proc/build/ms/bin/5332.wlanfw.eval/FW_IMAGES</file_path>
+      </file_ref>
+      <file_ref flash_64_file="true">
+        <file_name>*</file_name>
+        <file_path>wlan_proc/build/ms/bin/5332.wlanfw2.miami_york_eval/FW_IMAGES</file_path>
+      </file_ref>
+    </build>
+    <build>
+      <name>wlan_wbe2</name>
+      <role>wlan_wbe</role>
+      <chipset>ipq5322</chipset>
+      <build_id>WLAN.WBE.1.1.r7-00022-QCAHKSWPL_SILICONZ-1</build_id>
+      <windows_root_path>.\</windows_root_path>
+      <linux_root_path>./</linux_root_path>
+      <image_dir>wlan_proc</image_dir>
+      <release_path>BIN</release_path>
+      <file_ref flash_file="true">
+        <file_name>*</file_name>
+        <file_path>wlan_proc/build/ms/bin/5332.wlanfw.eval/FW_IMAGES</file_path>
+      </file_ref>
+      <file_ref flash_file="true">
+        <file_name>*</file_name>
+        <file_path>wlan_proc/build/ms/bin/5332.wlanfw2.miami_york_eval/FW_IMAGES</file_path>
+      </file_ref>
+      <file_ref flash_64_file="true">
+        <file_name>*</file_name>
+        <file_path>wlan_proc/build/ms/bin/5332.wlanfw.eval/FW_IMAGES</file_path>
+      </file_ref>
+      <file_ref flash_64_file="true">
+        <file_name>*</file_name>
+        <file_path>wlan_proc/build/ms/bin/5332.wlanfw2.miami_york_eval/FW_IMAGES</file_path>
+      </file_ref>
+    </build>
+    <build>
+      <name>wlan_wbe3</name>
+      <role>wlan_wbe</role>
+      <chipset>ipq5322</chipset>
+      <build_id>WLAN.WBE.1.1.r7-00022-QCAHKSWPL_SILICONZ-1</build_id>
+      <windows_root_path>.\</windows_root_path>
+      <linux_root_path>./</linux_root_path>
+      <image_dir>wlan_proc</image_dir>
+      <release_path>BIN</release_path>
+      <file_ref flash_file="true">
+        <file_name>*</file_name>
+        <file_path>wlan_proc/build/ms/bin/5332.wlanfw.eval/FW_IMAGES</file_path>
+      </file_ref>
+      <file_ref flash_file="true">
+        <file_name>*</file_name>
+        <file_path>wlan_proc/build/ms/bin/5332.wlanfw2.miami_york_eval/FW_IMAGES</file_path>
+      </file_ref>
+      <file_ref flash_64_file="true">
+        <file_name>*</file_name>
+        <file_path>wlan_proc/build/ms/bin/5332.wlanfw.eval/FW_IMAGES</file_path>
+      </file_ref>
+      <file_ref flash_64_file="true">
+        <file_name>*</file_name>
+        <file_path>wlan_proc/build/ms/bin/5332.wlanfw2.miami_york_eval/FW_IMAGES</file_path>
+      </file_ref>
+    </build>
+    <build>
+      <name>wlan_wbe4</name>
+      <role>wlan_wbe</role>
+      <chipset>ipq5322</chipset>
+      <build_id>WLAN.WBE.1.1.r7-00022-QCAHKSWPL_SILICONZ-1</build_id>
+      <windows_root_path>.\</windows_root_path>
+      <linux_root_path>./</linux_root_path>
+      <image_dir>wlan_proc</image_dir>
+      <release_path>BIN</release_path>
+      <file_ref flash_file="true">
+        <file_name>*</file_name>
+        <file_path>wlan_proc/build/ms/bin/5332.wlanfw.eval/FW_IMAGES</file_path>
+      </file_ref>
+      <file_ref flash_file="true">
+        <file_name>*</file_name>
+        <file_path>wlan_proc/build/ms/bin/5332.wlanfw2.miami_york_eval/FW_IMAGES</file_path>
+      </file_ref>
+      <file_ref flash_64_file="true">
+        <file_name>*</file_name>
+        <file_path>wlan_proc/build/ms/bin/5332.wlanfw.eval/FW_IMAGES</file_path>
+      </file_ref>
+      <file_ref flash_64_file="true">
+        <file_name>*</file_name>
+        <file_path>wlan_proc/build/ms/bin/5332.wlanfw2.miami_york_eval/FW_IMAGES</file_path>
+      </file_ref>
+    </build>
+  </builds_flat>
+  <build_tools>
+    <tool>
+      <name>create_FIT_image</name>
+      <build>apps</build>
+      <path>apss_proc/out/meta-scripts/pack_v2.py</path>
+    </tool>
+    <tool>
+      <name>meta_tools</name>
+      <build>apps</build>
+      <path>apss_proc/out/meta-tools</path>
+    </tool>
+    <tool>
+      <name>jtag-scripts</name>
+      <build>apps</build>
+      <path>apss_proc/out/jtag-scripts</path>
+    </tool>
+    <tool>
+      <name>exported_packages</name>
+      <build>apps</build>
+      <path>apss_proc/out/ipq53xx_32/packages</path>
+    </tool>
+    <tool>
+      <name>exported_packages_64</name>
+      <build>apps</build>
+      <path>apss_proc/out/ipq53xx_64/packages</path>
+    </tool>
+    <tool>
+      <name>exported_packages_minent_64</name>
+      <build>apps</build>
+      <path>apss_proc/out/ipq53xx_64_minent_debug/packages</path>
+    </tool>
+    <tool>
+      <name>exported_packages_debug</name>
+      <build>apps</build>
+      <path>apss_proc/out/ipq53xx_32_premium_debug/packages</path>
+    </tool>
+    <tool>
+      <name>exported_packages_lm512_debug</name>
+      <build>apps</build>
+      <path>apss_proc/out/ipq53xx_32_512_debug/packages</path>
+    </tool>
+    <tool>
+      <name>exported_packages_debug_64</name>
+      <build>apps</build>
+      <path>apss_proc/out/ipq53xx_64_premium_debug/packages</path>
+    </tool>
+    <tool>
+      <name>exported_packages_kasan_debug_64</name>
+      <build>apps</build>
+      <path>apss_proc/out/ipq53xx_64_premium_debug_kasan/packages</path>
+    </tool>
+    <tool>
+      <name>exported_packages_premium_draft3_0</name>
+      <build>apps</build>
+      <path>apss_proc/out/ipq53xx_32_premium_draft3_0/packages</path>
+    </tool>
+    <tool>
+      <name>exported_packages_premium_draft3_0_64</name>
+      <build>apps</build>
+      <path>apss_proc/out/ipq53xx_64_premium_draft3_0/packages</path>
+    </tool>
+    <tool>
+      <name>exported_packages_512_draft3_0</name>
+      <build>apps</build>
+      <path>apss_proc/out/ipq53xx_32_512_draft3_0/packages</path>
+    </tool>
+    <tool>
+      <name>exported_minent_draft3_0_debug_64</name>
+      <build>apps</build>
+      <path>apss_proc/out/ipq53xx_64_minent_draft3_0_debug/packages</path>
+    </tool>
+    <tool>
+      <name>skales</name>
+      <build>apps</build>
+      <path>apss_proc/out/skales</path>
+    </tool>
+  </build_tools>
+  <external_tools>
+      
+   </external_tools>
+  <builds_nested>
+      
+   </builds_nested>
+</contents>

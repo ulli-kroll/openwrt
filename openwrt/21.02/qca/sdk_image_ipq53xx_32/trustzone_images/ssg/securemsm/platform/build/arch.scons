@@ -1,0 +1,70 @@
+#===============================================================================
+#
+# Platform ARCH & CPU Type Detection.
+#
+# GENERAL DESCRIPTION
+#    build script
+#
+# Copyright 2016,2022 by Qualcomm Technologies, Incorporated.
+# All Rights Reserved.
+# QUALCOMM Proprietary/GTDR
+#
+#-------------------------------------------------------------------------------
+#
+#  $Header: //components/rel/ssg.tzw/1.2/securemsm/platform/build/arch.scons#6 $
+#  $DateTime: 2022/07/01 01:54:02 $
+#  $Author: pwbldsvc $
+#                      EDIT HISTORY FOR FILE
+#
+#  This section contains comments describing changes made to the module.
+#  Notice that changes are listed in reverse chronological order.
+#
+# when        who       what, where, why
+# ----------  ---       --------------------------------------------------------
+# 06/30/2022  as        CR3140653 fix is not applicable to IPQ chipsets. Reverted the IPQ chips
+# 05/19/2022  mp        Miami branching
+# 11/20/2016  pre       Initial revision
+#===============================================================================
+Import('env')
+#env = env.Clone()
+
+CPUS = []
+WAS = []
+
+if env['MSM_ID'] in ['845', '670']:
+   CPUS = ['kryo300gold', 'kryo300silver']
+elif env['MSM_ID'] in ['855', '1000', '6150', '7150','saipan']:
+   CPUS = ['kryo400gold', 'kryo400silver', 'kryo300silver']
+elif env['MSM_ID'] in ['8250']:
+   CPUS = ['kryo500gold', 'kryo500silver', 'kryo400silver']
+elif env['MSM_ID'] in ['24','55','9205']:
+   CPUS = ['cortex_a7']
+elif env['CHIPSET'] in ['qcs405','ipq60xx','ipq90xx','ipq53xx']:
+   CPUS = ['cortex_a53']
+elif env['CHIPSET'] in ['nicobar']:
+   CPUS = ['kryo200gold', 'kryo200silver']
+
+env.Replace(PLATFORM_CPUS = CPUS)
+
+#===============================================================
+# Setting up workarounds required for the platform & CPU.
+#===============================================================
+# CVE_2022_23960_WA:
+#      CVE_2022_23960 Workaround/Spectre BHB
+#===============================================================
+# Enable only if CVE_2017_5715_WA is not enabled
+# Only one of the workarounds, either CVE_2017_5715_WA or CVE_2022_23960_WA should be enabled for any chipset
+if env['CHIPSET'] in ['8250', 'saipan', 'rennell', 'lahaina', 'bitra', 'mannar', 'makena', 'cedros', 'kodiak', 'waipio', 'fillmore', 'kailua', 'netrani', 'lemans', 'lanai', 'halliday']:
+   if 'CVE_2017_5715_WA' in WAS:
+     print('ERROR: Only one of the workarounds, either CVE_2017_5715_WA or CVE_2022_23960_WA should be enabled for any chipset')
+     Exit(1)
+   else:
+     WAS += ['CVE_2022_23960_WA']
+# Even if a chipset does not need any WA, it needs to be called ot explicitly. If not Build will fail.
+# Thsi is added as a safety check whereby it is overlooked as part of porting
+# "FIXME_<pinnacles>"
+if env['MSM_ID'] in ['aurora', 'lassen', 'pinnacles']:
+   WAS += ['NONE']
+
+env.Replace(PLATFORM_WAS = WAS)
+

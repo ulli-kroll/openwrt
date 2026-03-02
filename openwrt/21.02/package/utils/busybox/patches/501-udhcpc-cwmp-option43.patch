@@ -1,0 +1,127 @@
+--- a/networking/udhcp/common.c
++++ a/networking/udhcp/common.c
+@@ -45,6 +45,7 @@ const struct dhcp_optflag dhcp_optflags[
+ 	{ OPTION_STRING_HOST                      , 0x28 }, /* DHCP_NIS_DOMAIN    */
+ 	{ OPTION_IP | OPTION_LIST                 , 0x29 }, /* DHCP_NIS_SERVER    */
+ 	{ OPTION_IP | OPTION_LIST     | OPTION_REQ, 0x2a }, /* DHCP_NTP_SERVER    */
++	{ OPTION_STRING | OPTION_REQ              , 0x2b }, /* DHCP_VENDOR_SPC   */
+ 	{ OPTION_IP | OPTION_LIST                 , 0x2c }, /* DHCP_WINS_SERVER   */
+ 	{ OPTION_U32                              , 0x33 }, /* DHCP_LEASE_TIME    */
+ 	{ OPTION_IP                               , 0x36 }, /* DHCP_SERVER_ID     */
+@@ -116,6 +117,7 @@ const char dhcp_option_strings[] ALIGN1
+ 	"nisdomain" "\0"        /* DHCP_NIS_DOMAIN      */
+ 	"nissrv" "\0"           /* DHCP_NIS_SERVER      */
+ 	"ntpsrv" "\0"           /* DHCP_NTP_SERVER      */
++	"vendor" "\0"           /* DHCP_VENDOR_SPC     */
+ 	"wins" "\0"             /* DHCP_WINS_SERVER     */
+ 	"lease" "\0"            /* DHCP_LEASE_TIME      */
+ 	"serverid" "\0"         /* DHCP_SERVER_ID       */
+
+--- a/networking/udhcp/common.h
++++ a/networking/udhcp/common.h
+@@ -132,6 +132,7 @@ enum {
+ //#define DHCP_NIS_DOMAIN       0x28
+ //#define DHCP_NIS_SERVER       0x29
+ //#define DHCP_NTP_SERVER       0x2a
++#define DHCP_VENDOR_SPC         0x2b
+ //#define DHCP_WINS_SERVER      0x2c
+ #define DHCP_REQUESTED_IP       0x32 /* sent by client if specific IP is wanted */
+ #define DHCP_LEASE_TIME         0x33
+
+
+--- a/networking/udhcp/dhcpc.c
++++ a/networking/udhcp/dhcpc.c
+@@ -1229,6 +1229,84 @@ static void client_background(void)
+ //usage:     "\n	USR1	Renew lease"
+ //usage:     "\n	USR2	Release lease"
+ 
++#define LAN_INTERFACE "br-lan"
++
++int cmd_exec(const char *cmd, char *pBuf, int size) 
++{
++    FILE *pp = popen(cmd, "r"); 
++    if (!pp) {
++        return -1;
++    }
++
++	if (NULL == fgets(pBuf, size, pp))
++	{
++		pclose(pp);
++		return -1;
++	}
++
++	if (pBuf[strlen(pBuf) - 1] == '\n') {
++        pBuf[strlen(pBuf) - 1] = '\0'; 
++    }
++    pclose(pp);
++    
++    return strlen(pBuf);
++}
++
++void handleVendorSpcOption(struct dhcp_packet *packet, char *pWanIf)
++{
++	int len = 0;
++	uint8_t *pData = NULL;
++	int pos = 0;
++	char url[256+1] = {0};
++	char file_path[] = "/tmp/vendor_spc";
++	FILE * file_r;
++	char url_old[256+1] = { 0 };
++	FILE * file;
++	char buf[10] = {0};
++
++	/* clear static route entry before add  */
++	uint8_t index = 0;
++	
++	if(!strcmp(pWanIf, LAN_INTERFACE))
++	{
++		return;
++	}
++
++	/* option 43 DHCP_VENDOR_SPC */
++	if (pData = udhcp_get_option(packet, DHCP_VENDOR_SPC))
++	{
++		len = *(pData - 1);
++		snprintf(url, len+1, "%s", pData);
++
++		/* read the old url */
++		file_r = fopen(file_path, "r");
++		if( file_r )
++		{
++			fgets(url_old, 256+1, file_r);
++			fclose(file_r);
++		}
++
++		/* old url is diff witch new url */
++		if(strcmp(url, url_old))
++		{
++			file = fopen(file_path, "w");
++			if (NULL == file)
++			{
++				return ;
++			}
++
++			fprintf(file, "%s", url);
++			fclose(file);
++
++			cmd_exec("ps w|grep -v grep|grep -w cwmp -c", buf, sizeof(buf)-1);
++			
++			if (atoi(buf) >= 1)
++    		{
++        		system("/etc/init.d/cwmp reload generate_conf; cwmp_cli -u cfg");
++    		}		
++		}
++	}
++}
+ 
+ int udhcpc_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
+ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
+@@ -1784,7 +1862,7 @@ int udhcpc_main(int argc UNUSED_PARAM, c
+ 					/* Something went wrong. Back to discover state */
+ 					timeout = already_waited_sec = 0;
+ 				}
+-
++				handleVendorSpcOption(&packet, client_data.interface);
+ 				client_data.state = BOUND;
+ 				change_listen_mode(LISTEN_NONE);
+ 				if (opt & OPT_q) { /* quit after lease */

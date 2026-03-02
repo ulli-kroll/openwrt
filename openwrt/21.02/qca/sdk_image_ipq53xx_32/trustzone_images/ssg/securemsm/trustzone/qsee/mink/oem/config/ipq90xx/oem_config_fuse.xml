@@ -1,0 +1,11 @@
+<driver name="NULL">
+  <global_def>
+
+  </global_def>
+  <device id="/tz/oem_fuse">
+    <props name="OEM_gpio_index_fuse_blow" type=DALPROP_ATTR_TYPE_UINT32>
+      20
+    </props>
+  </device>
+</driver>
+

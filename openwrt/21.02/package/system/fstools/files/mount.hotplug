@@ -1,0 +1,42 @@
+#env > /dev/console
+
+config="samba4"
+sharetype="sambashare"
+
+[ "$ACTION" = "add" -o "$ACTION" = "remove" ] && /sbin/block hotplug
+[ "$ACTION" = "add" -a "$DEVTYPE" = "partition" ] && {
+
+	#echo USB device $DEVNAME found > /dev/console
+	uci del $config.$DEVNAME
+	uci set $config.$DEVNAME=$sharetype
+	uci commit $config
+
+	#NTFS partition extra process, cause blockd+autofs won't mount ntfs automatically.
+	ntfs=$(block info | grep "dev/$DEVNAME" |grep 'TYPE="ntfs"')
+	[ "$ntfs" ] &&  {
+		path=$(uci get $config.$DEVNAME.path)
+		[ -z "$path" ] && { 
+			#echo "gonna mount $1 ntfs manually" > /dev/console
+			mkdir -p /mnt/$DEVNAME
+			ntfs-3g /dev/$DEVNAME /mnt/$DEVNAME
+		}
+		export ACTION="add" AUTOMOUNT="no" DEVICE="$DEVNAME"
+		/etc/hotplug.d/mount/10-mount
+	}
+}
+
+del_share() {
+	uci del $config.$1	
+
+}
+
+[ "$ACTION" = "remove" -a "$DEVTYPE" = "disk" ] && {
+	#echo USB disk $DEVNAME is gone > /dev/console
+	. /lib/functions/uci-defaults.sh
+
+	config_load $config
+	config_foreach del_share $sharetype
+		uci commit $config
+	/etc/init.d/samba4 restart
+}
+

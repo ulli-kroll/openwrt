@@ -1,0 +1,11 @@
+--- a/src/odhcpd.c
++++ b/src/odhcpd.c
+@@ -209,7 +209,7 @@
+ 
+ 	ssize_t sent = sendmsg(socket, &msg, MSG_DONTWAIT);
+ 	if (sent < 0)
+-		syslog(LOG_ERR, "Failed to send to %s%%%s@%s (%m)",
++		syslog(LOG_DEBUG, "Failed to send to %s%%%s@%s (%m)",
+ 				ipbuf, iface->name, iface->ifname);
+ 	else
+ 		syslog(LOG_DEBUG, "Sent %zd bytes to %s%%%s@%s",

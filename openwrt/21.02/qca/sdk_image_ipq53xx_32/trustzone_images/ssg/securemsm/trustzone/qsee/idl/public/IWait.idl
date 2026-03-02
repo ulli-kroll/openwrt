@@ -1,0 +1,59 @@
+// Copyright (c) 2018 Qualcomm Technologies, Inc.  All Rights Reserved.
+// Qualcomm Technologies Proprietary and Confidential.
+
+/** @cond */
+interface IWait {
+/** @endcond */
+
+  /**
+   * @addtogroup IWait
+   * @{
+   */
+
+  /** @cond */
+  /**
+   * Constants
+   */
+  const uint32 WAIT_INFINITE = 0xFFFFFFFF;
+
+  /**
+   * Events.
+   * Events in the mask 0x0000FFFF are reserved for official interface use and
+   * defined below.
+   * Events in the mask 0xFFFF0000 are left undefined and available for
+   * user-specified events.
+   */
+  const uint32 EVENT_NONE = 0;
+  const uint32 EVENT_CANCEL = 1;
+  /** @endcond */
+
+  /**
+   * @brief Wait for the specified amount of milliseconds for an event to occur.
+   *
+   * The object will only respond to events passed in the events parameter,
+   * to be interpreted as a mask, one event per bit.
+   *
+   * @param[in]  msec   How long to wait, in milliseconds, or WAIT_INFINITE.
+   * @param[in]  code   Optional code to use when processing an incoming signal:
+   *                    if non-0, the object will only accept a signal with
+   *                    matching code.
+   * @param[in]  events See list of supported events above.
+   * @param[out] result Mask of the received events.
+   *
+   * @return  Object_OK on success.
+   */
+  method wait(in uint32 msec, in uint32 code, in uint32 events, out uint32 result);
+
+  /**
+   * @brief Signal the object with the specified event(s).
+   *
+   * @param[in]  code   Optional code to use for signaling: if non-0, the object
+   *                    will only process a signal with matching code.
+   * @param[in]  events See list of supported events above.
+   *
+   * @return  Object_OK if the events were delivered.
+   */
+  method signal(in uint32 code, in uint32 events);
+
+  /** @} */ /* end_addtogroup IWait */
+};

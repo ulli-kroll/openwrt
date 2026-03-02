@@ -1,0 +1,15 @@
+// Copyright (c) 2015 Qualcomm Technologies, Inc.  All Rights Reserved.
+// Qualcomm Technologies Proprietary and Confidential.
+
+/**
+* @addtogroup CTLMM
+* @{
+  Class CTLMM implements \link ITLMM \endlink interface.
+  
+  The class ID `TLMM` is not included in the default privilege set. It needs to be added to the 
+  privileges section in the metadata to allow the TA to use the CTLMM class.
+*/
+
+const uint32 CTLMM_UID = 45;
+
+/** @} */

@@ -1,0 +1,56 @@
+diff --git a/src/drivers/driver_nl80211.c b/src/drivers/driver_nl80211.c
+index 01c17614f..168c4479f 100644
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -170,7 +170,8 @@ static int nl80211_send_frame_cmd(struct i802_bss *bss,
+ 				  const u8 *buf, size_t buf_len,
+ 				  int save_cookie,
+ 				  int no_cck, int no_ack, int offchanok,
+-				  const u16 *csa_offs, size_t csa_offs_len);
++				  const u16 *csa_offs, size_t csa_offs_len,
++				  int link_id);
+ static int wpa_driver_nl80211_probe_req_report(struct i802_bss *bss,
+ 					       int report);
+ 
+@@ -4312,7 +4313,7 @@ send_frame_cmd:
+ 	wpa_printf(MSG_DEBUG, "nl80211: send_mlme -> send_frame_cmd");
+ 	res = nl80211_send_frame_cmd(bss, freq, wait_time, data, data_len,
+ 				     use_cookie, no_cck, noack, offchanok,
+-				     csa_offs, csa_offs_len);
++				     csa_offs, csa_offs_len, link_id);
+ 	if (!res)
+ 		drv->send_frame_link_id = link_id;
+ 
+@@ -8898,7 +8899,7 @@ static int nl80211_send_frame_cmd(struct i802_bss *bss,
+ 				  const u8 *buf, size_t buf_len,
+ 				  int save_cookie, int no_cck, int no_ack,
+ 				  int offchanok, const u16 *csa_offs,
+-				  size_t csa_offs_len)
++				  size_t csa_offs_len, int link_id)
+ {
+ 	struct wpa_driver_nl80211_data *drv = bss->drv;
+ 	struct nl_msg *msg;
+@@ -8923,6 +8924,10 @@ static int nl80211_send_frame_cmd(struct i802_bss *bss,
+ 	    nla_put(msg, NL80211_ATTR_FRAME, buf_len, buf))
+ 		goto fail;
+ 
++	if (bss->n_links && (link_id >= 0) &&
++	    nla_put_u8(msg, NL80211_ATTR_MLO_LINK_ID, link_id))
++		goto fail;
++
+ 	cookie = 0;
+ 	ret = send_and_recv_msgs(drv, msg, cookie_handler, &cookie, NULL, NULL);
+ 	msg = NULL;
+@@ -9037,7 +9042,8 @@ static int wpa_driver_nl80211_send_action(struct i802_bss *bss,
+ 	else
+ 		ret = nl80211_send_frame_cmd(bss, freq, wait_time, buf,
+ 					     24 + data_len,
+-					     1, no_cck, 0, offchanok, NULL, 0);
++					     1, no_cck, 0, offchanok, NULL, 0,
++					     -1);
+ 
+ 	os_free(buf);
+ 	return ret;
+-- 
+2.17.1
+

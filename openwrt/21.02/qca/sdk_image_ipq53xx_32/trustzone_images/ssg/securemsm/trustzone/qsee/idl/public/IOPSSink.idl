@@ -1,0 +1,34 @@
+// Copyright (c) 2017 Qualcomm Technologies, Inc.  All Rights Reserved.
+// Qualcomm Technologies Proprietary and Confidential.
+
+include "IHdcpTransmitter.idl"
+include "INotifyHdcp.idl"
+/**
+  IOPSSink provides an interface to create a HdcpTransmitter object.
+*/
+/** @cond */
+interface IOPSSink {
+/** @endcond */
+
+  /**
+   * @addtogroup IOPSSink
+   * @{
+   */
+
+  /**
+    Creates an object implementing IHdcpTransmitter for a specific
+    device type.
+
+    @param[in]  deviceId  Device type can be HDMI, DP, or WFD listed in IOPS.idl.
+    @param[in]  notify    Object implementing INotifyHdcp; can be
+                          invoked by OPS to notify HDCP errors.
+    @param[out] hdcpTx    HDCP Transmitter object.
+
+    @return
+    Object_OK on success.
+  */
+  method getHdcpTransmitter(in uint32 deviceId,
+                            in INotifyHdcp notify,
+                            out IHdcpTransmitter hdcpTx);
+  /* @} */ /* end_addtogroup IOPSSink */
+};

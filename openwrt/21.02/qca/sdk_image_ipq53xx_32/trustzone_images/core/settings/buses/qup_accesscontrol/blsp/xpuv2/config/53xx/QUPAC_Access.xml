@@ -1,0 +1,76 @@
+//===========================================================================
+//
+// FILE:         QUPAC_Access.xml
+//
+// DESCRIPTION:  This file lists access permission for al QUPS
+//
+//===========================================================================
+//
+//                             Edit History
+//
+// $Header: 
+//
+// when       who     what, where, why
+// 11/14/19   gp      Remove unused configurations for 60xx
+// 11/05/18   dpk     Updated correct RG values.
+// 06/08/18   dpk     created for 405
+//
+//===========================================================================
+//             Copyright (c) 2018,2019 Qualcomm Technologies, Inc.
+//                    All Rights Reserved.
+//                  QUALCOMM Confidential & Proprietary
+//===========================================================================
+//#define TLMM_SOUTH_BASE                                             0x01000000
+//#define TLMM_NORTH_BASE                                             0x01300000
+//#define TLMM_EAST_BASE                                              0x07b00000
+
+#include "QupACCommonIds.h"
+#include "HALxpu2.h"
+
+
+//All QUPs have to be listed below. Any QUP not present cannot be accesssed by any subsystem. 
+//It's designed to be flexible enough to list only available QUPs on a particular platform.
+
+<driver name="NULL">
+   <global_def>
+      <var_seq name="blsp1_hclk_name"   type=DALPROP_DATA_TYPE_STRING>   gcc_blsp1_ahb_clk   </var_seq>
+      <var_seq name="blsp2_hclk_name"   type=DALPROP_DATA_TYPE_STRING>   gcc_blsp2_ahb_clk   </var_seq>
+
+      <var_seq name = "TLMM_REG_BASE_ADDRS"   type=DALPROP_DATA_TYPE_UINT32_SEQ> 
+         0x01000000, 0x01300000, 0x07b00000, end 
+      </var_seq>
+
+      <var_seq name = "TLMM_XPUS"   type=DALPROP_DATA_TYPE_UINT32_SEQ> 
+         HAL_XPU2_TLMM_XPU_SOUTH, HAL_XPU2_TLMM_XPU_NORTH, HAL_XPU2_TLMM_XPU_EAST, end 
+      </var_seq>
+
+      <var_seq name="alt1_qup6"   type=DALPROP_DATA_TYPE_STRING>   /dev/buses/qup/blsp_qup_6_alt1   </var_seq>
+   </global_def>
+
+  
+   <device id="BLSP_GLOBAL_PROP">
+      <props name="NUM_PERIPH_BLSP_CORES" type=DALPROP_ATTR_TYPE_UINT32> 2 </props> // Number of peripheral BLSP cores
+
+      <props name="NUM_BLSP1_QUP_CORES" type=DALPROP_ATTR_TYPE_UINT32> 5 </props> // 5 QUPs per BLSP1 core in this target
+      <props name="NUM_BLSP2_QUP_CORES" type=DALPROP_ATTR_TYPE_UINT32> 1 </props> // 1 QUPs per BLSP2 core in this target
+      
+      <props name="NUM_BLSP1_UART_CORES" type=DALPROP_ATTR_TYPE_UINT32> 4 </props> // 4 UARTS per BLSP1 core in this target
+      <props name="NUM_BLSP2_UART_CORES" type=DALPROP_ATTR_TYPE_UINT32> 1 </props> // 1 UARTS per BLSP2 core in this target
+      
+      <props name="BLSP1_BLSP_BAM_BASE" type=DALPROP_ATTR_TYPE_UINT32> 0x07884000 </props>
+      <props name="BLSP2_BLSP_BAM_BASE" type=DALPROP_ATTR_TYPE_UINT32> 0x07AC4000 </props>
+
+      <props name="BLSP1_BAM_PIPE_SID_BASE" type=DALPROP_ATTR_TYPE_UINT32> 0x0140 </props>
+      <props name="BLSP2_BAM_PIPE_SID_BASE" type=DALPROP_ATTR_TYPE_UINT32> 0x01C0 </props>
+
+      <props name="BLSP1_HCLK_NAME" type=DALPROP_ATTR_TYPE_STRING_PTR> blsp1_hclk_name </props>
+      <props name="BLSP2_HCLK_NAME" type=DALPROP_ATTR_TYPE_STRING_PTR> blsp2_hclk_name </props>
+
+      <props name="TLMM_NUM_TILES"    type=DALPROP_ATTR_TYPE_UINT32>           3                     </props>
+      <props name="TLMM_BASE_ADDRS"   type=DALPROP_ATTR_TYPE_UINT32_SEQ_PTR>   TLMM_REG_BASE_ADDRS   </props>
+      <props name="TLMM_XPU_IDS"      type=DALPROP_ATTR_TYPE_UINT32_SEQ_PTR>   TLMM_XPUS             </props>
+      //For information about the RG value/Index, please refer Access Control Wiki.
+   </device>
+
+</driver>
+

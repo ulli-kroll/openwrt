@@ -1,0 +1,17 @@
+// Copyright (c) 2018 Qualcomm Technologies, Inc.  All Rights Reserved.
+// Qualcomm Technologies Proprietary and Confidential.
+
+interface IGenericService {
+
+  /**
+    Generic request/response interface used to forward requests
+    of unknown format.  Do not reuse.
+
+    @param[in]  inBuf    Request buffer from the client.
+    @param[out] outBuf   Response buffer for the client.
+
+    @return
+    Object_OK if successful.
+  */
+  method handleCommand(in buffer inBuf, out buffer outBuf);
+};

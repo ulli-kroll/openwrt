@@ -1,0 +1,10 @@
+bdwlan_2G.b0001
+bdwlan_5G.b0002
+bdwlan_6G.b0004
+bdwlan_2G_5GL.b1010
+bdwlan_5GH_6G.b100e
+bdwlan_5G_6G.b1019
+bdwlan_5G.b0015
+bdwlan_6G.b0016
+bdwlan_2G.b001d
+regdb.bin

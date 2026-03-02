@@ -1,0 +1,15 @@
+// Copyright (c) 2018 Qualcomm Technologies, Inc.  All Rights Reserved.
+// Qualcomm Technologies Proprietary and Confidential.
+
+/**
+* @addtogroup CRegisterListenerCBO
+* @{
+  Class CRegisterListenerCBO implements \link IRegisterListenerCBO \endlink interface.
+  
+  The class ID `RegisterListenerCBO` is not included in the default privilege set. It needs to be added to the 
+  privileges section in the metadata to allow the TA to use the CRegisterListenerCBO class.
+*/
+
+const uint32 CRegisterListenerCBO_UID = 87;
+
+/** @} */

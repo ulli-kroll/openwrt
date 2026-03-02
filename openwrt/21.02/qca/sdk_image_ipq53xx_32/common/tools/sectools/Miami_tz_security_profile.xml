@@ -1,0 +1,2026 @@
+<tns:profile xmlns:tns="http://www.qualcomm.com/sectools" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.qualcomm.com/sectools profile_1_3.xsd" id="Miami Security Profile" minimum_sectools_version="1.0" schema_version="1.3">
+    <platform_binding_values>
+        <soc_hw_versions>
+            <value>0x201A</value>
+        </soc_hw_versions>
+        <jtag_ids>
+            <value variant="IPQ5302">0x23A0E1</value>
+            <value variant="IPQ5312">0x23C0E1</value>
+            <value variant="IPQ5322">0x23D0E1</value>
+            <value variant="IPQ5332">0x23B0E1</value>
+            <value variant="IPQ5300">0x2A20E1</value>
+        </jtag_ids>
+    </platform_binding_values>
+    <authentication>
+        <image_list>
+            <image id="XBL" authenticator_oem="GENERIC">
+                <sw_id>0x0</sw_id>
+            </image>
+            <image id="XBL-SEC" authenticator_qti="GENERIC">
+                <sw_id>0xB</sw_id>
+            </image>
+            <image id="DEVCFG" authenticator_oem="GENERIC">
+                <sw_id>0x5</sw_id>
+            </image>
+            <image id="QSEE" authenticator_oem="GENERIC" authenticator_qti="GENERIC">
+                <sw_id>0x7</sw_id>
+            </image>
+            <image id="APPSBL" authenticator_oem="GENERIC">
+                <sw_id>0x9</sw_id>
+            </image>
+            <image id="COMMONLIB" authenticator_oem="GENERIC" authenticator_qti="GENERIC">
+                <sw_id>0x1F</sw_id>
+            </image>
+            <image id="SECUREAPPS" authenticator_oem="GENERIC">
+                <sw_id>0xC</sw_id>
+            </image>
+            <image id="WCSS" authenticator_oem="GENERIC">
+                <sw_id>0xD</sw_id>
+            </image>
+            <image id="HLOS" authenticator_oem="GENERIC">
+                <sw_id>0x17</sw_id>
+            </image>
+        </image_list>
+        <authenticators>
+            <authenticator id="GENERIC">
+                <supported_image_formats>
+                    <image_format id="ELF-V6">
+                        <file_type>ELF</file_type>
+                        <elf_properties>
+                            <elf_class>
+                                <default_elf_class>64</default_elf_class>
+                                <supported_elf_classes>
+                                    <value>32</value>
+                                    <value>64</value>
+                                </supported_elf_classes>
+                            </elf_class>
+                            <contains_preamble>false</contains_preamble>
+                        </elf_properties>
+                        <hash_table_segment_properties>
+                            <hash_table_segment_placements>
+                                <default_hash_table_segment_placement>START</default_hash_table_segment_placement>
+                                <supported_hash_table_segment_placements>
+                                    <value>ANY</value>
+                                </supported_hash_table_segment_placements>
+                            </hash_table_segment_placements>
+                            <hash_table_segment_alignment>0x1000</hash_table_segment_alignment>
+                            <hash_pages>false</hash_pages>
+                            <segment_hash_algorithms>
+                                <default_segment_hash_algorithm>SHA256</default_segment_hash_algorithm>
+                                <supported_segment_hash_algorithms>
+                                    <value>SHA256</value>
+                                </supported_segment_hash_algorithms>
+                            </segment_hash_algorithms>
+                            <hash_table_segment_version>6</hash_table_segment_version>
+                            <hash_table_segment_metadata_versions>
+                                <default_hash_table_segment_metadata_version>0.0</default_hash_table_segment_metadata_version>
+                                <supported_hash_table_segment_metadata_versions>
+                                    <value>0.0</value>
+                                </supported_hash_table_segment_metadata_versions>
+                            </hash_table_segment_metadata_versions>
+                        </hash_table_segment_properties>
+                    </image_format>
+                </supported_image_formats>
+                <default_image_format>ELF-V6</default_image_format>
+                <supported_oem_signing_features>
+                    <supports_vouch_for>false</supports_vouch_for>
+                    <default_signature_format>RSA256</default_signature_format>
+                    <signature_formats>
+                        <signature_format id="RSA256">
+                            <signature_algorithm>RSA</signature_algorithm>
+                            <signature_hash_algorithms>
+                                <default_signature_hash_algorithm>SHA256</default_signature_hash_algorithm>
+                                <supported_signature_hash_algorithms>
+                                    <value>SHA256</value>
+                                </supported_signature_hash_algorithms>
+                            </signature_hash_algorithms>
+                            <rsa_paddings>
+                                <default_rsa_padding>PSS</default_rsa_padding>
+                                <supported_rsa_paddings>
+                                    <value>PSS</value>
+                                </supported_rsa_paddings>
+                            </rsa_paddings>
+                            <key_sizes>
+                                <default_key_size>2048</default_key_size>
+                                <supported_key_sizes>
+                                    <value>2048</value>
+                                    <value>4096</value>
+                                </supported_key_sizes>
+                            </key_sizes>
+                            <exponents>
+                                <default_exponent>65537</default_exponent>
+                                <supported_exponents>
+                                    <value>65537</value>
+                                </supported_exponents>
+                            </exponents>
+                        </signature_format>
+                    </signature_formats>
+                    <serial_bind>
+                        <supported>true</supported>
+                        <supports_single_serial>true</supports_single_serial>
+                        <supports_multi_serials>true</supports_multi_serials>
+                    </serial_bind>
+                    <debug>
+                        <supported>true</supported>
+                        <supports_single_serial>true</supports_single_serial>
+                        <supports_multi_serials>true</supports_multi_serials>
+                    </debug>
+                    <uie_key_switch_enable>
+                        <supported>false</supported>
+                        <supports_single_serial>false</supports_single_serial>
+                        <supports_multi_serials>false</supports_multi_serials>
+                    </uie_key_switch_enable>
+                    <root_revoke_activation_enable>
+                        <supported>true</supported>
+                        <supports_single_serial>true</supports_single_serial>
+                        <supports_multi_serials>true</supports_multi_serials>
+                    </root_revoke_activation_enable>
+                    <supports_root_revoke_activation_enable_as_combined>true</supports_root_revoke_activation_enable_as_combined>
+                    <crash_dump>
+                        <supported>false</supported>
+                        <supports_single_serial>false</supports_single_serial>
+                        <supports_multi_serials>false</supports_multi_serials>
+                    </crash_dump>
+                    <supports_oem_id_product_id_independent>true</supports_oem_id_product_id_independent>
+                    <supports_anti_rollback_version>true</supports_anti_rollback_version>
+                    <mrc_specs>
+                        <default_mrc_spec>2.0</default_mrc_spec>
+                        <supported_mrc_specs>
+                            <value>2.0</value>
+                        </supported_mrc_specs>
+                    </mrc_specs>
+                    <certificate_chain_depths>
+                        <default_certificate_chain_depth>3</default_certificate_chain_depth>
+                        <supported_certificate_chain_depths>
+                            <value>2</value>
+                            <value>3</value>
+                        </supported_certificate_chain_depths>
+                    </certificate_chain_depths>
+                    <platform_bindings>
+                        <default_platform_binding>SOC-HW-VER</default_platform_binding>
+                        <supported_platform_bindings>
+                            <value>SOC-HW-VER</value>
+                            <value>JTAG-ID</value>
+                        </supported_platform_bindings>
+                    </platform_bindings>
+                    <requires_secondary_software_id>false</requires_secondary_software_id>
+                    <requires_feature_id>false</requires_feature_id>
+                    <supported_oem_lifecycle_states>
+                        <value>DEVELOPMENT</value>
+                        <value>PRODUCTION</value>
+                    </supported_oem_lifecycle_states>
+                </supported_oem_signing_features>
+                <supported_qti_signing_features>
+                    <supports_vouch_for>false</supports_vouch_for>
+                    <default_signature_format>RSA256</default_signature_format>
+                    <signature_formats>
+                        <signature_format id="RSA256">
+                            <signature_algorithm>RSA</signature_algorithm>
+                            <signature_hash_algorithms>
+                                <default_signature_hash_algorithm>SHA256</default_signature_hash_algorithm>
+                                <supported_signature_hash_algorithms>
+                                    <value>SHA256</value>
+                                </supported_signature_hash_algorithms>
+                            </signature_hash_algorithms>
+                            <rsa_paddings>
+                                <default_rsa_padding>PSS</default_rsa_padding>
+                                <supported_rsa_paddings>
+                                    <value>PSS</value>
+                                </supported_rsa_paddings>
+                            </rsa_paddings>
+                            <key_sizes>
+                                <default_key_size>2048</default_key_size>
+                                <supported_key_sizes>
+                                    <value>2048</value>
+                                </supported_key_sizes>
+                            </key_sizes>
+                            <exponents>
+                                <default_exponent>65537</default_exponent>
+                                <supported_exponents>
+                                    <value>65537</value>
+                                </supported_exponents>
+                            </exponents>
+                        </signature_format>
+                    </signature_formats>
+                    <serial_bind>
+                        <supported>true</supported>
+                        <supports_single_serial>true</supports_single_serial>
+                        <supports_multi_serials>true</supports_multi_serials>
+                    </serial_bind>
+                    <debug>
+                        <supported>false</supported>
+                        <supports_single_serial>false</supports_single_serial>
+                        <supports_multi_serials>false</supports_multi_serials>
+                    </debug>
+                    <uie_key_switch_enable>
+                        <supported>false</supported>
+                        <supports_single_serial>false</supports_single_serial>
+                        <supports_multi_serials>false</supports_multi_serials>
+                    </uie_key_switch_enable>
+                    <root_revoke_activation_enable>
+                        <supported>false</supported>
+                        <supports_single_serial>false</supports_single_serial>
+                        <supports_multi_serials>false</supports_multi_serials>
+                    </root_revoke_activation_enable>
+                    <supports_root_revoke_activation_enable_as_combined>false</supports_root_revoke_activation_enable_as_combined>
+                    <crash_dump>
+                        <supported>false</supported>
+                        <supports_single_serial>false</supports_single_serial>
+                        <supports_multi_serials>false</supports_multi_serials>
+                    </crash_dump>
+                    <supports_oem_id_product_id_independent>true</supports_oem_id_product_id_independent>
+                    <supports_anti_rollback_version>false</supports_anti_rollback_version>
+                    <certificate_chain_depths>
+                        <default_certificate_chain_depth>3</default_certificate_chain_depth>
+                        <supported_certificate_chain_depths>
+                            <value>3</value>
+                        </supported_certificate_chain_depths>
+                    </certificate_chain_depths>
+                    <platform_bindings>
+                        <default_platform_binding>SOC-HW-VER</default_platform_binding>
+                        <supported_platform_bindings>
+                            <value>SOC-HW-VER</value>
+                            <value>JTAG-ID</value>
+                        </supported_platform_bindings>
+                    </platform_bindings>
+                    <requires_secondary_software_id>false</requires_secondary_software_id>
+                    <requires_feature_id>false</requires_feature_id>
+                </supported_qti_signing_features>
+                <supported_encryption_features>
+                    <encryption_specs>
+                        <default_encryption_spec>UIE-1.0-L2-1.0</default_encryption_spec>
+                        <supported_encryption_specs>
+                            <value>UIE-1.0-L2-1.0</value>
+                            <value>UIE-1.0-L2-1.1</value>
+                        </supported_encryption_specs>
+                    </encryption_specs>
+                    <root_key_types>
+                        <default_root_key_type>OTP-OEM</default_root_key_type>
+                        <supported_root_key_types>
+                            <value>RTL-QTI</value>
+                            <value>OTP-OEM</value>
+                            <value>OTP-QTI</value>
+                        </supported_root_key_types>
+                    </root_key_types>
+                    <supports_encrypted_segment_indices>false</supports_encrypted_segment_indices>
+                </supported_encryption_features>
+            </authenticator>
+        </authenticators>
+    </authentication>
+    <fuse_blowing>
+        <fuse_regions>
+            <fuse_region id="RD_WR_PERMISSIONS">
+                <fuse_row address="0x000a0038">
+                    <fuse>
+                        <name>PTE_READ_DISABLE</name>
+                        <bits>0</bits>
+                    </fuse>
+                    <fuse>
+                        <name>FEATURE_CONFIG_READ_DISABLE</name>
+                        <bits>1</bits>
+                    </fuse>
+                    <fuse>
+                        <name>RD_WR_PERMISSION_READ_DISABLE</name>
+                        <bits>2</bits>
+                    </fuse>
+                    <fuse>
+                        <name>ANTI-ROLLBACK#1_READ_DISABLE</name>
+                        <bits>3</bits>
+                    </fuse>
+                    <fuse>
+                        <name>ANTI-ROLLBACK#2_READ_DISABLE</name>
+                        <bits>4</bits>
+                    </fuse>
+                    <fuse>
+                        <name>ANTI-ROLLBACK#3_READ_DISABLE</name>
+                        <bits>5</bits>
+                    </fuse>
+                    <fuse>
+                        <name>OEM_CONFIG_READ_DISABLE</name>
+                        <bits>6</bits>
+                    </fuse>
+                    <fuse>
+                        <name>OEM_MRC_READ_DISABLE</name>
+                        <bits>7</bits>
+                    </fuse>
+                    <fuse>
+                        <name>OEM_SECURE_BOOT_READ_DISABLE</name>
+                        <bits>8</bits>
+                    </fuse>
+                    <fuse>
+                        <name>PK_HASH_READ_DISABLE</name>
+                        <bits>9</bits>
+                    </fuse>
+                    <fuse>
+                        <name>CALIBRATION_READ_DISABLE</name>
+                        <bits>10</bits>
+                    </fuse>
+                    <fuse>
+                        <name>MEMORY_CONFIG_READ_DISABLE</name>
+                        <bits>11</bits>
+                    </fuse>
+                    <fuse>
+                        <name>BOOT_ROM_PATCH_READ_DISABLE</name>
+                        <bits>12</bits>
+                    </fuse>
+                    <fuse>
+                        <name>FEC_ENABLE_READ_DISABLE</name>
+                        <bits>13</bits>
+                    </fuse>
+                    <fuse>
+                        <name>OEM_CONFIG#2_READ_DISABLE</name>
+                        <bits>14</bits>
+                    </fuse>
+                    <fuse>
+                        <name>OEM_SPARE_REGION#31_READ_DISABLE</name>
+                        <bits>15</bits>
+                    </fuse>
+                    <fuse>
+                        <name>UIE#0_READ_DISABLE</name>
+                        <bits>16</bits>
+                    </fuse>
+                    <fuse>
+                        <name>UIE#1_READ_DISABLE</name>
+                        <bits>17</bits>
+                    </fuse>
+                    <fuse>
+                        <name>RFA__CALIBRATION_OEM_READ_DISABLE</name>
+                        <bits>18</bits>
+                    </fuse>
+                    <fuse>
+                        <name>RFA_SW_OEM_READ_DISABLE</name>
+                        <bits>19</bits>
+                    </fuse>
+                    <fuse>
+                        <name>RFA_#0_READ_DISABLE</name>
+                        <bits>20</bits>
+                    </fuse>
+                    <fuse>
+                        <name>RFA_#1_READ_DISABLE</name>
+                        <bits>21</bits>
+                    </fuse>
+                    <fuse>
+                        <name>PTE_WRITE_DISABLE</name>
+                        <bits>32</bits>
+                    </fuse>
+                    <fuse>
+                        <name>FEATURE_CONFIG_WRITE_DISABLE</name>
+                        <bits>33</bits>
+                    </fuse>
+                    <fuse>
+                        <name>RD_WR_PERMISSION_WRITE_DISABLE</name>
+                        <bits>34</bits>
+                    </fuse>
+                    <fuse>
+                        <name>ANTI-ROLLBACK#1_WRITE_DISABLE</name>
+                        <bits>35</bits>
+                    </fuse>
+                    <fuse>
+                        <name>ANTI-ROLLBACK#2_WRITE_DISABLE</name>
+                        <bits>36</bits>
+                    </fuse>
+                    <fuse>
+                        <name>ANTI-ROLLBACK#3_WRITE_DISABLE</name>
+                        <bits>37</bits>
+                    </fuse>
+                    <fuse>
+                        <name>OEM_CONFIG_WRITE_DISABLE</name>
+                        <bits>38</bits>
+                    </fuse>
+                    <fuse>
+                        <name>OEM_MRC_WRITE_DISABLE</name>
+                        <bits>39</bits>
+                    </fuse>
+                    <fuse>
+                        <name>OEM_SECURE_BOOT_WRITE_DISABLE</name>
+                        <bits>40</bits>
+                    </fuse>
+                    <fuse>
+                        <name>PK_HASH_WRITE_DISABLE</name>
+                        <bits>41</bits>
+                    </fuse>
+                    <fuse>
+                        <name>CALIBRATION_WRITE_DISABLE</name>
+                        <bits>42</bits>
+                    </fuse>
+                    <fuse>
+                        <name>MEMORY_CONFIG_WRITE_DISABLE</name>
+                        <bits>43</bits>
+                    </fuse>
+                    <fuse>
+                        <name>BOOT_ROM_PATCH_WRITE_DISABLE</name>
+                        <bits>44</bits>
+                    </fuse>
+                    <fuse>
+                        <name>FEC_ENABLE_WRITE_DISABLE</name>
+                        <bits>45</bits>
+                    </fuse>
+                    <fuse>
+                        <name>OEM_CONFIG#2_WRITE_DISABLE</name>
+                        <bits>46</bits>
+                    </fuse>
+                    <fuse>
+                        <name>OEM_SPARE_REGION#31_WRITE_DISABLE</name>
+                        <bits>47</bits>
+                    </fuse>
+                    <fuse>
+                        <name>UIE#0_WRITE_DISABLE</name>
+                        <bits>48</bits>
+                    </fuse>
+                    <fuse>
+                        <name>UIE#1_WRITE_DISABLE</name>
+                        <bits>49</bits>
+                    </fuse>
+                    <fuse>
+                        <name>RFA__CALIBRATION_OEM_WRITE_DISABLE</name>
+                        <bits>50</bits>
+                    </fuse>
+                    <fuse>
+                        <name>RFA_SW_OEM_WRITE_DISABLE</name>
+                        <bits>51</bits>
+                    </fuse>
+                    <fuse>
+                        <name>RFA_#0_WRITE_DISABLE</name>
+                        <bits>52</bits>
+                    </fuse>
+                    <fuse>
+                        <name>RFA_#1_WRITE_DISABLE</name>
+                        <bits>53</bits>
+                    </fuse>
+                </fuse_row>
+            </fuse_region>
+            <fuse_region id="OEM_CONFIG">
+                <fuse_row address="0x000a0058">
+                    <fuse>
+                        <name>E_DLOAD_DISABLE</name>
+                        <description>SW only use for Boot.</description>
+                        <bits>0</bits>
+                    </fuse>
+                    <fuse>
+                        <name>ENUM_TIMEOUT</name>
+                        <description>SW only use for Boot.</description>
+                        <bits>1</bits>
+                    </fuse>
+                    <fuse>
+                        <name>NAND_XFER_PARAM</name>
+                        <bits>2</bits>
+                    </fuse>
+                    <fuse>
+                        <name>FORCE_DLOAD_DISABLE</name>
+                        <description>SW only use for Boot.</description>
+                        <bits>3</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SDCC_MCLK_BOOT_FREQ</name>
+                        <description>SW only use for Boot ; 0 - TCXO; 1 - 25 MHz.</description>
+                        <bits>4</bits>
+                    </fuse>
+                    <fuse>
+                        <name>ANTI_ROLLBACK_FEATURE_EN</name>
+                        <description>Bit 0 - BOOT_ANTI_ROLLBACK_EN
+				     Bit 1 - TZAPPS_ANTI_ROLLBACK_EN
+				     Bit 2 - PILSUBSYS_ANTI_ROLLBACK_EN
+				     Bit 3 - MSA_ANTI_ROLLBACK_EN
+				     Bit 4 - 
+				     Bit 5 -
+                        </description>
+                        <bits>9:5</bits>
+                    </fuse>
+                    <fuse>
+                        <name>ATF_ENABLE</name>
+                        <description>If blown, Bootloader can load ATF image.</description>
+                        <bits>10</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPDM_SECURE_MODE</name>
+                        <description>Used in internal logic that generate the Static SPDM Secure mode signal.</description>
+                        <bits>11</bits>
+                    </fuse>
+                    <fuse>
+                        <name>WDOG_EN</name>
+                        <description>Not used in Miami.</description>
+                        <bits>12</bits>
+		   </fuse>
+                     <fuse>
+                        <name>SPARE_R9_B13</name>
+                        <description>Reserved</description>
+                        <bits>13</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_REG30_SECURE</name>
+                        <description>If blown, region will become secure and usable for key storage.</description>
+                        <bits>14</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_REG31_SECURE</name>
+                        <description>If blown, region will become secure and usable for key storage.</description>
+                        <bits>15</bits>
+                    </fuse>
+                    <fuse>
+                        <name>UIE_0_SECURE</name>
+                        <description>If blown, region will become secure and usable for key storage.</description>
+                        <bits>16</bits>
+                    </fuse>
+                    <fuse>
+                        <name>UIE_1_SECURE</name>
+                        <description>If blown, region will become secure and usable for key storage.</description>
+                        <bits>17</bits>
+                    </fuse>
+
+                    <fuse>
+                        <name>ROOT_CERT_TOTAL_NUM</name>
+                        <description>Blown by OEM during Manufacture. Determines the number of RoTs supported in the current Product. Update for MRC 2.0 with support of 4 RoTs. MRC 1.0 supported 16 RoTs.</description>
+                        <bits>19:18</bits>
+       		</fuse>
+                    <fuse>
+                        <name>SPARE_R9_B20</name>
+                        <description>Reserved</description>
+                        <bits>20</bits>
+                    </fuse>
+
+                    <fuse>
+                        <name>SPI_CLK_BOOT_FREQ</name>
+                        <description>SW only use for Boot, writing 1 to it will force SPI clock at 24 Mhz for all boot speed.</description>
+                        <bits>21</bits>
+                    </fuse>
+                    <fuse>
+                        <name>PBL_LOG_DISABLE</name>
+                        <description>SW only use for Boot. Control logging mechanism in Boot ROM (If blown, Logging is disabled &amp; mandated for external parts).</description>
+                        <bits>22</bits>
+                    </fuse>
+                    <fuse>
+                        <name>DEBUG_POLICY_DISABLE</name>
+                        <description>Control Debug Policy.</description>
+                        <bits>23</bits>
+                    </fuse>
+                    <fuse>
+                        <name>QUSB_PORT0_HSTX_TRIM_LSB</name>
+                        <description>Add tuning parameter for QUSB2PHY HSTX Fixed o/p current Calibration.</description>
+                        <bits>27:24</bits>
+		   </fuse>
+                    <fuse>
+                        <name>SPARE_R9_B28</name>
+                        <bits>28</bits>
+                    </fuse>
+                    <fuse>
+                        <name>DISABLE_QPIC_QUADIO_XFER</name>
+                        <description>Newly added in alder as SW required.</description>
+                        <bits>29</bits>
+                    </fuse>
+                    <fuse>
+                        <name>APPS_SPI_NAND_FREQ_SEL</name>
+                        <description>Newly added in alder as SW required.
+2'b00:24M; 
+2'b01:100M; 
+2'b10:200M;.</description>
+                        <bits>31:30</bits>
+                    </fuse>
+                    <fuse>
+                        <name>ALL_DEBUG_DISABLE</name>
+                        <description>Used in interal logic to disable all debug capabilities permanently (Has to be used with caution).</description>
+                        <bits>32</bits>
+		</fuse>
+		<fuse>
+                        <name>SPARE_R9_B33</name>
+                        <description>Used by Security Lib.</description>
+                        <bits>33</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_R9_B34</name>
+                        <description>QC_WCSS_DBG_DISABLE.</description>
+                        <bits>34</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_R9_B35</name>
+                        <description>WCSS_SPNIDEN_DISABLE.</description>
+                        <bits>35</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_R9_B36</name>
+                        <description>Used in internal logic that generates RPM DBGEN.</description>
+                        <bits>36</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_R9_B37</name>
+                        <description>Used in internal logic that generates RPM NIDENs.</description>
+                        <bits>37</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_R9_B38</name>
+                        <description>Used in internal logic that generates RPM DAPEN.</description>
+                        <bits>38</bits>
+                    </fuse>
+                     <fuse>
+                        <name>SPARE_R9_B39</name>
+                        <description>WCSS_SPIDEN_DISABLE.</description>
+                        <bits>39</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_R9_B40</name>
+                        <description>WCSS NIDEN disable, newly added in Hawkeye v2.</description>
+                        <bits>40</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_R9_B41</name>
+                        <description>Q6SS_DBG_DISABLE.</description>
+                        <bits>41</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_R9_B42</name>
+                        <description>Used in internal logic that generates Apps DBGEN.</description>
+                        <bits>42</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_R9_B43</name>
+                        <description>Used in internal logic that generates Apps NIDEN.</description>
+                        <bits>43</bits>
+                    </fuse>
+                   <fuse>
+                        <name>SPARE_R9_B44</name>
+                        <description>Used in internal logic that generates Apps SPIDEN.</description>
+                        <bits>44</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_R9_B45</name>
+                        <description>Used in internal logic that generates Apps SPNIDEN.</description>
+                        <bits>45</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_R9_B46</name>
+                        <description>Used in internal logic that generates Dap DBGEN.</description>
+                        <bits>46</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_R9_B47</name>
+                        <description>Used in internal logic that generates Dap NIDEN.</description>
+                        <bits>47</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_R9_B48</name>
+                        <description>Used in internal logic that generates Dap SPIDEN.</description>
+                        <bits>48</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_R9_B49</name>
+                        <description>Used in internal logic that generates Dap SPNIDEN.</description>
+                        <bits>49</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_R9_B50</name>
+                        <description>Used in internal logic that generates Dap DEVICEEN.</description>
+                        <bits>50</bits>
+                    </fuse>
+                    <fuse>
+                        <name>FAST_BOOT</name>
+                        <description>These fuses are used by boot code or TLMM to specify which device has priority to be booted from. For Alder  the mapping is as follows:
+000 : SPI-NOR
+001 : eMMC
+010 : SPI NAND
+011 : USB2.0
+100: SPI-NOR-GPT
+101~111: Reserved.</description>
+                        <bits>53:51</bits>
+		</fuse>
+		<fuse>
+                        <name>CURRENT_UIE_KEY_SEL</name>
+                        <description>select which UIE key to use.</description>
+                        <bits>54</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_R9_B55</name>
+                        <description>1bit, to disable the debug ports for UBI32 #1 and #2.</description>
+                        <bits>55</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_R9_B56</name>
+                        <description>Q6SS_ETM_DISABLE.</description>
+                        <bits>56</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_R9_B57</name>
+                        <description>Q6SS_DFD_DISABLE.</description>
+                        <bits>57</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_R9_B58</name>
+                        <description>LPASS Q6 ETM DISABLE in oem region.</description>
+                        <bits>58</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_R9_B59</name>
+                        <description>LPASS Q6 DFD disable in oem region.</description>
+                        <bits>59</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_R9_B60</name>
+                        <description>Debug test bus disable.</description>
+                        <bits>60</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_R9_B61</name>
+                        <description>LPASS Q6 debug enable disable in oem reigon.</description>
+                        <bits>61</bits>
+                    </fuse>
+                    <fuse>
+                        <name>DEBUG_DISABLE_IN_ROM</name>
+                        <description>Control JTAG Override feature in PBL or TZ.</description>
+                        <bits>62</bits>
+                    </fuse>
+                    <fuse>
+                        <name>IMAGE_ENCRYPTION_ENABLE</name>
+                        <description>IMAGE_ENCRYPTION_ENABLE.</description>
+                        <bits>63</bits>
+                    </fuse>
+                </fuse_row>
+                <fuse_row address="0x000a0060">
+                    <fuse>
+                        <name>OEM_HW_ID</name>
+                        <description>OEM HW ID bit #0.</description>
+                        <bits>15:0</bits>
+                    </fuse>
+                    <fuse>
+                        <name>OEM_PRODUCT_ID</name>
+                        <description>OEM Product ID bit #0.</description>
+                        <bits>31:16</bits>
+                    </fuse>
+                    <fuse>
+                        <name>PERIPH_PID</name>
+                        <bits>47:32</bits>
+                    </fuse>
+                    <fuse>
+                        <name>PERIPH_VID</name>
+                        <bits>63:48</bits>
+                    </fuse>
+                </fuse_row>
+            </fuse_region>
+            <fuse_region id="OEM_MRC">
+                <fuse_row address="0x000a0068">
+                    <fuse>
+                        <name>MULTI_ROT_ACTIVATION</name>
+                        <description>Blown by OEM to activate the roots.</description>
+                        <bits>3:0</bits>
+                    </fuse>
+                    <fuse>
+                        <name>MULTI_ROT_REVOCATION</name>
+                        <description>Blown by OEM to revocate the roots.</description>
+                        <bits>7:4</bits>
+                    </fuse>
+                    <fuse>
+                        <name>OEM_MRC[63]</name>
+                        <bits>63</bits>
+                    </fuse>
+                </fuse_row>
+            </fuse_region>
+            <fuse_region id="TME_R_W_PERMISSION">
+                <fuse_row address="0x000a0078">
+                    <fuse>
+                        <name>TME_OEM_PRDT_SEED_REGION_READ_DISABLE</name>
+                        <bits>14</bits>
+                    </fuse>
+                    <fuse>
+                        <name>TME_CHIP_ID_REGION_WRITE_DISABLE</name>
+                        <bits>38</bits>
+                    </fuse>
+                    <fuse>
+                        <name>TME_OEM_SECURE_REGION_WRITE_DISABLE</name>
+                        <bits>40</bits>
+                    </fuse>
+                    <fuse>
+                        <name>TME_OEM_ATE_REGION_WRITE_DISABLE</name>
+                        <bits>41</bits>
+                    </fuse>
+                    <fuse>
+                        <name>TME_OEM_MRC_HASH_REGION_WRITE_DISABLE</name>
+                        <bits>42</bits>
+                    </fuse>
+                    <fuse>
+                        <name>TME_SKP2SIGN_REGION_WRITE_DISABLE</name>
+                        <bits>43</bits>
+                    </fuse>
+                    <fuse>
+                        <name>TME_OEM_PRDT_SEED_REGION_WRITE_DISABLE</name>
+                        <bits>46</bits>
+                    </fuse>
+                </fuse_row>
+            </fuse_region>
+            <fuse_region id="TME_FEC_CONTROL">
+                <fuse_row address="0x000a0080">
+                    <fuse>
+                        <name>TME_OEM_MRC_HASH_FEC_ENABLE</name>
+                        <bits>0</bits>
+                    </fuse>
+                    <fuse>
+                        <name>TME_SKP2SIGN_FEC_ENABLE</name>
+                        <bits>1</bits>
+                    </fuse>
+                    <fuse>
+                        <name>TME_OEM_PRDT_SEED_FEC_ENABLE</name>
+                        <bits>4</bits>
+                    </fuse>
+                </fuse_row>
+	</fuse_region>
+          <fuse_region id="TME_OEM">
+                <fuse_row address="0x000a0090">
+                    <fuse>
+                        <name>OEMMRCSTATEVECTOR</name>
+                        <bits>7:0</bits>
+                    </fuse>
+                </fuse_row>
+            </fuse_region>
+            <fuse_region id="TME_OEM_SECURE">
+                <fuse_row address="0x000a00c8">
+                    <fuse>
+                        <name>OEMLIFECYCLESTATE</name>
+                        <bits>7:0</bits>
+		   </fuse>
+                   <fuse>
+                        <name>TME_OEM_SECURE</name>
+                        <bits>63:8</bits>
+                    </fuse>
+                </fuse_row>
+	</fuse_region>
+            <fuse_region id="TME_OEM_ATE">
+                <fuse_row address="0x000a00d0">
+                    <fuse>
+                        <name>OEMSECURITYPOLICY</name>
+                        <description>AuthEnable.</description>
+                        <bits>7:0</bits>
+                    </fuse>
+                    <fuse>
+                        <name>PERSO</name>
+                        <description>Blown by Qualcomm.</description>
+                        <bits>8</bits>
+                    </fuse>
+                    <fuse>
+                        <name>OEMMRCROOTCERTTOTALNUM</name>
+                        <bits>10:9</bits>
+                    </fuse>
+                    <fuse>
+                        <name>OEMID</name>
+                        <bits>31:16</bits>
+                    </fuse>
+                    <fuse>
+                        <name>OEMPRODUCTID</name>
+                        <bits>47:32</bits>
+                    </fuse>
+                </fuse_row>
+                <fuse_row address="0x000a00d8">
+                    <fuse>
+                        <name>WCSS_DBGEN_DISABLE</name>
+                        <bits>2</bits>
+                    </fuse>
+                    <fuse>
+                        <name>QC_WCSS_SPNID_DISABLE</name>
+                        <bits>3</bits>
+                    </fuse>
+                    <fuse>
+                        <name>DEBUGDISABLEVECTOR_4</name>
+                        <bits>4</bits>
+                    </fuse>
+                    <fuse>
+                        <name>QC_RPM_WCSS_NID_DISABLE</name>
+                        <bits>5</bits>
+                    </fuse>
+                    <fuse>
+                        <name>QC_WCSS_SPID_DISABLE</name>
+                        <bits>8</bits>
+                    </fuse>
+                    <fuse>
+                        <name>MSMC_APPS_DBGEN</name>
+                        <bits>9</bits>
+                    </fuse>
+                    <fuse>
+                        <name>MSMC_APPS_NIDEN</name>
+                        <bits>10</bits>
+                    </fuse>
+                    <fuse>
+                        <name>MSMC_APPS_SPIDEN_DISABLE</name>
+                        <bits>11</bits>
+                    </fuse>
+                    <fuse>
+                        <name>MSMC_APPS_SPNIDEN</name>
+                        <bits>12</bits>
+                    </fuse>
+                    <fuse>
+                        <name>MSMC_DAP_DBGEN</name>
+                        <bits>13</bits>
+                    </fuse>
+                    <fuse>
+                        <name>MSMC_DAP_NIDEN</name>
+                        <bits>14</bits>
+                    </fuse>
+                    <fuse>
+                        <name>MSMC_DAP_SPIDEN_DISABLE</name>
+                        <bits>15</bits>
+                    </fuse>
+                    <fuse>
+                        <name>MSMC_DAP_SPNIDEN</name>
+                        <bits>16</bits>
+                    </fuse>
+                    <fuse>
+                        <name>MSMC_DAP_DEVICEEN</name>
+                        <bits>17</bits>
+                    </fuse>
+                </fuse_row>
+                <fuse_row address="0x000a00e0">
+                    <fuse>
+                        <name>QC_Q6SS_DBG_DISABLE</name>
+                        <description>DAP to Q6, connected to WCSS.</description>
+                        <bits>20</bits>
+                    </fuse>
+                    <fuse>
+                        <name>DBG_SEC_BOOT_AUTH_EN_DISABLE</name>
+                        <description>sec boot auth disable (used in PBL).</description>
+                        <bits>24</bits>
+                    </fuse>
+                    <fuse>
+                        <name>QC_Q6SS_ETM_DISABLE</name>
+                        <bits>26</bits>
+                    </fuse>
+                    <fuse>
+                        <name>FUSE_DEBUG_BUS_DISABLE</name>
+                        <bits>28</bits>
+                    </fuse>
+                    <fuse>
+                        <name>FUSE_IGNORE_CSR</name>
+                        <description>USB EUD.</description>
+                        <bits>39</bits>
+                    </fuse>
+                    <fuse>
+                        <name>FUSE_EUD_DISABLE</name>
+                        <description>USB EUD.</description>
+                        <bits>40</bits>
+                    </fuse>
+                    <fuse>
+                        <name>EFUSE_Q6SS_TCM_BOOT_DISABLE</name>
+                        <bits>59</bits>
+                    </fuse>
+                </fuse_row>
+            </fuse_region>
+            <fuse_region id="TME_OEM_MRC_HASH">
+                <fuse_row address="0x000a00e8">
+                    <fuse>
+                        <name>TME_OEM_MRC_HASH</name>
+                        <bits>55:0</bits>
+                    </fuse>
+                    <fuse>
+                        <name>FEC_6</name>
+                        <description>FEC autocalculated based on 56 bits in the row.</description>
+                        <bits>62:56</bits>
+                    </fuse>
+                </fuse_row>
+                <fuse_row address="0x000a00f0">
+                    <fuse>
+                        <name>TME_OEM_MRC_HASH</name>
+                        <bits>55:0</bits>
+                    </fuse>
+                    <fuse>
+                        <name>FEC_7</name>
+                        <description>FEC autocalculated based on 56 bits in the row.</description>
+                        <bits>62:56</bits>
+                    </fuse>
+                </fuse_row>
+                <fuse_row address="0x000a00f8">
+                    <fuse>
+                        <name>TME_OEM_MRC_HASH</name>
+                        <bits>55:0</bits>
+                    </fuse>
+                    <fuse>
+                        <name>FEC_8</name>
+                        <description>FEC autocalculated based on 56 bits in the row.</description>
+                        <bits>62:56</bits>
+                    </fuse>
+                </fuse_row>
+                <fuse_row address="0x000a0100">
+                    <fuse>
+                        <name>TME_OEM_MRC_HASH</name>
+                        <bits>55:0</bits>
+                    </fuse>
+                    <fuse>
+                        <name>FEC_9</name>
+                        <description>FEC autocalculated based on 56 bits in the row.</description>
+                        <bits>62:56</bits>
+                    </fuse>
+                </fuse_row>
+                <fuse_row address="0x000a0108">
+                    <fuse>
+                        <name>TME_OEM_MRC_HASH</name>
+                        <bits>55:0</bits>
+                    </fuse>
+                    <fuse>
+                        <name>FEC_10</name>
+                        <description>FEC autocalculated based on 56 bits in the row.</description>
+                        <bits>62:56</bits>
+                    </fuse>
+                </fuse_row>
+                <fuse_row address="0x000a0110">
+                    <fuse>
+                        <name>TME_OEM_MRC_HASH</name>
+                        <bits>55:0</bits>
+                    </fuse>
+                    <fuse>
+                        <name>FEC_32</name>
+                        <description>FEC autocalculated based on 56 bits in the row.</description>
+                        <bits>62:56</bits>
+                    </fuse>
+                </fuse_row>
+                <fuse_row address="0x000a0118">
+                    <fuse>
+                        <name>TME_OEM_MRC_HASH</name>
+                        <bits>55:0</bits>
+                    </fuse>
+                    <fuse>
+                        <name>FEC_33</name>
+                        <description>FEC autocalculated based on 56 bits in the row.</description>
+                        <bits>62:56</bits>
+                    </fuse>
+                </fuse_row>
+                <fuse_row address="0x000a0120">
+                    <fuse>
+                        <name>TME_OEM_MRC_HASH</name>
+                        <bits>55:0</bits>
+                    </fuse>
+                    <fuse>
+                        <name>FEC_34</name>
+                        <description>FEC autocalculated based on 56 bits in the row.</description>
+                        <bits>62:56</bits>
+                    </fuse>
+                </fuse_row>
+                <fuse_row address="0x000a0128">
+                    <fuse>
+                        <name>TME_OEM_MRC_HASH</name>
+                        <bits>55:0</bits>
+                    </fuse>
+                    <fuse>
+                        <name>FEC_35</name>
+                        <description>FEC autocalculated based on 56 bits in the row.</description>
+                        <bits>62:56</bits>
+                    </fuse>
+                </fuse_row>
+                <fuse_row address="0x000a0130">
+                    <fuse>
+                        <name>TME_OEM_MRC_HASH</name>
+                        <bits>55:0</bits>
+                    </fuse>
+                    <fuse>
+                        <name>FEC_36</name>
+                        <description>FEC autocalculated based on 56 bits in the row.</description>
+                        <bits>62:56</bits>
+                    </fuse>
+                </fuse_row>
+            </fuse_region>
+            <fuse_region id="TME_OEM_PRDT_SEED">
+                <fuse_row address="0x000a02b0">
+                    <fuse>
+                        <name>TME_OEM_PRDT_SEED</name>
+                        <bits>55:0</bits>
+                    </fuse>
+                    <fuse>
+                        <name>FEC_10</name>
+                        <description>FEC autocalculated based on 56 bits in the row.</description>
+                        <bits>62:56</bits>
+                    </fuse>
+                </fuse_row>
+                <fuse_row address="0x000a02b8">
+                    <fuse>
+                        <name>TME_OEM_PRDT_SEED</name>
+                        <bits>55:0</bits>
+                    </fuse>
+                    <fuse>
+                        <name>FEC_56</name>
+                        <description>FEC autocalculated based on 56 bits in the row.</description>
+                        <bits>62:56</bits>
+                    </fuse>
+                </fuse_row>
+                <fuse_row address="0x000a02c0">
+                    <fuse>
+                        <name>TME_OEM_PRDT_SEED</name>
+                        <bits>55:0</bits>
+                    </fuse>
+                    <fuse>
+                        <name>FEC_57</name>
+                        <description>FEC autocalculated based on 56 bits in the row.</description>
+                        <bits>62:56</bits>
+                    </fuse>
+                </fuse_row>
+                <fuse_row address="0x000a02c8">
+                    <fuse>
+                        <name>TME_OEM_PRDT_SEED</name>
+                        <bits>55:0</bits>
+                    </fuse>
+                    <fuse>
+                        <name>FEC_58</name>
+                        <description>FEC autocalculated based on 56 bits in the row.</description>
+                        <bits>62:56</bits>
+                    </fuse>
+                </fuse_row>
+                <fuse_row address="0x000a02d0">
+                    <fuse>
+                        <name>TME_OEM_PRDT_SEED</name>
+                        <bits>55:0</bits>
+                    </fuse>
+                    <fuse>
+                        <name>FEC_59</name>
+                        <description>FEC autocalculated based on 56 bits in the row.</description>
+                        <bits>62:56</bits>
+                    </fuse>
+                </fuse_row>
+            </fuse_region>
+            <fuse_region id="OEM_SECURE_BOOT">
+                <fuse_row address="0x000a02e8">
+                    <fuse>
+                        <name>OEM_SECURE_BOOT1_ROM_PK_HASH_IDX0</name>
+                        <description>Boot Segment for Apps &amp; other peripheral images.</description>
+                        <bits>0</bits>
+                    </fuse>
+                    <fuse>
+                        <name>OEM_SECURE_BOOT1_ROM_PK_HASH_IDX1</name>
+                        <description>Boot Segment for Apps &amp; other peripheral images.</description>
+                        <bits>1</bits>
+                    </fuse>
+                    <fuse>
+                        <name>OEM_SECURE_BOOT1_ROM_PK_HASH_IDX2</name>
+                        <description>Boot Segment for Apps &amp; other peripheral images.</description>
+                        <bits>2</bits>
+                    </fuse>
+                    <fuse>
+                        <name>OEM_SECURE_BOOT1_ROM_PK_HASH_IDX3</name>
+                        <description>Boot Segment for Apps &amp; other peripheral images.</description>
+                        <bits>3</bits>
+                    </fuse>
+                    <fuse>
+                        <name>OEM_SECURE_BOOT1_PK_HASH_IN_FUSE</name>
+                        <description>Boot Segment for Apps &amp; other peripheral images.</description>
+                        <bits>4</bits>
+                    </fuse>
+                    <fuse>
+                        <name>OEM_SECURE_BOOT1_AUTH_EN</name>
+                        <description>Boot Segment for Apps &amp; other peripheral images.</description>
+                        <bits>5</bits>
+                    </fuse>
+                    <fuse>
+                        <name>OEM_SECURE_BOOT1_USE_SERIAL_NUM</name>
+                        <description>Boot Segment for Apps &amp; other peripheral images.</description>
+                        <bits>6</bits>
+                    </fuse>
+                    <fuse>
+                        <name>OEM_SECURE_BOOT1_RESERVED</name>
+                        <description>Boot Segment for Apps &amp; other peripheral images.</description>
+                        <bits>7</bits>
+                    </fuse>
+                    <fuse>
+                        <name>OEM_SECURE_BOOT2_ROM_PK_HASH_IDX0</name>
+                        <description>Boot segment for MBA image.</description>
+                        <bits>8</bits>
+                    </fuse>
+                    <fuse>
+                        <name>OEM_SECURE_BOOT2_ROM_PK_HASH_IDX1</name>
+                        <description>Boot segment for MBA image.</description>
+                        <bits>9</bits>
+                    </fuse>
+                    <fuse>
+                        <name>OEM_SECURE_BOOT2_ROM_PK_HASH_IDX2</name>
+                        <description>Boot segment for MBA image.</description>
+                        <bits>10</bits>
+                    </fuse>
+                    <fuse>
+                        <name>OEM_SECURE_BOOT2_ROM_PK_HASH_IDX3</name>
+                        <description>Boot segment for MBA image.</description>
+                        <bits>11</bits>
+                    </fuse>
+                    <fuse>
+                        <name>OEM_SECURE_BOOT2_PK_HASH_IN_FUSE</name>
+                        <description>Boot segment for MBA image.</description>
+                        <bits>12</bits>
+                    </fuse>
+                    <fuse>
+                        <name>OEM_SECURE_BOOT2_AUTH_EN</name>
+                        <description>Boot segment for MBA image.</description>
+                        <bits>13</bits>
+                    </fuse>
+                    <fuse>
+                        <name>OEM_SECURE_BOOT2_USE_SERIAL_NUM</name>
+                        <description>Boot segment for MBA image.</description>
+                        <bits>14</bits>
+                    </fuse>
+                    <fuse>
+                        <name>OEM_SECURE_BOOT2_RESERVED</name>
+                        <description>Boot segment for MBA image.</description>
+                        <bits>15</bits>
+                    </fuse>
+                    <fuse>
+                        <name>OEM_SECURE_BOOT3_ROM_PK_HASH_IDX0</name>
+                        <description>Unused.</description>
+                        <bits>16</bits>
+                    </fuse>
+                    <fuse>
+                        <name>OEM_SECURE_BOOT3_ROM_PK_HASH_IDX1</name>
+                        <description>Unused.</description>
+                        <bits>17</bits>
+                    </fuse>
+                    <fuse>
+                        <name>OEM_SECURE_BOOT3_ROM_PK_HASH_IDX2</name>
+                        <description>Unused.</description>
+                        <bits>18</bits>
+                    </fuse>
+                    <fuse>
+                        <name>OEM_SECURE_BOOT3_ROM_PK_HASH_IDX3</name>
+                        <description>Unused.</description>
+                        <bits>19</bits>
+                    </fuse>
+                    <fuse>
+                        <name>OEM_SECURE_BOOT3_PK_HASH_IN_FUSE</name>
+                        <description>Boot segment for Modem image.</description>
+                        <bits>20</bits>
+                    </fuse>
+                    <fuse>
+                        <name>OEM_SECURE_BOOT3_AUTH_EN</name>
+                        <description>Boot segment for Modem image.</description>
+                        <bits>21</bits>
+		    </fuse>
+                     <fuse>
+                        <name>OEM_SECURE_BOOT3_USE_SERIAL_NUM</name>
+                        <description>Boot segment for Modem image.</description>
+                        <bits>22</bits>
+		    </fuse>
+                    <fuse>
+                        <name>OEM_SECURE_BOOT4_ROM_PK_HASH_IDX0</name>
+                        <description>This Boot segment is used for Secure Boot TZ apps.</description>
+                        <bits>24</bits>
+                    </fuse>
+                    <fuse>
+                        <name>OEM_SECURE_BOOT4_ROM_PK_HASH_IDX1</name>
+                        <description>This Boot segment is used for Secure Boot TZ apps</description>
+                        <bits>25</bits>
+                    </fuse>
+                    <fuse>
+                        <name>OEM_SECURE_BOOT4_ROM_PK_HASH_IDX2</name>
+                        <description>This Boot segment is used for Secure Boot TZ apps</description>
+                        <bits>26</bits>
+                    </fuse>
+                    <fuse>
+                        <name>OEM_SECURE_BOOT4_ROM_PK_HASH_IDX3</name>
+                        <description>This Boot segment is used for Secure Boot TZ apps</description>
+                        <bits>27</bits>
+                    </fuse>
+                    <fuse>
+                        <name>OEM_SECURE_BOOT4_PK_HASH_IN_FUSE</name>
+                        <description>This Boot segment is used for Secure Boot TZ apps</description>
+                        <bits>28</bits>
+                    </fuse>
+                    <fuse>
+                        <name>OEM_SECURE_BOOT4_AUTH_EN</name>
+                        <description>This Boot segment is used for Secure Boot TZ apps</description>
+                        <bits>29</bits>
+                    </fuse>
+                    <fuse>
+                        <name>OEM_SECURE_BOOT4_USE_SERIAL_NUM</name>
+                        <description>This Boot segment is used for Secure Boot TZ apps</description>
+                        <bits>30</bits>
+                    </fuse>
+                    <fuse>
+                        <name>FEC_58</name>
+                        <description>FEC autocalculated based on 56 bits in the row.</description>
+                        <bits>62:56</bits>
+                    </fuse>
+                </fuse_row>
+            </fuse_region>
+            <fuse_region id="PK_HASH">
+                <fuse_row address="0x000a02f0">
+                    <fuse>
+                        <name>PK_HASH</name>
+                        <bits>55:0</bits>
+                    </fuse>
+                    <fuse>
+                        <name>FEC_60</name>
+                        <description>FEC autocalculated based on 56 bits in the row.</description>
+                        <bits>62:56</bits>
+                    </fuse>
+                </fuse_row>
+                <fuse_row address="0x000a02f8">
+                    <fuse>
+                        <name>PK_HASH</name>
+                        <bits>55:0</bits>
+                    </fuse>
+                    <fuse>
+                        <name>FEC_61</name>
+                        <description>FEC autocalculated based on 56 bits in the row.</description>
+                        <bits>62:56</bits>
+                    </fuse>
+                </fuse_row>
+                <fuse_row address="0x000a0300">
+                    <fuse>
+                        <name>PK_HASH</name>
+                        <bits>55:0</bits>
+                    </fuse>
+                    <fuse>
+                        <name>FEC_62</name>
+                        <description>FEC autocalculated based on 56 bits in the row.</description>
+                        <bits>62:56</bits>
+                    </fuse>
+                </fuse_row>
+                <fuse_row address="0x000a0308">
+                    <fuse>
+                        <name>PK_HASH</name>
+                        <bits>55:0</bits>
+                    </fuse>
+                    <fuse>
+                        <name>FEC_63</name>
+                        <description>FEC autocalculated based on 56 bits in the row.</description>
+                        <bits>62:56</bits>
+                    </fuse>
+                </fuse_row>
+                <fuse_row address="0x000a0310">
+                    <fuse>
+                        <name>PK_HASH</name>
+                        <bits>55:0</bits>
+                    </fuse>
+                    <fuse>
+                        <name>FEC_64</name>
+                        <description>FEC autocalculated based on 56 bits in the row.</description>
+                        <bits>62:56</bits>
+                    </fuse>
+                </fuse_row>
+                <fuse_row address="0x000a0318">
+                    <fuse>
+                        <name>PK_HASH</name>
+                        <bits>55:0</bits>
+                    </fuse>
+                    <fuse>
+                        <name>FEC_65</name>
+                        <bits>62:56</bits>
+                    </fuse>
+                </fuse_row>
+                <fuse_row address="0x000a0320">
+                    <fuse>
+                        <name>PK_HASH</name>
+                        <bits>47:0</bits>
+                    </fuse>
+                    <fuse>
+                        <name>FEC_66</name>
+                        <description>FEC autocalculated based on 56 bits in the row.</description>
+                        <bits>62:56</bits>
+                    </fuse>
+                </fuse_row>
+            </fuse_region>
+            <fuse_region id="FEC_ENABLES">
+                <fuse_row address="0x000a05a0">
+                    <fuse>
+                        <name>PTE_FEC_ENABLE</name>
+                        <bits>0</bits>
+                    </fuse>
+                    <fuse>
+                        <name>FEATURE_CONFIG_FEC_ENABLE</name>
+                        <bits>1</bits>
+                    </fuse>
+                    <fuse>
+                        <name>OEM_SECURE_BOOT_FEC_ENABLE</name>
+                        <bits>2</bits>
+                    </fuse>
+                    <fuse>
+                        <name>PK_HASH_FEC_ENABLE</name>
+                        <bits>3</bits>
+                    </fuse>
+                    <fuse>
+                        <name>CALIBRATION_FEC_ENABLE</name>
+                        <bits>4</bits>
+                    </fuse>
+                    <fuse>
+                        <name>MEMORY_CONFIG_FEC_ENABLE</name>
+                        <bits>5</bits>
+                    </fuse>
+                    <fuse>
+                        <name>BOOT_ROM_PATCH_FEC_ENABLE</name>
+                        <bits>6</bits>
+                    </fuse>
+                    <fuse>
+                        <name>OEM_CONFIG#2_FEC_ENABLE</name>
+                        <bits>7</bits>
+                    </fuse>
+                    <fuse>
+                        <name>OEM_SPARE_REGION#31_FEC_ENABLE</name>
+                        <bits>8</bits>
+                    </fuse>
+                    <fuse>
+                        <name>UIE_#0_FEC_ENABLE</name>
+                        <bits>9</bits>
+                    </fuse>
+                    <fuse>
+                        <name>UIE_#1_FEC_ENABLE</name>
+                        <bits>10</bits>
+                    </fuse>
+                    <fuse>
+                        <name>RFA_CALIBRATION_OEM_FEC_ENABLE</name>
+                        <bits>11</bits>
+                    </fuse>
+                    <fuse>
+                        <name>RFA_SW_OEM_FEC_ENABLE</name>
+                        <bits>12</bits>
+                    </fuse>
+                    <fuse>
+                        <name>RFA_#0_FEC_ENABLA</name>
+                        <bits>13</bits>
+                    </fuse>
+                    <fuse>
+                        <name>RFA_#1_FEC_ENABLA</name>
+                        <bits>14</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_R171_B15</name>
+                        <description>Spare.</description>
+                        <bits>15</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_R171_B16</name>
+                        <description>Spare.</description>
+                        <bits>16</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_R171_B17</name>
+                        <description>Spare.</description>
+                        <bits>17</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_R171_B18</name>
+                        <description>Spare.</description>
+                        <bits>18</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_R171_B19</name>
+                        <description>Spare.</description>
+                        <bits>19</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_R171_B20</name>
+                        <description>Spare.</description>
+                        <bits>20</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_R171_B21</name>
+                        <description>Spare.</description>
+                        <bits>21</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_R171_B22</name>
+                        <description>Spare.</description>
+                        <bits>22</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_R171_B23</name>
+                        <description>Spare.</description>
+                        <bits>23</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_R171_B24</name>
+                        <description>Spare.</description>
+                        <bits>24</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_R171_B25</name>
+                        <description>Spare.</description>
+                        <bits>25</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_R171_B26</name>
+                        <description>Spare.</description>
+                        <bits>26</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_R171_B27</name>
+                        <description>Spare.</description>
+                        <bits>27</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_R171_B28</name>
+                        <description>Spare.</description>
+                        <bits>28</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_R171_B29</name>
+                        <description>Spare.</description>
+                        <bits>29</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_R171_B30</name>
+                        <description>Spare.</description>
+                        <bits>30</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_R171_B31</name>
+                        <description>Spare.</description>
+                        <bits>31</bits>
+                    </fuse>
+                    <fuse>
+                        <name>PTE_FEC_ENABLE_SHADOW</name>
+                        <bits>32</bits>
+                    </fuse>
+                    <fuse>
+                        <name>FEATURE_CONFIG_FEC_ENABLE_SHADOW</name>
+                        <bits>33</bits>
+                    </fuse>
+                    <fuse>
+                        <name>OEM_SECURE_BOOT_FEC_ENABLE_SHADOW</name>
+                        <bits>34</bits>
+                    </fuse>
+                    <fuse>
+                        <name>PK_HASH_FEC_ENABLE_SHADOW</name>
+                        <bits>35</bits>
+                    </fuse>
+                    <fuse>
+                        <name>CALIBRATION_FEC_ENABLE_SHADOW</name>
+                        <bits>36</bits>
+                    </fuse>
+                    <fuse>
+                        <name>MEMORY_CONFIG_FEC_ENABLE_SHADOW</name>
+                        <bits>37</bits>
+                    </fuse>
+                    <fuse>
+                        <name>BOOT_ROM_PATCH_FEC_ENABLE_SHADOW</name>
+                        <bits>38</bits>
+                    </fuse>
+                    <fuse>
+                        <name>OEM_CONFIG#2_FEC_ENABLE_SHADOW</name>
+                        <bits>39</bits>
+                    </fuse>
+                    <fuse>
+                        <name>OEM_SPARE_REGION#31_FEC_ENABLE_SHADOW</name>
+                        <bits>40</bits>
+                    </fuse>
+                    <fuse>
+                        <name>UIE_#0_FEC_ENABLE_SHADOW</name>
+                        <bits>41</bits>
+                    </fuse>
+                    <fuse>
+                        <name>UIE_#1_FEC_ENABLE_SHADOW</name>
+                        <bits>42</bits>
+                    </fuse>
+                    <fuse>
+                        <name>RFA_CALIBRATION_OEM_FEC_ENABLE_SHADOW</name>
+                        <bits>43</bits>
+                    </fuse>
+                    <fuse>
+                        <name>RFA_SW_OEM_FEC_ENABLE_SHADOW</name>
+                        <bits>44</bits>
+                    </fuse>
+                    <fuse>
+                        <name>RFA_#0_FEC_ENABLA_SHADOW</name>
+                        <bits>45</bits>
+                    </fuse>
+                    <fuse>
+                        <name>RFA_#1_FEC_ENABLA_SHADOW</name>
+                        <bits>46</bits>
+                    </fuse>
+                </fuse_row>
+            </fuse_region>
+            <fuse_region id="OEM_CONFIG_2">
+                <fuse_row address="0x000a05a8">
+                    <fuse>
+                        <name>SAFE_SWITCH</name>
+                        <description>SAFE SWITCH Bit0.</description>
+                        <bits>7:0</bits>
+                    </fuse>
+                    <fuse>
+                        <name>WIFI_BOARD_ID</name>
+                        <description>WIFI_BOARD_ID[7:0]-- For internal testing teams to auto load proper BDF during boot. Usable but optional for customers.</description>
+                        <bits>15:8</bits>
+                    </fuse>
+                    <fuse>
+                        <name>WIFI_COUNTRY_CODE</name>
+                        <description>WIFI_COUNTRY_CODE[15:0] -- bits [11:0] = country or domain code, [12-13] reserved, [14] = Wolrdwide roaming flag, [15]  - country or domain flag.</description>
+                        <bits>31:16</bits>
+                    </fuse>
+                    <fuse>
+                        <name>USB2PHY1_HSTX_TRIM_VLD</name>
+                        <bits>32</bits>
+                    </fuse>
+                    <fuse>
+                        <name>USB2PHY1_HSTX_TRIM</name>
+                        <bits>36:33</bits>
+		   </fuse>
+                    <fuse>
+                        <name>SPARE_R130_B37</name>
+                        <bits>37</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_R130_B38</name>
+                        <bits>38</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_R130_B39</name>
+                        <bits>39</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_131_40</name>
+                        <bits>40</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_131_41</name>
+                        <bits>41</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_131_42</name>
+                        <bits>42</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_131_43</name>
+                        <bits>43</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_131_44</name>
+                        <bits>44</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_131_45</name>
+                        <bits>45</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_131_46</name>
+                        <bits>46</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_131_47</name>
+                          <bits>47</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_131_48</name>
+                        <bits>48</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_131_49</name>
+                        <bits>49</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_131_50</name>
+                        <bits>50</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_131_51</name>
+                        <bits>51</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_131_52</name>
+                        <bits>52</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_131_53</name>
+                        <bits>53</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_131_54</name>
+                        <bits>54</bits>
+                    </fuse>
+                    <fuse>
+                        <name>SPARE_131_55</name>
+                        <bits>55</bits>
+                    </fuse>
+                    <fuse>
+                        <name>FEC_130</name>
+                        <bits>62:56</bits>
+                    </fuse>
+                </fuse_row>
+            </fuse_region>
+            <fuse_region id="OEM_SPARE_REGION_31">
+                <fuse_row address="0x000a05b0">
+                    <fuse>
+                        <name>OEM_SPARE_REGION_#31</name>
+                        <bits>55:0</bits>
+                    </fuse>
+                    <fuse>
+                        <name>FEC_132</name>
+                        <bits>62:56</bits>
+                    </fuse>
+                </fuse_row>
+	</fuse_region>
+        <fuse_region id="UIE_0">
+                <fuse_row address="0x000a05b8">
+                    <fuse>
+                        <name>UIE_#0</name>
+                        <description> Store the Image Encryption Key.</description>
+                        <bits>55:0</bits>
+                    </fuse>
+                    <fuse>
+                        <name>FEC_134</name>
+                        <description>FEC autocalculated based on 56 bits in the row.</description>
+                        <bits>62:56</bits>
+                    </fuse>
+                </fuse_row>
+                <fuse_row address="0x000a05c0">
+                    <fuse>
+                        <name>UIE_#0</name>
+                        <bits>55:0</bits>
+                    </fuse>
+                    <fuse>
+                        <name>FEC_132_</name>
+                        <description>FEC autocalculated based on 56 bits in the row.</description>
+                        <bits>62:56</bits>
+                    </fuse>
+                </fuse_row>
+                <fuse_row address="0x000a05c8">
+                    <fuse>
+                        <name>UIE_#0</name>
+                        <bits>55:0</bits>
+                    </fuse>
+                    <fuse>
+                        <name>FEC_133</name>
+                        <description>FEC autocalculated based on 56 bits in the row.</description>
+                        <bits>62:56</bits>
+                    </fuse>
+                </fuse_row>
+            </fuse_region>
+            <fuse_region id="UIE_1">
+                <fuse_row address="0x000a05d0">
+                    <fuse>
+                        <name>UIE_#1</name>
+                        <description>Store the Image Encryption Key. </description>
+                        <bits>55:0</bits>
+                    </fuse>
+                    <fuse>
+                        <name>FEC_135_</name>
+                        <description>FEC autocalculated based on 56 bits in the row.</description>
+                        <bits>62:56</bits>
+                    </fuse>
+                </fuse_row>
+                <fuse_row address="0x000a05d8">
+                    <fuse>
+                        <name>UIE_#1</name>
+                        <bits>55:0</bits>
+                    </fuse>
+                    <fuse>
+                        <name>FEC_135</name>
+                        <description>FEC autocalculated based on 56 bits in the row.</description>
+                        <bits>62:56</bits>
+                    </fuse>
+                </fuse_row>
+                <fuse_row address="0x000a05e0">
+                    <fuse>
+                        <name>UIE_#1</name>
+                        <bits>55:0</bits>
+                    </fuse>
+                    <fuse>
+                        <name>FEC_136</name>
+                        <description>FEC autocalculated based on 56 bits in the row.</description>
+                        <bits>62:56</bits>
+                    </fuse>
+                </fuse_row>
+            </fuse_region>
+	   <fuse_region id="RFA_CALIBRATION_OEM">
+                <fuse_row address="0x000a05e8">
+                    <fuse>
+                        <name>RFA_CALIBRATION_OEM</name>
+                        <bits>55:0</bits>
+                    </fuse>
+                    <fuse>
+                        <name>FEC_189</name>
+                        <bits>62:56</bits>
+                    </fuse>
+                </fuse_row>
+            </fuse_region>
+            <fuse_region id="RFA_SW_OEM">
+                <fuse_row address="0x000a05f0">
+                    <fuse>
+                        <name>PLUT_OFFSET_CH0_FREQ1</name>
+                        <bits>7:0</bits>
+                    </fuse>
+                    <fuse>
+                        <name>GLUT_OFFSET_CH0_FREQ1</name>
+                        <bits>15:8</bits>
+                    </fuse>
+                    <fuse>
+                        <name>TEMPERATURE_OFFSET_CH0_FREQ1</name>
+                        <bits>23:16</bits>
+                    </fuse>
+                    <fuse>
+                        <name>PLUT_OFFSET_CH1_FREQ1</name>
+                        <bits>31:24</bits>
+                    </fuse>
+                    <fuse>
+                        <name>GLUT_OFFSET_CH1_FREQ1</name>
+                        <bits>39:32</bits>
+                    </fuse>
+                    <fuse>
+                        <name>TEMPERATURE_OFFSET_CH1_FREQ1</name>
+                        <bits>47:40</bits>
+                    </fuse>
+                    <fuse>
+                        <name>PLUT_OFFSET_CH0_FREQ2</name>
+                        <bits>55:48</bits>
+                    </fuse>
+                    <fuse>
+                        <name>FEC_189</name>
+                        <bits>62:56</bits>
+                    </fuse>
+                </fuse_row>
+                <fuse_row address="0x000a05f8">
+                    <fuse>
+                        <name>GLUT_OFFSET_CH0_FREQ2</name>
+                        <bits>7:0</bits>
+                    </fuse>
+                    <fuse>
+                        <name>TEMPERATURE_OFFSET_CH0_FREQ2</name>
+                        <bits>15:8</bits>
+                    </fuse>
+                    <fuse>
+                        <name>PLUT_OFFSET_CH1_FREQ2</name>
+                        <bits>23:16</bits>
+                    </fuse>
+                    <fuse>
+                        <name>GLUT_OFFSET_CH1_FREQ2</name>
+                        <bits>31:24</bits>
+                    </fuse>
+                    <fuse>
+                        <name>TEMPERATURE_OFFSET_CH1_FREQ2</name>
+                        <bits>39:32</bits>
+                    </fuse>
+                    <fuse>
+                        <name>PLUT_OFFSET_CH0_FREQ3</name>
+                        <bits>47:40</bits>
+                    </fuse>
+                    <fuse>
+                        <name>GLUT_OFFSET_CH0_FREQ3</name>
+                        <bits>55:48</bits>
+                    </fuse>
+                    <fuse>
+                        <name>FEC_190</name>
+                        <bits>62:56</bits>
+                    </fuse>
+                </fuse_row>
+                <fuse_row address="0x000a0600">
+                    <fuse>
+                        <name>TEMPERATURE_OFFSET_CH0_FREQ3</name>
+                        <bits>7:0</bits>
+                    </fuse>
+                    <fuse>
+                        <name>PLUT_OFFSET_CH1_FREQ3</name>
+                        <bits>15:8</bits>
+                    </fuse>
+                    <fuse>
+                        <name>GLUT_OFFSET_CH1_FREQ3</name>
+                        <bits>23:16</bits>
+                    </fuse>
+                    <fuse>
+                        <name>TEMPERATURE_OFFSET_CH1_FREQ3</name>
+                        <bits>31:24</bits>
+                    </fuse>
+                    <fuse>
+                        <name>PLUT_OFFSET_CH0_FREQ4</name>
+                        <bits>39:32</bits>
+                    </fuse>
+                    <fuse>
+                        <name>GLUT_OFFSET_CH0_FREQ4</name>
+                        <bits>47:40</bits>
+                    </fuse>
+                    <fuse>
+                        <name>TEMPERATURE_OFFSET_CH0_FREQ4</name>
+                        <bits>55:48</bits>
+                    </fuse>
+                    <fuse>
+                        <name>FEC_191</name>
+                        <bits>62:56</bits>
+                    </fuse>
+                </fuse_row>
+                <fuse_row address="0x000a0608">
+                    <fuse>
+                        <name>PLUT_OFFSET_CH1_FREQ4</name>
+                        <bits>7:0</bits>
+                    </fuse>
+                    <fuse>
+                        <name>GLUT_OFFSET_CH1_FREQ4</name>
+                        <bits>15:8</bits>
+                    </fuse>
+                    <fuse>
+                        <name>TEMPERATURE_OFFSET_CH1_FREQ4</name>
+                        <bits>23:16</bits>
+                    </fuse>
+                    <fuse>
+                        <name>PLUT_OFFSET_CH0_FREQ5</name>
+                        <bits>31:24</bits>
+                    </fuse>
+                    <fuse>
+                        <name>GLUT_OFFSET_CH0_FREQ5</name>
+                        <bits>39:32</bits>
+                    </fuse>
+                    <fuse>
+                        <name>TEMPERATURE_OFFSET_CH0_FREQ5</name>
+                        <bits>47:40</bits>
+                    </fuse>
+                    <fuse>
+                        <name>PLUT_OFFSET_CH1_FREQ5</name>
+                        <bits>55:48</bits>
+                    </fuse>
+                    <fuse>
+                        <name>FEC_192</name>
+                        <bits>62:56</bits>
+                    </fuse>
+                </fuse_row>
+                <fuse_row address="0x000a0610">
+                    <fuse>
+                        <name>GLUT_OFFSET_CH1_FREQ5</name>
+                        <bits>7:0</bits>
+                    </fuse>
+                    <fuse>
+                        <name>TEMPERATURE_OFFSET_CH1_FREQ5</name>
+                        <bits>15:8</bits>
+                    </fuse>
+                    <fuse>
+                        <name>PLUT_OFFSET_CH0_FREQ6</name>
+                        <bits>23:16</bits>
+                    </fuse>
+                    <fuse>
+                        <name>GLUT_OFFSET_CH0_FREQ6</name>
+                        <bits>31:24</bits>
+                    </fuse>
+                    <fuse>
+                        <name>TEMPERATURE_OFFSET_CH0_FREQ6</name>
+                        <bits>39:32</bits>
+                    </fuse>
+                    <fuse>
+                        <name>PLUT_OFFSET_CH1_FREQ6</name>
+                        <bits>47:40</bits>
+                    </fuse>
+                    <fuse>
+                        <name>GLUT_OFFSET_CH1_FREQ6</name>
+                        <bits>55:48</bits>
+                    </fuse>
+                    <fuse>
+                        <name>FEC_193</name>
+                        <bits>62:56</bits>
+                    </fuse>
+                </fuse_row>
+                <fuse_row address="0x000a0618">
+                    <fuse>
+                        <name>TEMPERATURE_OFFSET_CH1_FREQ6</name>
+                        <bits>7:0</bits>
+                    </fuse>
+                    <fuse>
+                        <name>PLUT_OFFSET_CH0_FREQ7</name>
+                        <bits>15:8</bits>
+                    </fuse>
+                    <fuse>
+                        <name>GLUT_OFFSET_CH0_FREQ7</name>
+                        <bits>23:16</bits>
+                    </fuse>
+                    <fuse>
+                        <name>TEMPERATURE_OFFSET_CH0_FREQ7</name>
+                        <bits>31:24</bits>
+                    </fuse>
+                    <fuse>
+                        <name>PLUT_OFFSET_CH1_FREQ7</name>
+                        <bits>39:32</bits>
+                    </fuse>
+                    <fuse>
+                        <name>GLUT_OFFSET_CH1_FREQ7</name>
+                        <bits>47:40</bits>
+                    </fuse>
+                    <fuse>
+                        <name>TEMPERATURE_OFFSET_CH1_FREQ7</name>
+                        <bits>55:48</bits>
+                    </fuse>
+                    <fuse>
+                        <name>FEC_194</name>
+                        <bits>62:56</bits>
+                    </fuse>
+                </fuse_row>
+                <fuse_row address="0x000a0620">
+                    <fuse>
+                        <name>PLUT_OFFSET_CH0_FREQ8</name>
+                        <bits>7:0</bits>
+                    </fuse>
+                    <fuse>
+                        <name>GLUT_OFFSET_CH0_FREQ8</name>
+                        <bits>15:8</bits>
+                    </fuse>
+                    <fuse>
+                        <name>TEMPERATURE_OFFSET_CH0_FREQ8</name>
+                        <bits>23:16</bits>
+                    </fuse>
+                    <fuse>
+                        <name>PLUT_OFFSET_CH1_FREQ8</name>
+                        <bits>31:24</bits>
+                    </fuse>
+                    <fuse>
+                        <name>GLUT_OFFSET_CH1_FREQ8</name>
+                        <bits>39:32</bits>
+                    </fuse>
+                    <fuse>
+                        <name>TEMPERATURE_OFFSET_CH1_FREQ8</name>
+                        <bits>47:40</bits>
+                    </fuse>
+                    <fuse>
+                        <name>RFA_SW_OEM</name>
+                        <bits>55:48</bits>
+                    </fuse>
+                    <fuse>
+                        <name>FEC_195</name>
+                        <bits>62:56</bits>
+                    </fuse>
+                </fuse_row>
+            </fuse_region>
+        </fuse_regions>
+        <sec_dat_properties>
+            <default_sec_dat_version>2</default_sec_dat_version>
+            <supported_sec_dat_versions>
+                <value>2</value>
+            </supported_sec_dat_versions>
+        </sec_dat_properties>
+    </fuse_blowing>
+</tns:profile>

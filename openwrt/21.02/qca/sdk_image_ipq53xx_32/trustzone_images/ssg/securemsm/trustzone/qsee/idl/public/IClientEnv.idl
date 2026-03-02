@@ -1,0 +1,89 @@
+// Copyright (c) 2016-2018 Qualcomm Technologies, Inc.
+// All Rights Reserved.
+// Confidential and Proprietary - Qualcomm Technologies, Inc.
+
+include "IIO.idl"
+
+/**
+ * IClientEnv is the interface that REE clients use to obtain objects
+ * from the TEE via SMC Invoke.
+ */
+ /** @cond */
+interface IClientEnv {
+/** @endcond */
+
+  /**
+   * @addtogroup IClientEnv
+   * @{
+   */
+
+  /**
+    Gets a service object from the Client Environment.
+
+    @param[in]  uid  Identifies a class of service object.
+    @param[out] obj  Instance of the requested service.
+
+    @return
+    Object_OK on success.
+  */
+  method open (in uint32 uid,
+               out interface obj);
+
+  /**
+    Registers a REE client with the specified credentials and returns a
+    client environment object that the client can use to obtain service
+    objects. \n
+
+    @note1hang: This method is DEPRECATED.
+
+    @param[in] credentials  Buffer containing credentials identifying the
+                            client.
+    @param[out] clientEnv   Returned registered client environment object.
+
+    @return
+    Object_OK on success.
+  */
+  method registerLegacy (in buffer credentials,
+                         out interface clientEnv);
+
+  /**
+    Registers a REE client with the specified credentials and returns a
+    client environment object that the client can use to obtain service
+    objects.
+
+    @param[in] credentials  Callback object implementing the IIO
+                            interface which can be queried to return the REE
+                            credentials of the client being registered.
+    @param[out] clientEnv   Returned registered client environment object.
+
+    @return
+    Object_OK on success.
+  */
+  method register (in IIO credentials,
+                   out interface clientEnv);
+
+  /**
+    Registers a REE client with the specified credentials and restricts it
+    to the specified list of UIDs. The client can use the returned client
+    environment object to obtain service objects.
+
+    The returned client environment object can only obtain the
+    services with UIDs in the passed UID list.
+
+    @param[in] credentials  Callback object implementing the IIO
+                            interface which can be queried to return the REE
+                            credentials of the client being registered.
+    @param[in] uids         Class UIDs list the returned client environment
+                            object can obtain.
+    @param[out] clientEnv   Returned registered client environment object.
+
+    @return
+    Object_OK on success.
+  */
+  method registerWithWhitelist (in IIO credentials,
+                                in uint32[] uids,
+                                out interface clientEnv);
+
+  /* @} */ /* end_addtogroup IClientEnv */
+};
+

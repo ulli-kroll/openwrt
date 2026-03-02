@@ -1,0 +1,74 @@
+/** @file  IHwFuse.idl */
+
+// Copyright (c) 2015,2022 Qualcomm Technologies, Inc.  All Rights Reserved.
+// Qualcomm Technologies Proprietary and Confidential.
+
+/** @cond */
+interface IHwFuse {
+  /** @endcond */
+
+  /**
+   * @addtogroup IHwFuse
+   * @{
+   */
+
+  /** @cond */
+  const int32 QFRPOM_ADDR_SPACE_RAW = 0;
+  /**< raw (uncorrected) data */
+
+  const int32 QFRPOM_ADDR_SPACE_CORR = 1;
+  /**< FEC-corrected data */
+  /** @endcond */
+
+  /**
+   * Reads row data of the specified QFPROM row address.
+   *
+   * @param[in] rowAddress        Row address in the QFPROM region from which
+   *                              the row data is read.
+   *
+   * @param[in] addrType          Raw (uncorrected) or FEC-corrected data.
+   *
+   * @param[out] rowData1         Lower 32 bits of data read from QFPROM
+   *                              region.
+   *
+   * @param[out] rowData2         Upper 32 bits of the data read from QFPROM
+   *                              region.
+   *
+   * @param[out] qfpromApiStatus  Return value from QFPROM function.
+   *
+   * @return
+   * Object_OK -- Success. \n
+   * Object_ERROR -- Any error occurred.
+   */
+  method fuseRead(in uint32 rowAddress,
+                  in int32 addrType,
+                  out uint32 rowData1,
+                  out uint32 rowData2,
+                  out uint32 qfpromApiStatus);
+
+  /**
+   * Writes row data to the specified QFPROM raw row address.
+   *
+   * @param[in] rawRowAddress     Row address in QFPROM region to which the
+   *                              row data is to be written.
+   *
+   * @param[in] rowData1          Lower 32 bits of data to write into QFPROM
+   *                              region.
+   *
+   * @param[in] rowData2          Upper 32 bits of data to write into QFPROM
+   *                              region.
+   *
+   * @param[out] qfpromApiStatus  Return value from QFPROM function.
+   *
+   * @return
+   * Object_OK -- success. \n
+   * Object_ERROR -- any error occurred.
+   */
+  method fuseWrite(in uint32 rawRowAddress,
+                   in uint32 rowData1,
+                   in uint32 rowData2,
+                   in uint32 is_fec_enabled,
+                   out uint32 qfpromApiStatus);
+
+  /** @} */ /* end_addtogroup IHwFuse */
+};

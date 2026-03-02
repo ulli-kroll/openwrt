@@ -1,0 +1,76 @@
+diff --git a/hostapd/config_file.c b/hostapd/config_file.c
+index 4f3050841..6dea825e3 100644
+--- a/hostapd/config_file.c
++++ b/hostapd/config_file.c
+@@ -4778,6 +4778,8 @@ static int hostapd_config_fill(struct hostapd_config *conf,
+ 		bss->mld_ap = !!atoi(pos);
+ 	} else if (os_strcmp(buf, "mld_id") == 0) {
+ 		bss->mld_id = atoi(pos);
++	} else if (os_strcmp(buf, "mld_link_id") == 0) {
++		bss->mld_link_id = atoi(pos);
+ 	} else if (os_strcmp(buf, "mld_addr") == 0) {
+ 		if (hwaddr_aton(pos, bss->mld_addr)) {
+ 			wpa_printf(MSG_ERROR, "Line %d: Invalid mld_addr",
+diff --git a/hostapd/main.c b/hostapd/main.c
+index e831fad86..3543dcdbd 100644
+--- a/hostapd/main.c
++++ b/hostapd/main.c
+@@ -211,8 +211,12 @@ static int hostapd_driver_init(struct hostapd_iface *iface)
+ 		 * is needed for the de-initialization flow
+ 		 */
+ 		hapd->mld_first_bss = h_hapd;
+-		hapd->mld_link_id = hapd->mld_first_bss->mld_next_link_id++;
+-
++		if (hapd->conf->mld_link_id == -1) {
++			hapd->mld_link_id =
++			hapd->mld_first_bss->mld_next_link_id++;
++		} else {
++			hapd->mld_link_id = hapd->conf->mld_link_id;
++		}
+ 		goto setup_mld;
+ 	}
+ #endif /* CONFIG_IEEE80211BE */
+@@ -286,7 +290,11 @@ static int hostapd_driver_init(struct hostapd_iface *iface)
+ 	if (hapd->conf->mld_ap) {
+ 		os_memcpy(hapd->mld_addr, hapd->own_addr, ETH_ALEN);
+ 		hapd->mld_next_link_id = 0;
+-		hapd->mld_link_id = hapd->mld_next_link_id++;
++		if (hapd->conf->mld_link_id == -1) {
++			hapd->mld_link_id = hapd->mld_next_link_id++;
++		} else {
++			hapd->mld_link_id = hapd->conf->mld_link_id;
++		}
+ 		if (!b)
+ 			random_mac_addr_keep_oui(hapd->own_addr);
+ 		else
+diff --git a/src/ap/ap_config.c b/src/ap/ap_config.c
+index 2c66217e8..f497f1962 100644
+--- a/src/ap/ap_config.c
++++ b/src/ap/ap_config.c
+@@ -172,6 +172,9 @@ void hostapd_config_defaults_bss(struct hostapd_bss_config *bss)
+ 	bss->pasn_comeback_after = 10;
+ 	bss->pasn_noauth = 1;
+ #endif /* CONFIG_PASN */
++#ifdef CONFIG_IEEE80211BE
++	bss->mld_link_id = -1;
++#endif
+ }
+ 
+ 
+diff --git a/src/ap/ap_config.h b/src/ap/ap_config.h
+index 5699a6be1..36a251745 100644
+--- a/src/ap/ap_config.h
++++ b/src/ap/ap_config.h
+@@ -948,6 +948,9 @@ struct hostapd_bss_config {
+ 
+ 	/* The AP's MLD MAC address within the AP MLD */
+ 	u8 mld_addr[ETH_ALEN];
++
++	s8 mld_link_id;
++
+ #endif /* CONFIG_IEEE80211BE */
+ };
+ 
+-- 
+2.17.1
+

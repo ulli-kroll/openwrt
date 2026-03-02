@@ -1,0 +1,89 @@
+#!/bin/sh
+# (C) 2008 openwrt.org
+
+. /lib/functions.sh
+. /usr/share/libubox/jshn.sh
+
+curl_get_ip() {
+	local iface="$1"
+	local device
+	local argu
+	local curip
+
+	if [ -n "$iface" ]; then
+		json_cleanup
+		json_load "$(ifstatus $iface)"
+		json_get_var device l3_device
+		argu=${device:+--interface $device}
+	fi
+
+	# 1. http://icanhazip.com
+	# 2. http://ifconfig.me
+	# 3. http://checkip.dyndns.com
+	# 4. http://members.3322.org/dyndns/getip
+	if [ -z "$curip" ]; then
+		curip=$(curl $argu -s http://icanhazip.com/ | grep -m 1 -o "[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}")
+	fi
+
+	if [ -z "$curip" ]; then
+		curip=$(curl $argu -s http://ifconfig.me/ | grep -m 1 -o "[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}")
+	fi
+
+	if [ -z "$curip" ]; then
+		curip=$(curl $argu -s http://checkip.dyndns.com/ | grep -m 1 -o "[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}")
+	fi
+
+	if [ -z "$curip" ]; then
+		curip=$(curl $argu -s http://members.3322.org/dyndns/getip | grep -m 1 -o "[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}")
+	fi
+
+	if [ -n "$curip" ]; then
+		if [ -n "$iface" ]; then
+			uci_revert_state network $iface inetip
+			uci_set_state network $iface inetip "$curip"
+		else
+			uci_revert_state network lan inetip
+			uci_set_state network lan inetip "$curip"
+		fi
+	fi
+
+	echo -n "$curip"
+}
+
+wget_get_ip() {
+	local curip
+
+	# 1. http://icanhazip.com
+	# 2. http://ifconfig.co/ip
+	# 3. http://checkip.dyndns.com
+	# 4. http://members.3322.org/dyndns/getip
+	if [ -z "$curip" ]; then
+		curip=$(wget -O - -q http://icanhazip.com/ | grep -m 1 -o "[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}")
+	fi
+
+	if [ -z "$curip" ]; then
+		curip=$(wget -O - -q http://ifconfig.co/ip | grep -m 1 -o "[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}")
+	fi
+
+	if [ -z "$curip" ]; then
+		curip=$(wget -O - -q http://checkip.dyndns.com/ | grep -m 1 -o "[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}")
+	fi
+
+	if [ -z "$curip" ]; then
+		curip=$(wget -O - -q http://members.3322.org/dyndns/getip | grep -m 1 -o "[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}")
+	fi
+
+	if [ -n "$curip" ]; then
+		uci_revert_state network lan inetip
+		uci_set_state network lan inetip "$curip"
+	fi
+
+	echo -n "$curip"
+}
+
+if [ -x "/usr/bin/curl" ]; then
+	[ -n "$1" ] && curl_get_ip "$1"
+	curl_get_ip
+elif [ -x "/bin/wget" ]; then
+	wget_get_ip
+fi

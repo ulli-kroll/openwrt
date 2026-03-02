@@ -1,0 +1,36 @@
+diff --git a/src/drivers/driver_nl80211.c b/src/drivers/driver_nl80211.c
+index 30477d6..20825fc 100644
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -9399,7 +9399,12 @@ static int driver_nl80211_scan2(void *priv,
+ 				struct wpa_driver_scan_params *params)
+ {
+ 	struct i802_bss *bss = priv;
+-#ifdef CONFIG_DRIVER_NL80211_QCA
++	/* Renamed this macro to CONFIG_DRIVER_NL80211_VENDOR_QCA since
++	 * normal scan path needs to be used rather than using the
++	 * vendor scan path. Many scan fixes are missing in vendor scan
++	 * path and that path should not be used.
++	 */
++#ifdef CONFIG_DRIVER_NL80211_VENDOR_QCA
+ 	struct wpa_driver_nl80211_data *drv = bss->drv;
+ 
+ 	/*
+diff --git a/src/drivers/driver_nl80211_scan.c b/src/drivers/driver_nl80211_scan.c
+index 1316084..9b2fc3c 100644
+--- a/src/drivers/driver_nl80211_scan.c
++++ b/src/drivers/driver_nl80211_scan.c
+@@ -1037,7 +1037,12 @@ void nl80211_dump_scan(struct wpa_driver_nl80211_data *drv)
+ int wpa_driver_nl80211_abort_scan(void *priv, u64 scan_cookie)
+ {
+ 	struct i802_bss *bss = priv;
+-#ifdef CONFIG_DRIVER_NL80211_QCA
++	/* Renamed this macro to CONFIG_DRIVER_NL80211_VENDOR_QCA since
++	 * normal scan path needs to be used rather than using the
++	 * vendor scan path. Many scan fixes are missing in vendor scan
++	 * path and that path should not be used.
++	 */
++#ifdef CONFIG_DRIVER_NL80211_VENDOR_QCA
+ 	struct wpa_driver_nl80211_data *drv = bss->drv;
+ 
+ 	/*

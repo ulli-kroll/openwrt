@@ -1,0 +1,86 @@
+#!/bin/sh
+#
+
+. /lib/mediatek.sh
+. /lib/functions/system.sh
+
+if [ "$(uci -q get system.board.type)" != "router" ]; then
+	if [ x"$(uci -q get network.wan.type)" != x"bridge" ]; then
+		wan_mac=$(mtd_get_mac_binary bdinfo 0xde00)
+		uci batch <<-EOF
+			set network.wan.interface=''
+			set network.wan=interface
+			set network.wan.type='bridge'
+			set network.wan.proto='dhcp'
+			set network.wan.disabled=''
+			set network.wan.auto=''
+			set network.wan.macaddr="$wan_mac"
+			commit network
+		EOF
+	fi
+	lan_if=$(uci -q get network.lan.def_ifname)
+	wan_if=$(uci -q get network.wan.def_ifname)
+	if [ "$(uci -q get system.board.type)" == "ap" ]; then
+		uci batch <<-EOF
+			set network.lan.ifname="$lan_if"
+			set network.wan.ifname="$wan_if"
+			commit network
+		EOF
+	else
+		uci batch <<-EOF
+			set network.lan.ifname="$lan_if $wan_if"
+			set network.wan.ifname=""
+			commit network
+		EOF
+	fi
+fi
+
+macaddr_add() {
+	local mac=$1
+	local val=$2
+	local oui=${mac%:*:*:*}
+	local nic=${mac#*:*:*:}
+
+	nic=$(printf "%06x" $((0x${nic//:/} + val & 0xffffff)) | /bin/sed 's/^\(.\{2\}\)\(.\{2\}\)\(.\{2\}\)/\1:\2:\3/')
+	echo $oui:$nic
+}
+
+lan_mac=$(macaddr_canonicalize $(bdinfo mac))
+wan_mac=$(macaddr_add $lan_mac 1)
+uci batch <<-EOF
+	set network.wan.ori_macaddr="$wan_mac"
+	commmit network
+EOF
+
+wan_clone_mac=$(uci -q get network.wan.macaddr)
+[ -z "$wan_clone_mac" ] && {
+	wan_if=$(uci -q get network.wan.def_ifname)
+	device_name="wan_${wan_if}_dev"
+	uci batch <<-EOF
+		set network.${device_name}.macaddr="$wan_mac"
+		commmit network
+	EOF
+}
+
+[ -n "$(uci -q get network.wan2)" ] || {
+	wan_if=$(uci -q get network.wan.def_ifname)
+	uci batch <<-EOF
+		set network.wan2=interface
+		set network.wan2.ifname="$wan_if"
+		set network.wan2.proto='none'
+		set network.wan2.metric='90'
+		set network.wan2.disabled='1'
+		commit network
+	EOF
+}
+
+uci del_list firewall.@zone[1].network='wan2'
+uci add_list firewall.@zone[1].network='wan2'
+commit firewall
+
+uci batch <<-EOF
+	delete pingcheck.wan2
+	commit pingcheck
+EOF
+
+exit 0

@@ -1,0 +1,43 @@
+// Copyright (c) 2017 Qualcomm Technologies, Inc.  All Rights Reserved.
+// Qualcomm Technologies Proprietary and Confidential.
+
+/**
+  IOPSSource Interface provides APIs to enforce output protection for
+  DRM protected content.
+*/
+ /** @cond */
+interface IOPSSource {
+/** @endcond */
+
+  /**
+   * @addtogroup IOPSSource
+   * @{
+   */
+
+  /** @cond */
+  /** error codes */
+
+  /** SRM Version check failure */
+  error ERROR_SRM_VERSION_CHECK_FAILED;
+
+  /** Output/Sink does not meet the required OPL */
+  error ERROR_INSUFFICIENT_HDCP;
+  /** @endcond */
+
+  /**
+    - Sets content's encryption level, as required by the license.
+    - DRM TAs invoke this function to enforce required HDCP level.
+
+    @param[in]  opl         Output Protection Level to be enforced by Source or DRM.
+    @param[in]  srmVersion  HDCP System Renewability Message version.
+    @param[out] cpl         Content protection level = max( all source OPLs ).
+    @param[out] dpl         Display protection level = min( all sink OPLs ).
+    @param[out] epl         Final protection level enforced by OPS.
+
+    @return
+    Object_OK on success.
+  */
+  method applyOPL(in uint8 opl, in uint16 srmVersion,
+                  out uint8 cpl, out uint8 dpl, out uint8 epl);
+  /* @} */ /* end_addtogroup IOPSSource */
+};

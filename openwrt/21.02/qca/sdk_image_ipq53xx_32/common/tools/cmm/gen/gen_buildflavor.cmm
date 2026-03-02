@@ -1,0 +1,9 @@
+ENTRY &ARG0
+
+GLOBAL &APSS_ELF
+
+IF ("&ARG0"=="None")
+(
+	&PRODUCT_FLAVOR="None"
+)
+ENDDO

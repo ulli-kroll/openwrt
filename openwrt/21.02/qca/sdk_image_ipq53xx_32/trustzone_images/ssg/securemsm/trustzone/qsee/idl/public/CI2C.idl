@@ -1,0 +1,15 @@
+// Copyright (c) 2015 Qualcomm Technologies, Inc.  All Rights Reserved.
+// Qualcomm Technologies Proprietary and Confidential.
+
+/**
+* @addtogroup CI2C
+* @{
+  Class CI2C implements \link II2C \endlink interface.
+	
+  The class ID `I2C` is not included in the default privilege set. It needs to be added to the 
+  privileges section in the metadata to allow the TA to use the CI2C class.
+*/
+
+const uint32 CI2C_UID = 43;
+
+/** @} */

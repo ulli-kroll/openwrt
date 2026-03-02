@@ -1,0 +1,50 @@
+#===============================================================================
+#
+# SPI Settings API Registration
+#
+# GENERAL DESCRIPTION
+#    Buses Settings API Registration
+#
+# Copyright (c) 2017-2018 Qualcomm Technologies, Inc.
+#            All Rights Reserved.
+# Qualcomm Technologies, Inc. Confidential and Proprietary.
+#
+#
+#-------------------------------------------------------------------------------
+#                      EDIT HISTORY FOR FILE
+#
+#  This section contains comments describing changes made to the module.
+#  Notice that changes are listed in reverse chronological order.
+#
+# when       who     what, where, why
+# --------   ---     ---------------------------------------------------------
+# 12/13/18   dpk     Added support for Bruin.
+# 02/02/18   vg      Buses migration from ssg
+# 09/12/17   vmk     Initial version
+#
+#===============================================================================
+
+Import('env')
+
+#-------------------------------------------------------------------------------
+# Publish Restricted APIs
+#-------------------------------------------------------------------------------
+
+# Restricted APIs these are accessible by anyone with in CoreBSP
+if env['TARGET_FAMILY'] in ['hoya', 'bruin']:
+   if env['CHIPSET'] in ['sdx24']:
+      Return();
+   else:
+      env.PublishRestrictedApi('SPI_SETTINGS', [
+         "${INC_ROOT}/core/settings/buses/spi/qupv3/interface",
+      ])
+else:
+   # FIXME_sdm000 - no stubs defined; using sdm845
+   env.PublishRestrictedApi('SPI_SETTINGS', [
+      "${INC_ROOT}/core/settings/buses/spi/qupv3/interface",
+   ])
+
+#--------------------------------------------------------------------------- #
+# Search for additional APIs                                                 #
+#--------------------------------------------------------------------------- #
+env.LoadAPIUnits()

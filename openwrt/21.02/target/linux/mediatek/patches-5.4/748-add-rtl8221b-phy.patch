@@ -1,0 +1,22 @@
+--- linux-5.4.119.orig/drivers/net/phy/Kconfig
++++ linux-5.4.119/drivers/net/phy/Kconfig
+@@ -483,6 +483,11 @@ config GPY211_PHY
+ 	---help---
+ 	  Supports the Intel GPY211 PHY with rate adaption.
+ 
++config RTL8221B_PHY
++	tristate "RTL8221B_PHY"
++	---help---
++	  Supports the Realtek RTL8221B PHY.
++
+ config ICPLUS_PHY
+ 	tristate "ICPlus PHYs"
+ 	---help---
+--- linux-5.4.119.orig/drivers/net/phy/Makefile
++++ linux-5.4.119/drivers/net/phy/Makefile
+@@ -116,4 +116,4 @@ obj-$(CONFIG_VITESSE_PHY)	+= vitesse.o
+ obj-$(CONFIG_XILINX_GMII2RGMII) += xilinx_gmii2rgmii.o
+ obj-$(CONFIG_MT753X_GSW)        += mtk/mt753x/
+ obj-$(CONFIG_RTL8367S_GSW)	+= rtk/
+-
++obj-$(CONFIG_RTL8221B_PHY)	+= rtl8221b/

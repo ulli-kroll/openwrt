@@ -1,0 +1,11 @@
+--- a/service.c
++++ b/service.c
+@@ -298,7 +298,7 @@
+ 	get_hostname();
+ 
+ 	vlist_update(&services);
+-	service_load("/etc/umdns/*");
++	service_load("/var/etc/umdns/*");
+ 
+ 	blob_for_each_attr(cur, msg, rem) {
+ 		struct blob_attr *cur2;

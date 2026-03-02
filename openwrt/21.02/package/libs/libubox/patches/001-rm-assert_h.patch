@@ -1,0 +1,23 @@
+--- a/avl.c
++++ b/avl.c 
+@@ -45,7 +45,7 @@
+ #include <string.h>
+ 
+ #include "avl.h"
+-#include "assert.h"
++#include <assert.h>
+ #include "list.h"
+ 
+ /**
+
+--- a/base64.c 
++++ b/base64.c 
+@@ -66,7 +66,7 @@
+ #include <stdlib.h>
+ #include <string.h>
+ 
+-#include "assert.h"
++#include <assert.h>
+ #include "utils.h"
+ 
+ static const char Base64[] =

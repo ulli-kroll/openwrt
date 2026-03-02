@@ -1,0 +1,15 @@
+// Copyright (c) 2015 Qualcomm Technologies, Inc.  All Rights Reserved.
+// Qualcomm Technologies Proprietary and Confidential.
+
+/**
+* @addtogroup CDeviceID
+* @{
+  Class CDeviceID implements \link IDeviceID \endlink interface.
+	
+  The class ID `DeviceID` is included in the default privilege set, therefore the 
+  CDeviceID class is available to every TA.
+*/
+
+const uint32 CDeviceID_UID = 12;
+
+/** @} */

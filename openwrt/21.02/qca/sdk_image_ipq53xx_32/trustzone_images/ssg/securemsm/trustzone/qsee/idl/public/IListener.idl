@@ -1,0 +1,36 @@
+// Copyright (c) 2015, 2019 Qualcomm Technologies, Inc.  All Rights Reserved.
+// Qualcomm Technologies Proprietary and Confidential.
+
+/** @cond */
+interface IListener {
+/** @endcond */
+
+  /**
+   * @addtogroup IListener
+   * @{
+   */
+
+  /**
+    Sends request to listener service.
+
+    @param[in]  listenerId  Requested listener service ID.
+    @param[in]  request     Buffer containing request to be sent.
+    @param[out] response    Buffer to contain received response.
+
+    @return Object_OK on success.
+  */
+  method requestService(in int32 listenerId, in buffer request, out buffer response);
+
+  /**
+    Sends request to listener get size.
+
+    @param[in]  listenerId  Requested listener service ID.
+    @param[out] size        Determine the size of the request/response buffer for a given listener.
+
+    @return
+    Object_OK -- Success. \n
+    Object_ERROR -- Failure.
+  */
+  method getSize(in int32 listenerId, out uint32 size);
+  /* @} */ /* end_addtogroup IListener */
+};

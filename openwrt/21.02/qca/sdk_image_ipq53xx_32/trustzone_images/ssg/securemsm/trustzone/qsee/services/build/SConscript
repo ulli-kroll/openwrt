@@ -1,0 +1,67 @@
+#===============================================================================
+#
+# Trustzone Libs
+#
+# GENERAL DESCRIPTION
+#    build script
+#
+# Copyright (c) 2011, 2017,2019,2022 by Qualcomm Technologies, Inc.
+# All Rights Reserved.
+# QUALCOMM Proprietary/GTDR
+#
+#-------------------------------------------------------------------------------
+#
+#  $Header:$
+#  $DateTime:$
+#  $Author:$
+#  $Change:$
+#                      EDIT HISTORY FOR FILE
+#
+#  This section contains comments describing changes made to the module.
+#  Notice that changes are listed in reverse chronological order.
+#
+# when       who     what, where, why
+# --------   ---     ---------------------------------------------------------
+# 09/08/11           Initial Version
+#===============================================================================
+import os
+Import('env')
+
+env.RequirePublicApi(['SECUREMSM'], area='ssg')
+env.RequireRestrictedApi('SSGPLATFORM_DRIVERS')
+
+#-------------------------------------------------------------------------------
+# Publish Private Include Paths from secimgauth
+#-------------------------------------------------------------------------------
+INC_PATH = [
+    "${INC_ROOT}/ssg/tme/tmecom/api",
+    "${INC_ROOT}/ssg/tme/tmecom/inc",
+    "${INC_ROOT}/ssg/tme/tmekey_mgnt/inc",
+]
+
+env.Append(CPPPATH = INC_PATH)
+
+if 'tzbsp_with_test_svc' in env and env['tzbsp_with_test_svc'] == 1:
+    env.RequireRestrictedApi('TRUSTZONE_UNIT_TEST')
+
+# Add target include directory
+
+target_path = env.subst("${INC_ROOT}/ssg/securemsm/trustzone/qsee/services/idl/target/")
+target_dir = env['CHIPSET']
+
+if not os.path.isdir(os.path.join(target_path, target_dir)):
+    target_dir = "stub"
+
+if 'OFFTARGET' in env['CPPDEFINES']:
+    target_dir = "stub"
+
+env.Append(CPPPATH = [ os.path.join(target_path, target_dir) ])
+
+#-------------------------------------------------------------------------------
+# Load sub scripts
+#-------------------------------------------------------------------------------
+env.LoadSoftwareUnits()
+
+CLEAN_SOURCES = [	'${BUILD_ROOT}/ssg/securemsm/trustzone/qsee/services/securechannel/tzbsp_securechannel_def.h', ]
+env.Append(CFLAGS = " -Werror ")
+env.CleanPack('TZOS_IMAGE', CLEAN_SOURCES)

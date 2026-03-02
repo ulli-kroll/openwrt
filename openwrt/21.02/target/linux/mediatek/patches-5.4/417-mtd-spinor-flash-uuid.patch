@@ -1,0 +1,141 @@
+---  a/drivers/mtd/spi-nor/spi-nor.c
++++  b/drivers/mtd/spi-nor/spi-nor.c
+@@ -5093,6 +5093,91 @@ int spi_nor_scan(struct spi_nor *nor, co
+ }
+ EXPORT_SYMBOL_GPL(spi_nor_scan);
+ 
++extern int flash_uuid_init(u8 *uuid, int len);
++
++static int spi_nor_uuid_detect(struct spi_device *spi)
++{
++	u8 code;
++	u8 buffer[129];
++	u8 tmp_code[5];
++	u8	id[5];
++	int ret;
++
++	code = 0x9f; /* Read JEDEC ID */
++	ret = spi_write_then_read(spi, &code, 1, id, sizeof(id)); 
++	if (ret < 0)
++	{
++		dev_err(&spi->dev, "error %d reading %x\n", ret, code);
++		return -1;
++	}
++
++	if ((id[0] == 0xef) || ((id[0] == 0x20) && (id[1] == 0x40))) {
++		u8 unique_id[8];
++
++		memset(tmp_code, 0, sizeof(tmp_code));
++		tmp_code[0] = 0x4b;
++		ret = spi_write_then_read(spi, &tmp_code, 5, unique_id, sizeof(unique_id));
++		if (ret < 0)
++		{
++			dev_err(&spi->dev, "error %d reading UNIQUE ID\n", ret);
++			return -1;
++		}
++
++		memset(buffer, 0, sizeof(buffer));
++		snprintf(buffer, sizeof(buffer), "%02X%02X%02X%02X%02X-%02X%02X%02X%02X%02X%02X%02X%02X",
++												id[0], id[1], id[2], id[3], id[4],
++												unique_id[7], unique_id[6], unique_id[5], unique_id[4],
++												unique_id[3], unique_id[2], unique_id[1], unique_id[0]);
++		flash_uuid_init(buffer, sizeof(buffer));
++	}
++	else if ((id[0] == 0x1c) && (id[1] == 0x70) && (id[2] == 0x19)) { /* EN25QH256A */
++		u8 uuid[12];
++
++		memset(tmp_code, 0, sizeof(tmp_code));
++		tmp_code[0]= 0x5A;
++		tmp_code[1] = 0x00;
++		tmp_code[2] = 0x01;
++		tmp_code[3] = 0xE0;
++		ret = spi_write_then_read(spi, &tmp_code, 5, uuid, sizeof(uuid));
++		if (ret < 0)
++		{
++			dev_err(&spi->dev, "error %d reading UNIQUE ID\n", ret);
++			return -1;
++		}
++
++		memset(buffer, 0, sizeof(buffer));
++		snprintf(buffer, sizeof(buffer), "%02X%02X%02X%02X%02X-%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X",
++												id[0], id[1], id[2], id[3], id[4], uuid[11], uuid[10],
++												uuid[9], uuid[8], uuid[7], uuid[6], uuid[5], uuid[4],
++												uuid[3], uuid[2], uuid[1], uuid[0]);
++		flash_uuid_init(buffer, sizeof(buffer));
++	}
++	else if ((id[0] == 0x1c) || ((id[0] == 0x20) && (id[1] == 0x70))) {
++		u8 uuid[12];
++
++		memset(tmp_code, 0, sizeof(tmp_code));
++		tmp_code[0]= 0x5A;
++		tmp_code[1] = 0x00;
++		tmp_code[2] = 0x00;
++		tmp_code[3] = 0x80;
++		ret = spi_write_then_read(spi, &tmp_code, 5, uuid, sizeof(uuid));
++		if (ret < 0)
++		{
++			dev_err(&spi->dev, "error %d reading UNIQUE ID\n", ret);
++			return -1;
++		}
++
++		memset(buffer, 0, sizeof(buffer));
++        snprintf(buffer, sizeof(buffer), "%02X%02X%02X%02X%02X-%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X",
++                                                id[0], id[1], id[2], id[3], id[4], uuid[11], uuid[10],
++                                                uuid[9], uuid[8], uuid[7], uuid[6], uuid[5], uuid[4],
++                                                uuid[3], uuid[2], uuid[1], uuid[0]);
++		flash_uuid_init(buffer, sizeof(buffer));
++	}
++
++       return 0;
++}
++
+ static int spi_nor_probe(struct spi_mem *spimem)
+ {
+ 	struct spi_device *spi = spimem->spi;
+@@ -5154,6 +5239,8 @@ static int spi_nor_probe(struct spi_mem
+ 			return -ENOMEM;
+ 	}
+ 
++	spi_nor_uuid_detect(spi);
++
+ 	return mtd_device_register(&nor->mtd, data ? data->parts : NULL,
+ 				   data ? data->nr_parts : 0);
+ }
+
+---  a/kernel/sysctl.c
++++  b/kernel/sysctl.c
+@@ -250,6 +250,21 @@ static int sysrq_sysctl_handler(struct c
+ 
+ #endif
+ 
++u8 flash_uuid[129];
++
++int flash_uuid_init(u8 *uuid, int len)
++{
++	int max_len = sizeof(flash_uuid);
++
++	if (len > max_len)
++		len = max_len;
++
++	memset(flash_uuid, 0, sizeof(flash_uuid));
++	memcpy(flash_uuid, uuid, len);
++
++	return 0;
++}
++
+ #ifdef CONFIG_BPF_SYSCALL
+ 
+ void __weak unpriv_ebpf_notify(int new_state)
+@@ -2006,6 +2021,13 @@ static struct ctl_table debug_table[] =
+ };
+ 
+ static struct ctl_table dev_table[] = {
++	{
++		.procname	= "flash_uuid",
++		.data		= flash_uuid,
++		.maxlen 	= sizeof(flash_uuid),
++		.mode		= 0444,
++		.proc_handler	= proc_dostring,
++	},
+ 	{ }
+ };

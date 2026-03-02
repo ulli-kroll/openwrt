@@ -1,0 +1,50 @@
+diff --git a/wpa_supplicant/wpa_supplicant.c b/wpa_supplicant/wpa_supplicant.c
+index fec1303..c9053b5 100644
+--- a/wpa_supplicant/wpa_supplicant.c
++++ b/wpa_supplicant/wpa_supplicant.c
+@@ -8119,7 +8119,8 @@ void add_freq(int *freqs, int *num_freqs, int freq)
+ 	(*num_freqs)++;
+ }
+ 
+-
++#if 0
++/* Disabling blacklisting of BSSID after first disconnect */
+ static int * get_bss_freqs_in_ess(struct wpa_supplicant *wpa_s)
+ {
+ 	struct wpa_bss *bss, *cbss;
+@@ -8152,13 +8153,16 @@ static int * get_bss_freqs_in_ess(struct wpa_supplicant *wpa_s)
+ 
+ 	return freqs;
+ }
+-
++#endif
+ 
+ void wpas_connection_failed(struct wpa_supplicant *wpa_s, const u8 *bssid)
+ {
+ 	int timeout;
++#if 0
++	/* Disabling blacklisting of BSSID after first disconnect */
+ 	int count;
+ 	int *freqs = NULL;
++#endif
+ 
+ 	wpas_connect_work_done(wpa_s);
+ 
+@@ -8184,6 +8188,9 @@ void wpas_connection_failed(struct wpa_supplicant *wpa_s, const u8 *bssid)
+ 		return;
+ 	}
+ 
++#if 0
++	/* Disabling blacklisting of BSSID after first disconnect */
++
+ 	/*
+ 	 * Add the failed BSSID into the ignore list and speed up next scan
+ 	 * attempt if there could be other APs that could accept association.
+@@ -8210,6 +8217,7 @@ void wpas_connection_failed(struct wpa_supplicant *wpa_s, const u8 *bssid)
+ 			wpa_s->next_scan_freqs = freqs;
+ 		}
+ 	}
++#endif
+ 
+ 	wpa_s->consecutive_conn_failures++;
+ 

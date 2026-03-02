@@ -1,0 +1,1052 @@
+--- a/include/linux/if_bridge.h
++++ b/include/linux/if_bridge.h
+@@ -50,7 +50,21 @@ struct br_ip_list {
+ 
+ #define BR_DEFAULT_AGEING_TIME	(300 * HZ)
+ 
++struct net_bridge_port;
++
+ extern void brioctl_set(int (*ioctl_hook)(struct net *, unsigned int, void __user *));
++extern struct net_device *br_port_dev_get(struct net_device *dev,
++					  unsigned char *addr,
++					  struct sk_buff *skb,
++					  unsigned int cookie);
++extern void br_refresh_fdb_entry(struct net_device *dev, const char *addr);
++extern void br_dev_update_stats(struct net_device *dev,
++				struct rtnl_link_stats64 *nlstats);
++extern struct net_bridge_fdb_entry *br_fdb_has_entry(struct net_device *dev,
++						     const char *addr,
++						     __u16 vid);
++extern void br_fdb_update_register_notify(struct notifier_block *nb);
++extern void br_fdb_update_unregister_notify(struct notifier_block *nb);
+ 
+ #if IS_ENABLED(CONFIG_BRIDGE) && IS_ENABLED(CONFIG_BRIDGE_IGMP_SNOOPING)
+ int br_multicast_list_adjacent(struct net_device *dev,
+@@ -85,6 +99,39 @@ static inline bool br_multicast_router(c
+ }
+ #endif
+ 
++typedef struct net_bridge_port *br_port_dev_get_hook_t(struct net_device *dev,
++						       struct sk_buff *skb,
++						       unsigned char *addr,
++						       unsigned int cookie);
++extern br_port_dev_get_hook_t __rcu *br_port_dev_get_hook;
++
++typedef void (br_notify_hook_t)(int group, int event, const void *ptr);
++extern br_notify_hook_t __rcu *br_notify_hook;
++typedef int (br_multicast_handle_hook_t)(const struct net_bridge_port *src,
++		struct sk_buff *skb);
++extern br_multicast_handle_hook_t __rcu *br_multicast_handle_hook;
++
++#define BR_FDB_EVENT_ADD     0x01
++#define BR_FDB_EVENT_DEL     0x02
++struct br_fdb_event {
++	unsigned char addr[6];
++	unsigned char is_local;
++	struct net_device *dev;
++	struct net_bridge *br;
++	struct net_device *orig_dev;
++};
++extern void br_fdb_register_notify(struct notifier_block *nb);
++extern void br_fdb_unregister_notify(struct notifier_block *nb);
++extern struct net_device *br_fdb_bridge_dev_get_and_hold(struct net_bridge *br);
++
++typedef struct net_bridge_port *br_get_dst_hook_t(
++		const struct net_bridge_port *src,
++		struct sk_buff **skb);
++extern br_get_dst_hook_t __rcu *br_get_dst_hook;
++
++typedef void (br_notify_hook_t)(int group, int event, const void *ptr);
++extern br_notify_hook_t __rcu *br_notify_hook;
++
+ #if IS_ENABLED(CONFIG_BRIDGE) && IS_ENABLED(CONFIG_BRIDGE_VLAN_FILTERING)
+ bool br_vlan_enabled(const struct net_device *dev);
+ int br_vlan_get_pvid(const struct net_device *dev, u16 *p_pvid);
+--- a/include/linux/netdevice.h
++++ b/include/linux/netdevice.h
+@@ -2556,6 +2556,8 @@ enum netdev_cmd {
+ 	NETDEV_CVLAN_FILTER_DROP_INFO,
+ 	NETDEV_SVLAN_FILTER_PUSH_INFO,
+ 	NETDEV_SVLAN_FILTER_DROP_INFO,
++	NETDEV_BR_JOIN,
++	NETDEV_BR_LEAVE,
+ };
+ const char *netdev_cmd_to_name(enum netdev_cmd cmd);
+ 
+--- a/net/bridge/br.c
++++ b/net/bridge/br.c
+@@ -394,6 +394,10 @@ static void __exit br_deinit(void)
+ 	br_fdb_fini();
+ }
+ 
++/* Hook for bridge event notifications */
++br_notify_hook_t __rcu *br_notify_hook __read_mostly;
++EXPORT_SYMBOL_GPL(br_notify_hook);
++
+ module_init(br_init)
+ module_exit(br_deinit)
+ MODULE_LICENSE("GPL");
+--- a/net/bridge/br_device.c
++++ b/net/bridge/br_device.c
+@@ -38,6 +38,9 @@ netdev_tx_t br_dev_xmit(struct sk_buff *
+ 	const struct nf_br_ops *nf_ops;
+ 	const unsigned char *dest;
+ 	u16 vid = 0;
++	struct net_bridge_port *pdst;
++	br_get_dst_hook_t *get_dst_hook;
++	br_multicast_handle_hook_t *multicast_handle_hook;
+ 
+ 	memset(skb->cb, 0, sizeof(struct br_input_skb_cb));
+ 
+@@ -63,6 +66,8 @@ netdev_tx_t br_dev_xmit(struct sk_buff *
+ 	if (!br_allowed_ingress(br, br_vlan_group_rcu(br), skb, &vid))
+ 		goto out;
+ 
++	get_dst_hook = rcu_dereference(br_get_dst_hook);
++
+ 	if (IS_ENABLED(CONFIG_INET) &&
+ 	    (eth_hdr(skb)->h_proto == htons(ETH_P_ARP) ||
+ 	     eth_hdr(skb)->h_proto == htons(ETH_P_RARP)) &&
+@@ -85,6 +90,10 @@ netdev_tx_t br_dev_xmit(struct sk_buff *
+ 	if (is_broadcast_ether_addr(dest)) {
+ 		br_flood(br, skb, BR_PKT_BROADCAST, false, true);
+ 	} else if (is_multicast_ether_addr(dest)) {
++		multicast_handle_hook = rcu_dereference(br_multicast_handle_hook);
++		if (!__br_get(multicast_handle_hook, true, NULL, skb))
++			goto out;
++
+ 		if (unlikely(netpoll_tx_running(dev))) {
+ 			br_flood(br, skb, BR_PKT_MULTICAST, false, true);
+ 			goto out;
+@@ -100,11 +109,21 @@ netdev_tx_t br_dev_xmit(struct sk_buff *
+ 			br_multicast_flood(mdst, skb, false, true);
+ 		else
+ 			br_flood(br, skb, BR_PKT_MULTICAST, false, true);
+-	} else if ((dst = br_fdb_find_rcu(br, dest, vid)) != NULL) {
+-		br_forward(dst->dst, skb, false, true);
+ 	} else {
+-		br_flood(br, skb, BR_PKT_UNICAST, false, true);
++		pdst = __br_get(get_dst_hook, NULL, NULL, &skb);
++		if (pdst) {
++			if (!skb)
++				goto out;
++			br_forward(pdst, skb, false, true);
++		} else {
++			dst = br_fdb_find_rcu(br, dest, vid);
++			if (dst)
++				br_forward(dst->dst, skb, false, true);
++			else
++				br_flood(br, skb, BR_PKT_UNICAST, false, true);
++		}
+ 	}
++
+ out:
+ 	rcu_read_unlock();
+ 	return NETDEV_TX_OK;
+--- a/net/bridge/br_fdb.c
++++ b/net/bridge/br_fdb.c
+@@ -37,6 +37,20 @@ static int fdb_insert(struct net_bridge
+ static void fdb_notify(struct net_bridge *br,
+ 		       const struct net_bridge_fdb_entry *, int, bool);
+ 
++ATOMIC_NOTIFIER_HEAD(br_fdb_notifier_list);
++
++void br_fdb_register_notify(struct notifier_block *nb)
++{
++	atomic_notifier_chain_register(&br_fdb_notifier_list, nb);
++}
++EXPORT_SYMBOL_GPL(br_fdb_register_notify);
++
++void br_fdb_unregister_notify(struct notifier_block *nb)
++{
++	atomic_notifier_chain_unregister(&br_fdb_notifier_list, nb);
++}
++EXPORT_SYMBOL_GPL(br_fdb_unregister_notify);
++
+ int __init br_fdb_init(void)
+ {
+ 	br_fdb_cache = kmem_cache_create("bridge_fdb_cache",
+@@ -146,6 +160,7 @@ struct net_bridge_fdb_entry *br_fdb_find
+ {
+ 	return fdb_find_rcu(&br->fdb_hash_tbl, addr, vid);
+ }
++EXPORT_SYMBOL_GPL(br_fdb_find_rcu);
+ 
+ /* When a static FDB entry is added, the mac address from the entry is
+  * added to the bridge private HW address list and all required ports
+@@ -329,6 +344,20 @@ out:
+ 	spin_unlock_bh(&br->hash_lock);
+ }
+ 
++ATOMIC_NOTIFIER_HEAD(br_fdb_update_notifier_list);
++
++void br_fdb_update_register_notify(struct notifier_block *nb)
++{
++	atomic_notifier_chain_register(&br_fdb_update_notifier_list, nb);
++}
++EXPORT_SYMBOL_GPL(br_fdb_update_register_notify);
++
++void br_fdb_update_unregister_notify(struct notifier_block *nb)
++{
++	atomic_notifier_chain_unregister(&br_fdb_update_notifier_list, nb);
++}
++EXPORT_SYMBOL_GPL(br_fdb_update_unregister_notify);
++
+ void br_fdb_cleanup(struct work_struct *work)
+ {
+ 	struct net_bridge *br = container_of(work, struct net_bridge,
+@@ -337,6 +366,7 @@ void br_fdb_cleanup(struct work_struct *
+ 	unsigned long delay = hold_time(br);
+ 	unsigned long work_delay = delay;
+ 	unsigned long now = jiffies;
++	struct br_fdb_event fdb_event;
+ 
+ 	/* this part is tricky, in order to avoid blocking learning and
+ 	 * consequently forwarding, we rely on rcu to delete objects with
+@@ -354,7 +384,14 @@ void br_fdb_cleanup(struct work_struct *
+ 		} else {
+ 			spin_lock_bh(&br->hash_lock);
+ 			if (!hlist_unhashed(&f->fdb_node))
++			{
++				memset(&fdb_event, 0, sizeof(fdb_event));
++				ether_addr_copy(fdb_event.addr, f->key.addr.addr);
+ 				fdb_delete(br, f, true);
++				atomic_notifier_call_chain(
++					&br_fdb_update_notifier_list, 0,
++					(void *)&fdb_event);
++			}
+ 			spin_unlock_bh(&br->hash_lock);
+ 		}
+ 	}
+@@ -554,11 +591,20 @@ int br_fdb_insert(struct net_bridge *br,
+ 	return ret;
+ }
+ 
++/* Get the bridge device */
++struct net_device *br_fdb_bridge_dev_get_and_hold(struct net_bridge *br)
++{
++	dev_hold(br->dev);
++	return br->dev;
++}
++EXPORT_SYMBOL_GPL(br_fdb_bridge_dev_get_and_hold);
++
+ void br_fdb_update(struct net_bridge *br, struct net_bridge_port *source,
+ 		   const unsigned char *addr, u16 vid, bool added_by_user)
+ {
+ 	struct net_bridge_fdb_entry *fdb;
+ 	bool fdb_modified = false;
++	struct br_fdb_event fdb_event;
+ 
+ 	/* some users want to always flood. */
+ 	if (hold_time(br) == 0)
+@@ -582,8 +628,17 @@ void br_fdb_update(struct net_bridge *br
+ 			/* fastpath: update of existing entry */
+ 			if (unlikely(source != fdb->dst && !fdb->is_sticky)) {
+ 				br_switchdev_fdb_notify(br, fdb, RTM_DELNEIGH);
++				ether_addr_copy(fdb_event.addr, addr);
++				fdb_event.br = br;
++				fdb_event.orig_dev = fdb->dst->dev;
++				fdb_event.dev = source->dev;
+ 				fdb->dst = source;
+ 				fdb_modified = true;
++
++				atomic_notifier_call_chain(
++					&br_fdb_update_notifier_list,
++					0, (void *)&fdb_event);
++
+ 				/* Take over HW learned entry */
+ 				if (unlikely(fdb->added_by_external_learn))
+ 					fdb->added_by_external_learn = 0;
+@@ -614,6 +669,44 @@ void br_fdb_update(struct net_bridge *br
+ 	}
+ }
+ 
++/* Refresh FDB entries for bridge packets being forwarded by offload engines */
++void br_refresh_fdb_entry(struct net_device *dev, const char *addr)
++{
++	struct net_bridge_port *p = br_port_get_rcu(dev);
++
++	if (!p || p->state == BR_STATE_DISABLED)
++		return;
++
++	if (!is_valid_ether_addr(addr)) {
++		pr_info("bridge: Attempt to refresh with invalid ether address %pM\n",
++			addr);
++		return;
++	}
++
++	rcu_read_lock();
++	br_fdb_update(p->br, p, addr, 0, true);
++	rcu_read_unlock();
++}
++EXPORT_SYMBOL_GPL(br_refresh_fdb_entry);
++
++/* Look up the MAC address in the device's bridge fdb table */
++struct net_bridge_fdb_entry *br_fdb_has_entry(struct net_device *dev,
++					      const char *addr, __u16 vid)
++{
++	struct net_bridge_port *p = br_port_get_rcu(dev);
++	struct net_bridge_fdb_entry *fdb;
++
++	if (!p || p->state == BR_STATE_DISABLED)
++		return NULL;
++
++	rcu_read_lock();
++	fdb = fdb_find_rcu(&p->br->fdb_hash_tbl, addr, vid);
++	rcu_read_unlock();
++
++	return fdb;
++}
++EXPORT_SYMBOL_GPL(br_fdb_has_entry);
++
+ static int fdb_to_nud(const struct net_bridge *br,
+ 		      const struct net_bridge_fdb_entry *fdb)
+ {
+@@ -699,6 +792,23 @@ static void fdb_notify(struct net_bridge
+ 	if (swdev_notify)
+ 		br_switchdev_fdb_notify(br, fdb, type);
+ 
++	if (fdb->dst) {
++		int event;
++		struct br_fdb_event fdb_event;
++
++		if (type == RTM_NEWNEIGH)
++			event = BR_FDB_EVENT_ADD;
++		else
++			event = BR_FDB_EVENT_DEL;
++
++		fdb_event.dev = fdb->dst->dev;
++		ether_addr_copy(fdb_event.addr, fdb->key.addr.addr);
++		fdb_event.is_local = fdb->is_local;
++		atomic_notifier_call_chain(&br_fdb_notifier_list,
++					   event,
++					   (void *)&fdb_event);
++	}
++
+ 	skb = nlmsg_new(fdb_nlmsg_size(), GFP_ATOMIC);
+ 	if (skb == NULL)
+ 		goto errout;
+@@ -710,6 +820,7 @@ static void fdb_notify(struct net_bridge
+ 		kfree_skb(skb);
+ 		goto errout;
+ 	}
++	__br_notify(RTNLGRP_NEIGH, type, fdb);
+ 	rtnl_notify(skb, net, 0, RTNLGRP_NEIGH, NULL, GFP_ATOMIC);
+ 	return;
+ errout:
+--- a/net/bridge/br_forward.c
++++ b/net/bridge/br_forward.c
+@@ -24,7 +24,8 @@ static inline int should_deliver(const s
+ 	struct net_bridge_vlan_group *vg;
+ 
+ 	vg = nbp_vlan_group_rcu(p);
+-	return ((p->flags & BR_HAIRPIN_MODE) || skb->dev != p->dev) &&
++	return ((skb->dev != p->dev) || ((p->flags & BR_HAIRPIN_MODE) &&
++		(!is_multicast_ether_addr(eth_hdr(skb)->h_dest)))) &&
+ 		br_allowed_egress(vg, skb) && p->state == BR_STATE_FORWARDING &&
+ 		nbp_switchdev_allowed_egress(p, skb) &&
+ 		!br_skb_isolated(p, skb);
+@@ -62,7 +63,7 @@ EXPORT_SYMBOL_GPL(br_dev_queue_push_xmit
+ int br_forward_finish(struct net *net, struct sock *sk, struct sk_buff *skb)
+ {
+ 	skb->tstamp = 0;
+-	return NF_HOOK(NFPROTO_BRIDGE, NF_BR_POST_ROUTING,
++	return BR_HOOK(NFPROTO_BRIDGE, NF_BR_POST_ROUTING,
+ 		       net, sk, skb, NULL, skb->dev,
+ 		       br_dev_queue_push_xmit);
+ 
+@@ -106,7 +107,7 @@ static void __br_forward(const struct ne
+ 		indev = NULL;
+ 	}
+ 
+-	NF_HOOK(NFPROTO_BRIDGE, br_hook,
++	BR_HOOK(NFPROTO_BRIDGE, br_hook,
+ 		net, NULL, skb, indev, skb->dev,
+ 		br_forward_finish);
+ }
+--- a/net/bridge/br_if.c
++++ b/net/bridge/br_if.c
+@@ -26,6 +26,10 @@
+ 
+ #include "br_private.h"
+ 
++/* Hook for external forwarding logic */
++br_port_dev_get_hook_t __rcu *br_port_dev_get_hook __read_mostly;
++EXPORT_SYMBOL_GPL(br_port_dev_get_hook);
++
+ /*
+  * Determine initial path cost based on speed.
+  * using recommendations from 802.1d standard
+@@ -694,6 +698,7 @@ int br_add_if(struct net_bridge *br, str
+ 	br_set_gso_limits(br);
+ 
+ 	kobject_uevent(&p->kobj, KOBJ_ADD);
++	call_netdevice_notifiers(NETDEV_BR_JOIN, dev);
+ 
+ 	return 0;
+ 
+@@ -731,6 +736,8 @@ int br_del_if(struct net_bridge *br, str
+ 	if (!p || p->br != br)
+ 		return -EINVAL;
+ 
++	call_netdevice_notifiers(NETDEV_BR_LEAVE, dev);
++
+ 	/* Since more than one interface can be attached to a bridge,
+ 	 * there still maybe an alternate path for netconsole to use;
+ 	 * therefore there is no reason for a NETDEV_RELEASE event.
+@@ -774,3 +781,85 @@ bool br_port_flag_is_set(const struct ne
+ 	return p->flags & flag;
+ }
+ EXPORT_SYMBOL_GPL(br_port_flag_is_set);
++
++/* br_port_dev_get()
++ *      If a skb is provided, and the br_port_dev_get_hook_t hook exists,
++ *      use that to try and determine the egress port for that skb.
++ *      If not, or no egress port could be determined, use the given addr
++ *      to identify the port to which it is reachable,
++ *	returing a reference to the net device associated with that port.
++ *
++ * NOTE: Return NULL if given dev is not a bridge or the mac has no
++ * associated port.
++ */
++struct net_device *br_port_dev_get(struct net_device *dev, unsigned char *addr,
++				   struct sk_buff *skb,
++				   unsigned int cookie)
++{
++	struct net_bridge_fdb_entry *fdbe;
++	struct net_bridge *br;
++	struct net_device *netdev = NULL;
++
++	/* Is this a bridge? */
++	if (!(dev->priv_flags & IFF_EBRIDGE))
++		return NULL;
++
++	rcu_read_lock();
++
++	/* If the hook exists and the skb isn't NULL, try and get the port */
++	if (skb) {
++		br_port_dev_get_hook_t *port_dev_get_hook;
++
++		port_dev_get_hook = rcu_dereference(br_port_dev_get_hook);
++		if (port_dev_get_hook) {
++			struct net_bridge_port *pdst =
++				__br_get(port_dev_get_hook, NULL, dev, skb,
++					 addr, cookie);
++			if (pdst) {
++				dev_hold(pdst->dev);
++				netdev = pdst->dev;
++				goto out;
++			}
++		}
++	}
++
++	/* Either there is no hook, or can't
++	 * determine the port to use - fall back to using FDB
++	 */
++
++	br = netdev_priv(dev);
++
++	/* Lookup the fdb entry and get reference to the port dev */
++	fdbe = br_fdb_find_rcu(br, addr, 0);
++	if (fdbe && fdbe->dst) {
++		netdev = fdbe->dst->dev; /* port device */
++		dev_hold(netdev);
++	}
++out:
++	rcu_read_unlock();
++	return netdev;
++}
++EXPORT_SYMBOL_GPL(br_port_dev_get);
++
++/* Update bridge statistics for bridge packets processed by offload engines */
++void br_dev_update_stats(struct net_device *dev,
++			 struct rtnl_link_stats64 *nlstats)
++{
++	struct net_bridge *br;
++	struct pcpu_sw_netstats *stats;
++
++	/* Is this a bridge? */
++	if (!(dev->priv_flags & IFF_EBRIDGE))
++		return;
++
++	br = netdev_priv(dev);
++	stats = per_cpu_ptr(br->stats, 0);
++
++	u64_stats_update_begin(&stats->syncp);
++	stats->rx_packets += nlstats->rx_packets;
++	stats->rx_bytes += nlstats->rx_bytes;
++	stats->tx_packets += nlstats->tx_packets;
++	stats->tx_bytes += nlstats->tx_bytes;
++	u64_stats_update_end(&stats->syncp);
++}
++EXPORT_SYMBOL_GPL(br_dev_update_stats);
+--- a/net/bridge/br_input.c
++++ b/net/bridge/br_input.c
+@@ -22,6 +22,14 @@
+ #include "br_private.h"
+ #include "br_private_tunnel.h"
+ 
++/* Hook for external Multicast handler */
++br_multicast_handle_hook_t __rcu *br_multicast_handle_hook __read_mostly;
++EXPORT_SYMBOL_GPL(br_multicast_handle_hook);
++
++/* Hook for external forwarding logic */
++br_get_dst_hook_t __rcu *br_get_dst_hook __read_mostly;
++EXPORT_SYMBOL_GPL(br_get_dst_hook);
++
+ static int
+ br_netif_receive_skb(struct net *net, struct sock *sk, struct sk_buff *skb)
+ {
+@@ -29,7 +37,7 @@ br_netif_receive_skb(struct net *net, st
+ 	return netif_receive_skb(skb);
+ }
+ 
+-static int br_pass_frame_up(struct sk_buff *skb)
++int br_pass_frame_up(struct sk_buff *skb)
+ {
+ 	struct net_device *indev, *brdev = BR_INPUT_SKB_CB(skb)->brdev;
+ 	struct net_bridge *br = netdev_priv(brdev);
+@@ -68,10 +76,11 @@ static int br_pass_frame_up(struct sk_bu
+ 	br_multicast_count(br, NULL, skb, br_multicast_igmp_type(skb),
+ 			   BR_MCAST_DIR_TX);
+ 
+-	return NF_HOOK(NFPROTO_BRIDGE, NF_BR_LOCAL_IN,
++	return BR_HOOK(NFPROTO_BRIDGE, NF_BR_LOCAL_IN,
+ 		       dev_net(indev), NULL, skb, indev, NULL,
+ 		       br_netif_receive_skb);
+ }
++EXPORT_SYMBOL_GPL(br_pass_frame_up);
+ 
+ /* note: already called with rcu_read_lock */
+ int br_handle_frame_finish(struct net *net, struct sock *sk, struct sk_buff *skb)
+@@ -82,6 +91,9 @@ int br_handle_frame_finish(struct net *n
+ 	struct net_bridge_mdb_entry *mdst;
+ 	bool local_rcv, mcast_hit = false;
+ 	struct net_bridge *br;
++	struct net_bridge_port *pdst = NULL;
++	br_get_dst_hook_t *get_dst_hook = rcu_dereference(br_get_dst_hook);
++	br_multicast_handle_hook_t *multicast_handle_hook;
+ 	u16 vid = 0;
+ 
+ 	if (!p || p->state == BR_STATE_DISABLED)
+@@ -139,6 +151,10 @@ int br_handle_frame_finish(struct net *n
+ 
+ 	switch (pkt_type) {
+ 	case BR_PKT_MULTICAST:
++		multicast_handle_hook = rcu_dereference(br_multicast_handle_hook);
++		if (!__br_get(multicast_handle_hook, true, p, skb))
++			goto out;
++
+ 		mdst = br_mdb_get(br, skb, vid);
+ 		if ((mdst || BR_INPUT_SKB_CB_MROUTERS_ONLY(skb)) &&
+ 		    br_multicast_querier_exists(br, eth_hdr(skb))) {
+@@ -154,7 +170,14 @@ int br_handle_frame_finish(struct net *n
+ 		}
+ 		break;
+ 	case BR_PKT_UNICAST:
+-		dst = br_fdb_find_rcu(br, eth_hdr(skb)->h_dest, vid);
++		pdst = __br_get(get_dst_hook, NULL, p, &skb);
++		if (pdst) {
++			if (!skb)
++				goto out;
++		} else {
++			dst = br_fdb_find_rcu(br, eth_hdr(skb)->h_dest, vid);
++		}
++
+ 	default:
+ 		break;
+ 	}
+@@ -167,12 +190,20 @@ int br_handle_frame_finish(struct net *n
+ 
+ 		if (now != dst->used)
+ 			dst->used = now;
+-		br_forward(dst->dst, skb, local_rcv, false);
++		if (pdst)
++		{
++			br_forward(pdst, skb, local_rcv, false);
++		}else
++			br_forward(dst->dst, skb, local_rcv, false);
+ 	} else {
+-		if (!mcast_hit)
+-			br_flood(br, skb, pkt_type, local_rcv, false);
+-		else
+-			br_multicast_flood(mdst, skb, local_rcv, false);
++		if (pdst)	
++			br_forward(pdst, skb, local_rcv, false);
++		else {
++			if (!mcast_hit)
++				br_flood(br, skb, pkt_type, local_rcv, false);
++			else
++				br_multicast_flood(mdst, skb, local_rcv, false);
++		}
+ 	}
+ 
+ 	if (local_rcv)
+@@ -343,7 +374,7 @@ rx_handler_result_t br_handle_frame(stru
+ 		 *   - returns = 0 (stolen/nf_queue)
+ 		 * Thus return 1 from the okfn() to signal the skb is ok to pass
+ 		 */
+-		if (NF_HOOK(NFPROTO_BRIDGE, NF_BR_LOCAL_IN,
++		if (BR_HOOK(NFPROTO_BRIDGE, NF_BR_LOCAL_IN,
+ 			    dev_net(skb->dev), NULL, skb, skb->dev, NULL,
+ 			    br_handle_local_finish) == 1) {
+ 			return RX_HANDLER_PASS;
+@@ -355,15 +386,18 @@ rx_handler_result_t br_handle_frame(stru
+ forward:
+ 	switch (p->state) {
+ 	case BR_STATE_DISABLED:
+-		if (ether_addr_equal(p->br->dev->dev_addr, dest))
+-			skb->pkt_type = PACKET_HOST;
+-
+-		if (NF_HOOK(NFPROTO_BRIDGE, NF_BR_PRE_ROUTING,
+-			dev_net(skb->dev), NULL, skb, skb->dev, NULL,
+-			br_handle_local_finish) == 1) {
+-			return RX_HANDLER_PASS;
++		if (skb->protocol == htons(ETH_P_PAE)) {
++			if (ether_addr_equal(p->br->dev->dev_addr, dest))
++				skb->pkt_type = PACKET_HOST;
++
++			if (BR_HOOK(NFPROTO_BRIDGE, NF_BR_PRE_ROUTING,
++				dev_net(skb->dev), NULL, skb, skb->dev, NULL,
++				br_handle_local_finish) == 1) {
++				return RX_HANDLER_PASS;
++			}
++			break;
+ 		}
+-		break;
++		goto drop;
+ 
+ 	case BR_STATE_FORWARDING:
+ 	case BR_STATE_LEARNING:
+--- a/net/bridge/br_multicast.c
++++ b/net/bridge/br_multicast.c
+@@ -29,6 +29,7 @@
+ #include <net/ipv6.h>
+ #include <net/mld.h>
+ #include <net/ip6_checksum.h>
++#include <net/ip6_route.h>
+ #include <net/addrconf.h>
+ #endif
+ 
+@@ -724,7 +725,7 @@ static void __br_multicast_send_query(st
+ 		skb->dev = port->dev;
+ 		br_multicast_count(br, port, skb, igmp_type,
+ 				   BR_MCAST_DIR_TX);
+-		NF_HOOK(NFPROTO_BRIDGE, NF_BR_LOCAL_OUT,
++		BR_HOOK(NFPROTO_BRIDGE, NF_BR_LOCAL_OUT,
+ 			dev_net(port->dev), NULL, skb, NULL, skb->dev,
+ 			br_dev_queue_push_xmit);
+ 	} else {
+@@ -1647,6 +1648,262 @@ static int br_multicast_ipv4_rcv(struct
+ }
+ 
+ #if IS_ENABLED(CONFIG_IPV6)
++static int br_ndisc_send_na_finish(struct net *net, struct sock *sk,
++				   struct sk_buff *skb)
++{
++	return dev_queue_xmit(skb);
++}
++
++static int br_ndisc_send_na(struct net_device *dev,
++			    const struct in6_addr *daddr,
++			    const struct in6_addr *solicited_addr,
++			    const u8 *target_lladdr, bool solicited,
++			    bool override, const u8 *dest_hw)
++{
++	struct sk_buff *skb;
++	struct nd_msg *msg;
++	int hlen = LL_RESERVED_SPACE(dev);
++	int tlen = dev->needed_tailroom;
++	struct dst_entry *dst;
++	struct net *net = dev_net(dev);
++	struct sock *sk = net->ipv6.ndisc_sk;
++	struct inet6_dev *idev;
++	int err;
++	struct ipv6hdr *hdr;
++	struct icmp6hdr *icmp6h;
++	u8 type;
++	const struct in6_addr *saddr = solicited_addr;
++	int pad, data_len, space;
++	u8 *opt;
++
++	skb = alloc_skb(hlen + sizeof(struct ipv6hdr) + sizeof(*msg) +
++			ndisc_opt_addr_space(dev, NDISC_NEIGHBOUR_ADVERTISEMENT) + tlen, GFP_ATOMIC);
++	if (!skb)
++		return -ENOMEM;
++
++	skb->protocol = htons(ETH_P_IPV6);
++	skb->dev = dev;
++
++	skb_reserve(skb, hlen + sizeof(struct ipv6hdr));
++	skb_reset_transport_header(skb);
++
++	/* Manually assign socket ownership as we avoid calling
++	 * sock_alloc_send_pskb() to bypass wmem buffer limits
++	 */
++	skb_set_owner_w(skb, sk);
++
++	msg = (struct nd_msg *)skb_put(skb, sizeof(*msg));
++	*msg = (struct nd_msg) {
++		.icmph = {
++			.icmp6_type = NDISC_NEIGHBOUR_ADVERTISEMENT,
++			.icmp6_router = false,
++			.icmp6_solicited = solicited,
++			.icmp6_override = override,
++		},
++		.target = *solicited_addr,
++	};
++
++	/* We are replying on behalf of other entity. Let that entity's
++	 * address be the target ll addr and src_addr.
++	 */
++	pad = ndisc_addr_option_pad(skb->dev->type);
++	data_len = skb->dev->addr_len;
++	space = ndisc_opt_addr_space(skb->dev, NDISC_NEIGHBOUR_ADVERTISEMENT);
++	opt = skb_put(skb, space);
++
++	opt[0] = ND_OPT_TARGET_LL_ADDR;
++	opt[1] = space >> 3;
++
++	memset(opt + 2, 0, pad);
++	opt += pad;
++	space -= pad;
++
++	memcpy(opt + 2, target_lladdr, dev->addr_len);
++	data_len += 2;
++	opt += data_len;
++	space -= data_len;
++	if (space > 0)
++		memset(opt, 0, space);
++
++	dst = skb_dst(skb);
++	icmp6h = icmp6_hdr(skb);
++
++	type = icmp6h->icmp6_type;
++
++	if (!dst) {
++		struct flowi6 fl6;
++
++		icmpv6_flow_init(sk, &fl6, type, saddr, daddr,
++				 skb->dev->ifindex);
++		dst = icmp6_dst_alloc(skb->dev, &fl6);
++		if (IS_ERR(dst))
++			goto out;
++
++		skb_dst_set(skb, dst);
++	}
++
++	icmp6h->icmp6_cksum = csum_ipv6_magic(saddr, daddr, skb->len,
++					      IPPROTO_ICMPV6,
++					      csum_partial(icmp6h,
++							   skb->len, 0));
++
++	skb_push(skb, sizeof(*hdr));
++	skb_reset_network_header(skb);
++	hdr = ipv6_hdr(skb);
++
++	ip6_flow_hdr(hdr, 0, 0);
++
++	hdr->payload_len = htons(skb->len - sizeof(*hdr));
++	hdr->nexthdr = IPPROTO_ICMPV6;
++	hdr->hop_limit = inet6_sk(sk)->hop_limit;
++
++	hdr->saddr = *saddr;
++	hdr->daddr = *daddr;
++
++	/* We are replying on behalf of another entity. Use that entity's
++	 * address as the source link layer address if we have all the needed
++	 * information to build the link layer header.
++	 */
++	if (dest_hw &&
++	    dev_hard_header(skb, dev, ETH_P_IPV6, dest_hw, target_lladdr,
++			    skb->len) < 0)
++		goto out;
++
++	rcu_read_lock();
++	idev = __in6_dev_get(dst->dev);
++	IP6_UPD_PO_STATS(net, idev, IPSTATS_MIB_OUT, skb->len);
++
++	err = NF_HOOK(NFPROTO_IPV6, NF_INET_LOCAL_OUT, net, sk, skb, NULL,
++		      dst->dev, dest_hw ? br_ndisc_send_na_finish : dst_output);
++
++	if (!err) {
++		ICMP6MSGOUT_INC_STATS(net, idev, type);
++		ICMP6_INC_STATS(net, idev, ICMP6_MIB_OUTMSGS);
++	}
++
++	rcu_read_unlock();
++	return 0;
++
++out:
++	kfree_skb(skb);
++	return -EINVAL;
++}
++
++static const u8 *br_get_ndisc_lladdr(const u8 *opt, int opt_len,
++				     unsigned int alen)
++{
++	const struct nd_opt_hdr *nd_opt = (const struct nd_opt_hdr *)opt;
++
++	while (opt_len > sizeof(struct nd_opt_hdr)) {
++		int l;
++
++		l = nd_opt->nd_opt_len << 3;
++		if (opt_len < l || l == 0)
++			return NULL;
++
++		if (nd_opt->nd_opt_type == ND_OPT_SOURCE_LL_ADDR) {
++			if (l >= 2 + alen)
++				return (const u8 *)(nd_opt + 1);
++		}
++
++		opt_len -= l;
++		nd_opt = ((void *)nd_opt) + l;
++	}
++
++	return NULL;
++}
++
++static void br_do_proxy_ndisc(struct sk_buff *skb, struct net_bridge *br,
++			      u16 vid, struct net_bridge_port *p)
++{
++	struct net_device *dev = br->dev;
++	struct nd_msg *msg;
++	const struct ipv6hdr *iphdr;
++	const struct in6_addr *saddr, *daddr;
++	struct neighbour *n, *n_sender = NULL;
++	struct net_bridge_fdb_entry *f;
++	int ndoptlen;
++	bool override = false, solicited = true;
++	bool dad;
++	const struct in6_addr *daddr_na;
++	const u8 *dest_hw = NULL;
++
++	BR_INPUT_SKB_CB(skb)->proxyarp_replied = false;
++
++	if (!p)
++		return;
++
++	if (!pskb_may_pull(skb, skb->len))
++		return;
++
++	iphdr = ipv6_hdr(skb);
++	saddr = &iphdr->saddr;
++	daddr = &iphdr->daddr;
++
++	msg = (struct nd_msg *)skb_transport_header(skb);
++	if (msg->icmph.icmp6_code != 0 ||
++	    msg->icmph.icmp6_type != NDISC_NEIGHBOUR_SOLICITATION)
++		return;
++
++	if (ipv6_addr_loopback(daddr) ||
++	    ipv6_addr_is_multicast(&msg->target))
++		return;
++
++	n = neigh_lookup(&nd_tbl, &msg->target, dev);
++	if (!n)
++		return;
++
++	if (!(n->nud_state & NUD_VALID))
++		goto out;
++
++	f = br_fdb_find_rcu(br, n->ha, vid);
++	if (!f)
++		goto out;
++
++	if (!(p->flags & BR_PROXYARP) &&
++	    !(f->dst && (f->dst->flags & BR_PROXYARP_WIFI)))
++		goto out;
++
++	dad = ipv6_addr_any(saddr);
++	daddr_na = saddr;
++
++	if (dad && !ipv6_addr_is_solict_mult(daddr))
++		goto out;
++
++	if (dad) {
++		override = true;
++		solicited = false;
++		daddr_na = &in6addr_linklocal_allnodes;
++	}
++
++	if (!(p->flags & BR_PROXYARP)) {
++		ndoptlen = skb_tail_pointer(skb) -
++			(skb_transport_header(skb) +
++			 offsetof(struct nd_msg, opt));
++		dest_hw = br_get_ndisc_lladdr(msg->opt, ndoptlen,
++					      dev->addr_len);
++		if (!dest_hw && !dad) {
++			n_sender = neigh_lookup(&nd_tbl, saddr, dev);
++			if (n_sender)
++				dest_hw = n_sender->ha;
++		}
++
++		if (dest_hw && is_multicast_ether_addr(dest_hw))
++			dest_hw = NULL;
++	}
++
++	if (br_ndisc_send_na(dev, daddr_na, &msg->target, n->ha, solicited,
++			     override, dest_hw))
++		goto out;
++
++	BR_INPUT_SKB_CB(skb)->proxyarp_replied = true;
++
++out:
++	neigh_release(n);
++	if (n_sender)
++		neigh_release(n_sender);
++}
++
+ static void br_ip6_multicast_mrd_rcv(struct net_bridge *br,
+ 				     struct net_bridge_port *port,
+ 				     struct sk_buff *skb)
+@@ -1668,6 +1925,11 @@ static int br_multicast_ipv6_rcv(struct
+ 
+ 	err = ipv6_mc_check_mld(skb);
+ 
++	if (err == -ENOMSG &&
++	    icmp6_hdr(skb)->icmp6_type == NDISC_NEIGHBOUR_SOLICITATION) {
++		br_do_proxy_ndisc(skb, br, vid, port);
++	}
++
+ 	if (err == -ENOMSG || err == -ENODATA) {
+ 		if (!ipv6_addr_is_ll_all_nodes(&ipv6_hdr(skb)->daddr))
+ 			BR_INPUT_SKB_CB(skb)->mrouters_only = 1;
+--- a/net/bridge/br_netfilter_hooks.c
++++ b/net/bridge/br_netfilter_hooks.c
+@@ -56,6 +56,7 @@ struct brnf_net {
+ 	int call_iptables;
+ 	int call_ip6tables;
+ 	int call_arptables;
++	int call_custom;
+ 
+ 	/* default value is 0 */
+ 	int filter_vlan_tagged;
+@@ -72,6 +73,14 @@ struct brnf_net {
+ #define IS_ARP(skb) \
+ 	(!skb_vlan_tag_present(skb) && skb->protocol == htons(ETH_P_ARP))
+ 
++bool br_netfilter_run_hooks(struct net * net)
++{
++	struct brnf_net *brnet;
++
++	brnet = net_generic(net, brnf_net_id);
++	return brnet->call_iptables | brnet->call_ip6tables | brnet->call_arptables | brnet->call_custom;
++}
++
+ static inline __be16 vlan_proto(const struct sk_buff *skb)
+ {
+ 	if (skb_vlan_tag_present(skb))
+@@ -1077,6 +1086,12 @@ static struct ctl_table brnf_table[] = {
+ 		.mode		= 0644,
+ 		.proc_handler	= brnf_sysctl_call_tables,
+ 	},
++	{
++		.procname	= "bridge-nf-call-custom",
++		.maxlen		= sizeof(int),
++		.mode		= 0644,
++		.proc_handler	= brnf_sysctl_call_tables,
++	},
+ 	{ }
+ };
+ 
+@@ -1085,6 +1100,7 @@ static inline void br_netfilter_sysctl_d
+ 	brnf->call_iptables = 1;
+ 	brnf->call_ip6tables = 1;
+ 	brnf->call_arptables = 1;
++	brnf->call_custom= 1;
+ 	brnf->filter_vlan_tagged = 0;
+ 	brnf->filter_pppoe_tagged = 0;
+ 	brnf->pass_vlan_indev = 0;
+@@ -1108,6 +1124,7 @@ static int br_netfilter_sysctl_init_net(
+ 	table[3].data = &brnet->filter_vlan_tagged;
+ 	table[4].data = &brnet->filter_pppoe_tagged;
+ 	table[5].data = &brnet->pass_vlan_indev;
++	table[6].data = &brnet->call_custom;
+ 
+ 	br_netfilter_sysctl_default(brnet);
+ 
+--- a/net/bridge/br_netlink.c
++++ b/net/bridge/br_netlink.c
+@@ -499,6 +499,7 @@ void br_ifinfo_notify(int event, const s
+ 		kfree_skb(skb);
+ 		goto errout;
+ 	}
++	__br_notify(RTNLGRP_LINK, event, port);
+ 	rtnl_notify(skb, net, 0, RTNLGRP_LINK, NULL, GFP_ATOMIC);
+ 	return;
+ errout:
+--- a/net/bridge/br_private.h
++++ b/net/bridge/br_private.h
+@@ -18,6 +18,8 @@
+ #include <linux/if_vlan.h>
+ #include <linux/rhashtable.h>
+ #include <linux/refcount.h>
++#include <linux/export.h>
++#include <linux/netfilter.h>
+ 
+ #define BR_HASH_BITS 8
+ #define BR_HASH_SIZE (1 << BR_HASH_BITS)
+@@ -627,6 +629,7 @@ void br_manage_promisc(struct net_bridge
+ int nbp_backup_change(struct net_bridge_port *p, struct net_device *backup_dev);
+ 
+ /* br_input.c */
++int br_pass_frame_up(struct sk_buff *skb);
+ int br_handle_frame_finish(struct net *net, struct sock *sk, struct sk_buff *skb);
+ rx_handler_result_t br_handle_frame(struct sk_buff **pskb);
+ 
+@@ -1117,12 +1120,25 @@ extern const struct nf_br_ops __rcu *nf_
+ int br_nf_core_init(void);
+ void br_nf_core_fini(void);
+ void br_netfilter_rtable_init(struct net_bridge *);
++bool br_netfilter_run_hooks(struct net *);
+ #else
+ static inline int br_nf_core_init(void) { return 0; }
+ static inline void br_nf_core_fini(void) {}
+ #define br_netfilter_rtable_init(x)
++#define br_netfilter_run_hooks(x)	false
+ #endif
+ 
++static inline int
++BR_HOOK(uint8_t pf, unsigned int hook, struct net *net, struct sock *sk,
++	struct sk_buff *skb, struct net_device *in, struct net_device *out,
++	int (*okfn)(struct net *, struct sock *, struct sk_buff *))
++{
++	if (!br_netfilter_run_hooks(net))
++		return okfn(net, sk, skb);
++
++	return NF_HOOK(pf, hook, net, sk, skb, in, out, okfn);
++}
++
+ /* br_stp.c */
+ void br_set_state(struct net_bridge_port *p, unsigned int state);
+ struct net_bridge_port *br_get_port(struct net_bridge *br, u16 port_no);
+@@ -1195,6 +1211,17 @@ static inline int br_sysfs_addbr(struct
+ static inline void br_sysfs_delbr(struct net_device *dev) { return; }
+ #endif /* CONFIG_SYSFS */
+ 
++#define __br_get(__hook, __default, __args ...) \
++		(__hook ? (__hook(__args)) : (__default))
++
++static inline void __br_notify(int group, int type, const void *data)
++{
++	br_notify_hook_t *notify_hook = rcu_dereference(br_notify_hook);
++
++	if (notify_hook)
++		notify_hook(group, type, data);
++}
++
+ /* br_switchdev.c */
+ #ifdef CONFIG_NET_SWITCHDEV
+ int nbp_switchdev_mark_set(struct net_bridge_port *p);
+--- a/net/bridge/br_stp_bpdu.c
++++ b/net/bridge/br_stp_bpdu.c
+@@ -56,7 +56,7 @@ static void br_send_bpdu(struct net_brid
+ 
+ 	skb_reset_mac_header(skb);
+ 
+-	NF_HOOK(NFPROTO_BRIDGE, NF_BR_LOCAL_OUT,
++	BR_HOOK(NFPROTO_BRIDGE, NF_BR_LOCAL_OUT,
+ 		dev_net(p->dev), NULL, skb, NULL, skb->dev,
+ 		br_send_bpdu_finish);
+ }

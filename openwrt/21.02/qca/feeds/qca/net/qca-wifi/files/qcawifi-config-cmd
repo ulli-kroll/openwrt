@@ -1,0 +1,96 @@
+#!/bin/sh /etc/rc.common
+#
+# Copyright (c) 2020-2021,2023 Qualcomm Technologies, Inc.
+# All Rights Reserved.
+# Confidential and Proprietary - Qualcomm Technologies, Inc.
+#
+
+. /lib/wifi/wifi-utils.sh
+START=11
+
+boot_wifi() {
+	if grep -q 'skip_wifi' /proc/cmdline; then
+		echo "skipping wifi load" > /dev/console
+		exit 0
+	fi
+	echo "loading qca-wifi" > /dev/kmsg
+	[ -e /tmp/.wifi-config-done ] && {
+		return
+	}
+	/sbin/wifi config "1" > /tmp/wireless.tmp
+	[ -s /tmp/wireless.tmp ] && {
+		cat /tmp/wireless.tmp >> /etc/config/wireless
+	}
+	rm -f /tmp/wireless.tmp
+
+	[ -s /etc/config/wireless ] && {
+		touch /tmp/.wifi-config-done
+	}
+
+	[ -f /lib/modules/*/ecm-wifi-plugin.ko ] && [ -d /sys/module/ecm ] && {
+		insmod ecm-wifi-plugin.ko
+	}
+
+	echo "qca-wifi loaded" > /dev/kmsg
+}
+
+boot_dependency() {
+	[ -f /lib/modules/*/bonding.ko ] && {
+		insmod bonding.ko
+	}
+	[ -f /lib/modules/*/qca-ssdk.ko ] && {
+		insmod qca-ssdk.ko
+	}
+	[ -f /lib/modules/*/qca-nss-ppe.ko ] && {
+		modprobe qca-nss-ppe.ko
+	}
+	[ -f /lib/modules/*/qca-nss-dp.ko ] && {
+		insmod qca-nss-dp.ko
+	}
+	[ -f /lib/modules/*/qca-nss-drv.ko ] && {
+		insmod qca-nss-drv.ko
+	}
+	[ -f /lib/modules/*/cfg80211.ko ] && {
+		insmod cfg80211.ko
+	}
+	[ -f /lib/modules/*/qca-nss-ppe-vp.ko ] && {
+		insmod qca-nss-ppe-vp.ko
+	}
+}
+
+boot_owrt_le() {
+	local BOOT_KPI_NODE=/sys/kernel/boot_kpi/kpi_values
+	if grep -q 'skip_wifi' /proc/cmdline; then
+		echo "Skipping QCA WiFi load" > /dev/console
+		exit 0
+	fi
+
+	echo "Loading QCA WiFi modules" > /dev/kmsg
+	[ -e /tmp/.wifi-config-done ] && {
+                echo "WiFi modules already loaded" > /dev/kmsg
+		return
+	}
+
+	/sbin/wifi config > /tmp/wireless.tmp
+	[ -s /tmp/wireless.tmp ] && {
+		cat /tmp/wireless.tmp >> /etc/config/wireless
+	}
+	rm -f /tmp/wireless.tmp
+
+	[ -s /etc/config/wireless ] && {
+		touch /tmp/.wifi-config-done
+	}
+
+	echo -n "M - QCA wifi Ready" >> $BOOT_KPI_NODE
+	echo "Done loading QCA WiFi modules" > /dev/kmsg
+}
+
+boot() {
+	if [ ! -f /sys/firmware/devicetree/base/model ] || [ $(grep -c "SDXPINN" /sys/firmware/devicetree/base/model) = 0 ]; then
+		boot_dependency
+		boot_wifi
+	else
+		boot_owrt_le
+	fi
+}
+

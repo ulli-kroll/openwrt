@@ -1,0 +1,11 @@
+--- a/src/ndp.c
++++ b/src/ndp.c
+@@ -330,6 +330,8 @@
+ 	if (!memcmp(ll->sll_addr, mac, sizeof(mac)))
+ 		return; /* Looped back */
+ 
++	setup_route(&req->nd_ns_target, iface, true);
++
+ 	avl_for_each_element(&interfaces, c, avl) {
+ 		if (iface != c && c->ndp == MODE_RELAY &&
+ 				(ns_is_dad || !c->external))

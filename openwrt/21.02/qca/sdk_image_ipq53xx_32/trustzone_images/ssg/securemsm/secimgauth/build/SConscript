@@ -1,0 +1,171 @@
+#===============================================================================
+#
+#
+# GENERAL DESCRIPTION
+#    build script
+#
+# Copyright (c) 2017,2022 by Qualcomm Technologies, Inc.
+# All Rights Reserved.
+# QUALCOMM Proprietary/GTDR
+#
+#-------------------------------------------------------------------------------
+#
+#  $Header: //components/rel/ssg.tzw/1.2/securemsm/secimgauth/build/SConscript#3 $
+#  $DateTime: 2022/06/01 05:49:19 $
+#  $Author: pwbldsvc $
+#  $Change: 37564638 $
+#                      EDIT HISTORY FOR FILE
+#
+#  This section contains comments describing changes made to the module.
+#  Notice that changes are listed in reverse chronological order.
+#
+# when       who     what, where, why
+# --------   ---     ---------------------------------------------------------
+# 05/19/22    mp      Miami branching
+# 09/18/2017  hw     Initial Version
+#===============================================================================
+import os
+Import('env')
+env = env.Clone()
+
+#-------------------------------------------------------------------------------
+# Source PATH
+#-------------------------------------------------------------------------------
+SRCPATH = "${BUILD_ROOT}/ssg/securemsm/secimgauth"
+
+env.VariantDir('${BUILDPATH}', SRCPATH, duplicate=0)
+
+
+#-------------------------------------------------------------------------------
+# Request APIs from Core Platform
+#-------------------------------------------------------------------------------
+CBSP_API = [
+   'SERVICES',
+   'DAL',
+   'SYSTEMDRIVERS',
+   'BOOT',
+   'KERNEL',
+   'KERNEL_API',
+]
+
+env.RequirePublicApi(CBSP_API, area='core')
+
+
+#-------------------------------------------------------------------------------
+# Request APIs from SSG
+#-------------------------------------------------------------------------------
+
+SSG_API = [
+   'SECUREMSM',
+   'SECUREFUSES',
+   'TZCHIPSET',
+   'SECBOOT',
+   'TZSECAPP',  # for elf format definition
+   'UIE_API',
+]
+
+env.RequirePublicApi(SSG_API, area = 'ssg')
+env.RequireRestrictedApi(SSG_API)
+
+#-------------------------------------------------------------------------------
+# Publish Private Include Paths from secimgauth
+#-------------------------------------------------------------------------------
+INC_PATH = [
+    "${INC_ROOT}/ssg/securemsm/secimgauth/src/env/tz",
+    "${INC_ROOT}/ssg/securemsm/secimgauth/src/vers/inc",
+    "${INC_ROOT}/ssg/securemsm/secimgauth/src",
+    "${INC_ROOT}/ssg/securemsm/secutils/inc",
+]
+
+env.Append(CPPPATH = INC_PATH)
+
+#-------------------------------------------------------------------------------
+# Sources, libraries
+#-------------------------------------------------------------------------------
+chipset_groups = {
+  'mbnv5_chips' : ['sdm845', 'sdm670',],
+  # chipsets that support both mbnv5 and mbnv6
+  'mbnv5_v6_chips' : ['sdm855', 'sdm1000', 'saipan', 'sdx24', 'sdx55', 'qcs405','ipq60xx','ipq90xx', 'ipq53xx', 'sm6150'],
+  #others supports only mbnv6
+}
+
+# define feature key word for each chipset group
+chipset_group_features = {
+  'mbnv5_chips' : ['common','single_mbn_ver','mbnv5',],
+  'mbnv6_chips' : ['common','single_mbn_ver','mbnv6',],
+  'mbnv5_v6_chips' : ['common','multi_mbn_vers','mbnv6','mbnv5'],
+  'xbl_sec_feature' : ['xbl_sec_common'],
+}
+
+# define source files and feature flags
+feature_sources = {
+  'common' : {
+    'files' : [
+      '${BUILDPATH}/src/sec_img_hashseg_api.c',
+      '${BUILDPATH}/src/sec_img_auth_misc.c',
+      '${BUILDPATH}/src/sec_img_stub.c'
+    ],
+  },
+  'single_mbn_ver' : {
+    'files' : ['${BUILDPATH}/src/vers/src/sec_img_hashseg_api_single_ver.c',],
+    'flags' : 'SEC_IMG_AUTH_HASHSEG_SUPPORT_SINGLE_MBN_VER'
+  },
+  'multi_mbn_vers' : {
+    'files' : ['${BUILDPATH}/src/vers/src/sec_img_hashseg_api_multi_vers.c',],
+    'flags' : ['SEC_IMG_AUTH_HASHSEG_SUPPORT_MULTI_MBN_VERS',]
+  },
+  'mbnv5' : {
+    'files' : ['${BUILDPATH}/src/vers/src/sec_img_hashseg_mbnv5.c',],
+    'flags' : 'SUPPORT_MBNV5'
+  },
+  'mbnv6' : {
+    'files' : ['${BUILDPATH}/src/vers/src/sec_img_hashseg_mbnv6.c',],
+    'flags' : [
+      'SUPPORT_MBNV6','SUPPORT_MISC',
+    ],
+  },
+  'ctx_accessor' : {
+    'files' : [
+      '${BUILDPATH}/src/sec_img_accessor.c',
+      '${BUILDPATH}/src/vers/src/sec_img_hashseg_api_dao.c',
+      '${BUILDPATH}/src/vers/src/sec_img_hashseg_data_proxy.c',
+    ],
+    'flags' : ['SEC_IMG_HASHSEG_ACCESS_SECIMGAUTH_HANDLE_DATA']
+  },
+  'xbl_sec_common' : {
+    'files' : ['${BUILDPATH}/src/sec_img_hashseg_api.c',],
+    'features' : ['ctx_accessor'],
+    'flags' : [
+      'SEC_IMG_AUTH_HASHSEG_NON_TZ_REDUCED_API_SET',
+      'SEC_IMG_AUTH_HASHSEG_SUPPORT_SINGLE_MBN_VER',
+    ]
+  }
+}
+
+# Get Srouce files and Compiler flags for chipset groups
+env.LoadToolScript('${BUILD_ROOT}/ssg/bsp/build/scripts/featured_files_builder.py')
+if not env.FeatureFilesUTest(): # running unit test only once
+  exit(0)
+
+feature_list = []
+if env.get('IMAGE_ALIASES')[0] == 'xbl_sec':
+  feature_list = chipset_group_features['xbl_sec_feature']
+else:
+  for key in chipset_groups:
+    if env['CHIPSET'] in chipset_groups[key]:
+      feature_list = chipset_group_features[key]
+  if not feature_list:
+    feature_list = chipset_group_features['mbnv6_chips']
+
+SECIMG_LIB_SOURCES, flags = env.FeatureGenFilesAndFlags(feature_list, feature_sources)
+
+# Add Compiler options
+flags_string = ""
+for flag in flags:
+  flags_string += "-D" + flag + " "
+env.Append(CCFLAGS = flags_string)
+
+#-------------------------------------------------------------------------------
+# Add Libraries to MBA Image
+#-------------------------------------------------------------------------------
+env.AddBinaryLibrary(['TZOS_IMAGE','XBL_SEC_IMAGE'], '${BUILDPATH}/secimgauth',  SECIMG_LIB_SOURCES)

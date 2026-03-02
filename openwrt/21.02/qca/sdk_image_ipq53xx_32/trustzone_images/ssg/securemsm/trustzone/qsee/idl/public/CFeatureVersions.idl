@@ -1,0 +1,15 @@
+// Copyright (c) 2018 Qualcomm Technologies, Inc.  All Rights Reserved.
+// Qualcomm Technologies Proprietary and Confidential.
+
+/**
+* @addtogroup CFeatureVersions
+* @{
+  Class CFeatureVersions implements \link IFeatureVersions \endlink interface.
+	
+  The class ID `FeatureVersions` is not included in the default privilege set. It needs to be added to the 
+  privileges section in the metadata to allow the TA to use the CFeatureVersions class.
+*/
+
+const uint32 CFeatureVersions_UID = 2033;
+
+/** @} */

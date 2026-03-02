@@ -1,0 +1,27 @@
+// Copyright (c) 2015-2017 Qualcomm Technologies, Inc.  All Rights Reserved.
+// Qualcomm Technologies Proprietary and Confidential.
+
+/** @cond */
+interface IHdmiStatus
+{
+/** @endcond */
+
+  /**
+   * @addtogroup IHdmiStatus
+   * @{
+   */
+
+  /**
+    Reads status of the HDMI link and hardware HDCP.
+
+    @param[out] hdmiEnable  HDMI output enabled.
+    @param[out] hdmiSense   HDMI sense.
+    @param[out] hdcpAuth    HDCP authentication success.
+
+    @return
+    Object_OK on success.
+  */
+  method hdmiStatusRead(out uint32 hdmiEnable, out uint32 hdmiSense, out uint32 hdcpAuth );
+  /** @} */ /* end_addtogroup IHdmiStatus */
+};
+

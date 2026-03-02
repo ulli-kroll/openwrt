@@ -1,0 +1,32 @@
+#!/bin/sh /etc/rc.common
+#
+[ -e /lib/ipq806x.sh ] && . /lib/ipq806x.sh
+
+START=15
+boardname=$(ipq806x_board_name)
+
+USE_PROCD=1
+
+NAME=secure_channel_onboarding
+PROG=/usr/bin/secure_channel_onboarding
+
+# For procd version
+start_service() {
+    procd_open_instance
+    procd_set_param command "$PROG"
+    procd_close_instance
+}
+
+# For non-procd version (SDX)
+start() {
+    service_start $PROG
+}
+
+stop() {
+    service_stop $PROG
+}
+
+reload() {
+    service_reload $PROG
+}
+

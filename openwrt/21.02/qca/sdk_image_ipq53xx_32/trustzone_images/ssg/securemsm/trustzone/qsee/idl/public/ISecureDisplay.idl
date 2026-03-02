@@ -1,0 +1,63 @@
+/** @file ISecureDisplay.idl  */
+/*
+  Copyright (c) 2015-2018 Qualcomm Technologies, Inc.  All Rights Reserved.
+  Qualcomm Technologies Proprietary and Confidential. */
+
+
+/** @cond */
+interface ISecureDisplay {
+/** @endcond */
+
+  /**
+   * @addtogroup ISecureDisplay
+   * @{
+   */
+
+  /**
+    Controls whether REE can stop the secure display using
+    Android's sd_ctrl syscall.
+
+    @param[in] isAllowed  1 allows REE to stop secure display; otherwise, 0. \n
+
+
+    @return
+    Object_OK on success.
+  */
+  method setStopAllowed(in int32 isAllowed);
+
+  /**
+    Gets current secure display session ID.
+
+    @param[out] sessionID  Current secure display session ID. \n
+                           0 if no active session.
+
+    @return
+    Object_OK on success.
+  */
+  method getSession(out uint32 sessionID);
+
+  /**
+     Gets the Layer Mixer Register count for CRC calculation.
+
+     @param[out] lm_count Count of Layer Mixer registers used by display
+                          0 to disable frame authentication based on MISR.
+
+     @return
+     Object_OK if successful.
+   */
+  method getLMRegCount(out uint32 lm_count);
+
+  /**
+     Reads the Layer Mixer MISR registers.
+
+     @param[out] lm_misr Pointer to output array for MISR vaues.\n
+                         Array size must be at least equal to
+                         2*lm_count.
+
+     @return
+     Object_OK if successful.
+   */
+  method readMISR(out uint32[] lm_misr);
+  /** @} */ /* end_addtogroup ISecureDisplay */
+};
+

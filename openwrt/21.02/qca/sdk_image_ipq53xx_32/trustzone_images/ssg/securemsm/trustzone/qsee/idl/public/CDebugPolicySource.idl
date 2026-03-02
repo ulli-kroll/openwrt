@@ -1,0 +1,15 @@
+// Copyright (c) 2016 Qualcomm Technologies, Inc.  All Rights Reserved.
+// Qualcomm Technologies Proprietary and Confidential.
+
+/**
+* @addtogroup CDebugPolicySource
+* @{
+  Class CDebugPolicySource implements \link ISource \endlink interface.
+	
+  The class ID `DebugPolicySource` is included in the default privilege set, therefore the 
+  CDebugPolicySource class is available to every TA.
+*/
+
+const uint32 CDebugPolicySource_UID = 64;
+
+/** @} */

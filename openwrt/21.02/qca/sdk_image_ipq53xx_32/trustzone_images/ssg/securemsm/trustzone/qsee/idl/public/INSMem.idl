@@ -1,0 +1,75 @@
+/** @file  INSMem.idl */
+
+/* Copyright (c) 2015-2017 Qualcomm Technologies, Inc.  All Rights Reserved.
+   Qualcomm Technologies Proprietary and Confidential. */
+
+/** @cond */
+interface INSMem {
+/** @endcond */
+
+  /** @cond */
+  error INVALID;
+  /** @endcond */
+
+  /**
+   * @addtogroup INSMem
+   * @{
+   */
+
+  /**
+    Checks whether a memory range is completely within the secure memory
+    tagged for a use case.
+
+    @param [in] tag Domain that has access to the protected memory region.
+
+    @param [in] start Start of memory area (included in the range).
+
+    @param [in] size Number of bytes in memory area.
+
+    @return
+    Object_OK if the entire area is in secure memory; otherwise, INSMem_INVALID.
+  */
+  method isSecureTaggedRange(in uint32 tag, in uint64 start, in uint64 size);
+
+  /**
+    Checks whether the specified memory range is completely in non-secure memory.
+
+    @param [in] start Starting address of the region. Zero is a valid value.
+
+    @param [in] size  Number of bytes in region.
+
+    @return
+    Object_OK if the entire area is in secure memory; otherwise, INSMem_INVALID.
+  */
+  method isNSRange(in uint64 start, in uint64 size);
+
+  /**
+    Counts the number of pages tagged as secure display memory.
+
+    @param [in] tag  Domain with access to protected memory region.
+
+    @param [out] usageInPages  Number of pages.
+
+    @return
+    Object_OK if the entire area is in secure memory; otherwise, INSMem_INVALID.
+  */
+  method countMemUsage(in uint32 tag, out uint32 usageInPages);
+
+  /**
+    Tags memory provided for a specific use-case.
+
+    @param [in] tag   Domain which should have access to the protected memory region.
+
+    @param [in] start Start of memory area (included in the range).
+
+    @param [in] end   End of memory area (excluded in the range).
+
+    @return Object_OK if the entire area successfully tagged for the use case; otherwise, INSMem_INVALID.
+
+  */
+  method tagMem(in uint32 tag, in uint64 start, in uint64 end);
+
+  /** @} */ /* end_addtogroup INSMem */
+};
+
+

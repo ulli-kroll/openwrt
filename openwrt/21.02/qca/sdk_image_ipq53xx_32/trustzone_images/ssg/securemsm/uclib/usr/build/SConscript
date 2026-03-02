@@ -1,0 +1,274 @@
+#===============================================================================
+#
+# TZBSP crypto lib
+#
+# GENERAL DESCRIPTION
+#    build script
+#
+# Copyright 2017,2019,2022,2023 by Qualcomm Technologies, Inc.
+# All Rights Reserved.
+# QUALCOMM Proprietary/GTDR
+#
+#-------------------------------------------------------------------------------
+#
+#  $Header: //components/rel/ssg.tzw/1.2/securemsm/uclib/usr/build/SConscript#4 $
+#  $DateTime: 2023/01/30 23:39:43 $
+#  $Author: pwbldsvc $
+#                      EDIT HISTORY FOR FILE
+#
+#  This section contains comments describing changes made to the module.
+#  Notice that changes are listed in reverse chronological order.
+#
+# when          who        what, where, why
+# --------      ---        ---------------------------------------------------------
+# 01/20/2022    aj         Skip UCLIB API for independent devcfg build
+# 12/06/2022    gp         Support TZAPP in Miami
+# 08/11/2022    abs        Update for Miami uclib
+# 8/23/2017     ah         Initial
+#===============================================================================
+Import('env')
+
+includes = [
+'${BUILD_ROOT}/ssg/securemsm/uclib/inc',
+'${BUILD_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/core/inc',
+'${BUILD_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/environment/inc',
+'${BUILD_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/environment/usr/inc',
+'${BUILD_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/core/ecc/inc',
+'${BUILD_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/core/ecc_generic/inc',
+'${BUILD_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/core/ecies/inc',
+'${BUILD_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/shared/aes/inc',
+'${BUILD_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/shared/des/inc',
+'${BUILD_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/shared/ecc/inc',
+'${BUILD_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/shared/ecc_generic/inc',
+'${BUILD_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/shared/ecies/inc',
+'${BUILD_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/shared/sha/inc',
+'${BUILD_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/shared/pbkdf2/inc',
+'${BUILD_ROOT}/ssg/securemsm/uclib/usr/legacy/secrsa/shared/inc',
+'${BUILD_ROOT}/ssg/securemsm/uclib/usr/legacy/secrsa/shared/src',
+'${BUILD_ROOT}/ssg/securemsm/uclib/usr/legacy/secrsa/env/sampleapp/inc',
+'${BUILD_ROOT}/ssg/securemsm/uclib/usr/legacy/secmath/shared/inc',
+'${BUILD_ROOT}/ssg/securemsm/uclib/usr/legacy/secmath/env/sampleapp/inc',
+'${BUILD_ROOT}/ssg/securemsm/uclib/usr/legacy/secarith/shared/inc',
+'${BUILD_ROOT}/ssg/securemsm/uclib/usr/legacy/secarith/shared/src',
+'${BUILD_ROOT}/ssg/securemsm/uclib/usr/legacy/secarith/env/qsapps/inc',
+'${BUILD_ROOT}/ssg/securemsm/swcryptoselftest/inc',
+'${BUILD_ROOT}/ssg/securemsm/trustzone/qsapps/libs/cmnlib/inc/',
+'${BUILD_ROOT}/ssg/securemsm/trustzone/qsapps/libs/cmnlib/services/inc',
+'${BUILD_ROOT}/ssg/securemsm/trustzone/qsapps/libs/cmnlib/gp/inc/',
+'${BUILD_ROOT}/ssg/securemsm/trustzone/image_version/inc/',
+'${BUILD_ROOT}/ssg/api/securemsm/trustzone/qsee/',
+'${BUILD_ROOT}/core/api/kernel/libstd/',
+'${BUILD_ROOT}/core/api/services',
+]
+
+if env['CHIPSET'] in ['ipq53xx']:
+  includes += ['${BUILD_ROOT}/uclib/api/uclib',]
+
+if env['MSM_ID'] in ['53xx']:
+  env.Append(CPPDEFINES = ["CHIPSET_53xx"])
+
+#-------------------------------------------------------------------------------
+# Source PATH
+#-------------------------------------------------------------------------------
+SRCPATH = "${BUILD_ROOT}/ssg/securemsm/uclib/usr"
+
+env.VariantDir('${BUILDPATH}', SRCPATH, duplicate=0)
+
+#-------------------------------------------------------------------------------
+# Internal depends within CoreBSP
+#-------------------------------------------------------------------------------
+env.RequirePublicApi(['SERVICES',
+                      'DAL',
+                      'KERNEL'
+                     ], area='core')
+
+# Skip UCLIB API for Miami devcfg independent build.
+# Get UCLIB API though devcfg comes along with TZ build request(for External build)
+skip_image_alias = ['devcfg']
+if env['CHIPSET'] in ['ipq53xx']:
+  if env.CheckAlias(alias_list = ['tz']) or not env.CheckAlias(alias_list = skip_image_alias):
+    env.RequirePublicApi(['UCLIB'], area='uclib')
+
+SSG_API = [
+   'SECUREMSM',
+   'SWCRYPTOSELFTEST',
+   'SSGPLATFORM',
+   'UNIFIEDCRYPTO',
+   'MINK',
+   'SECUTILS',
+ ]
+
+if env['CHIPSET'] in ['ipq90xx']:
+  SSG_API += ['UCLIB',]
+
+env.RequirePublicApi(SSG_API, area='ssg')
+
+env.RequireRestrictedApi(['SECUREMSM',
+                          'SWCRYPTOSELFTEST',
+                          'SSGPLATFORM',
+                          'UNIFIEDCRYPTO',
+                          'MINK',
+                          'SWCRYPTOSELFTEST',
+                          'TAUCLIB'])
+
+#-------------------------------------------------------------------------------
+# Compiler, object, and linker definitions
+#-------------------------------------------------------------------------------
+#
+#-------------------------------------------------------------------------------
+# Sources, libraries
+#-------------------------------------------------------------------------------
+
+USR_UCLIB_SOURCES = ['${BUILDPATH}/ucenv_usr.c']
+
+USR_UCLIB_LEGACY_SOURCES = ['${BUILDPATH}/legacy/unifiedcrypto/shared/aes/src/aes_shared.c',
+                            '${BUILDPATH}/legacy/unifiedcrypto/shared/des/src/des_shared.c',
+                            '${BUILDPATH}/legacy/unifiedcrypto/shared/ecc/src/ecc_shared.c',
+                            '${BUILDPATH}/legacy/unifiedcrypto/shared/ecc_generic/src/ecc_generic_shared.c',
+                            '${BUILDPATH}/legacy/unifiedcrypto/shared/ecies/src/ecies_shared.c',
+                            '${BUILDPATH}/legacy/unifiedcrypto/shared/sha/src/sha_shared.c',
+                            '${BUILDPATH}/legacy/unifiedcrypto/shared/pbkdf2/src/pbkdf2.c',
+                            '${BUILDPATH}/legacy/secrsa/shared/src/secrsa_encryption.c',
+                            '${BUILDPATH}/legacy/secrsa/shared/src/secrsa_keygen.c',
+                            '${BUILDPATH}/legacy/secrsa/shared/src/secrsa_signature.c',
+                            '${BUILDPATH}/legacy/secrsa/shared/src/secrsa_crt.c',
+                           ]
+
+UCLIB_LEGACY_ECC_SOURCES = ['${BUILDPATH}/legacy/unifiedcrypto/core/ecc/src/ecc_core.c',
+                            '${BUILDPATH}/legacy/unifiedcrypto/core/ecc_generic/src/qrlbn_arith.c',
+                            '${BUILDPATH}/legacy/unifiedcrypto/core/ecc_generic/src/qrlbn_ecc.c',
+                            '${BUILDPATH}/legacy/unifiedcrypto/core/ecc_generic/src/qrlbn_ecc_protocols.c',
+                            '${BUILDPATH}/legacy/unifiedcrypto/core/ecc_generic/src/qrlbn_inverse.c',
+                            '${BUILDPATH}/legacy/unifiedcrypto/core/ecc_generic/src/qrlbn_random.c',
+                            '${BUILDPATH}/legacy/unifiedcrypto/core/ecc_generic/src/qrlbn_utils.c',
+                            '${BUILDPATH}/legacy/unifiedcrypto/core/ecies/src/ecies_core.c',
+                            '${BUILDPATH}/legacy/unifiedcrypto/environment/src/uc_env.c',
+                           ]
+
+UCLIB_LEGACY_SECARITH_SOURCES = ['${BUILDPATH}/legacy/secarith/shared/src/bn_add.c',
+                                 '${BUILDPATH}/legacy/secarith/shared/src/bn_asm.c',
+                                 '${BUILDPATH}/legacy/secarith/shared/src/bn_ctx2.c',
+                                 '${BUILDPATH}/legacy/secarith/shared/src/bn_div.c',
+                                 '${BUILDPATH}/legacy/secarith/shared/src/bn_exp.c',
+                                 '${BUILDPATH}/legacy/secarith/shared/src/bn_gcd.c',
+                                 '${BUILDPATH}/legacy/secarith/shared/src/bn_kron.c',
+                                 '${BUILDPATH}/legacy/secarith/shared/src/bn_lib.c',
+                                 '${BUILDPATH}/legacy/secarith/shared/src/bn_malloc2.c',
+                                 '${BUILDPATH}/legacy/secarith/shared/src/bn_mod2.c',
+                                 '${BUILDPATH}/legacy/secarith/shared/src/bn_mont.c',
+                                 '${BUILDPATH}/legacy/secarith/shared/src/bn_mul.c',
+                                 '${BUILDPATH}/legacy/secarith/shared/src/bn_prime.c',
+                                 '${BUILDPATH}/legacy/secarith/shared/src/bn_prime_tbl.c',
+                                 '${BUILDPATH}/legacy/secarith/shared/src/bn_print.c',
+                                 '${BUILDPATH}/legacy/secarith/shared/src/bn_rand.c',
+                                 '${BUILDPATH}/legacy/secarith/shared/src/bn_recp.c',
+                                 '${BUILDPATH}/legacy/secarith/shared/src/bn_shift.c',
+                                 '${BUILDPATH}/legacy/secarith/shared/src/bn_sqr.c',
+                                 '${BUILDPATH}/legacy/secarith/shared/src/bn_sqrt.c',
+                                 '${BUILDPATH}/legacy/secarith/shared/src/bn_word.c',
+                                 #'${BUILDPATH}/legacy/secarith/shared/src/bntest2.c',
+                                 '${BUILDPATH}/legacy/secarith/shared/src/isaac_rand.c',
+                                 '${BUILDPATH}/legacy/secarith/shared/src/qbn_xbgcd.c',
+                                 '${BUILDPATH}/legacy/secarith/shared/src/rand_lib2.c',
+                                ]
+
+UCLIB_LEGACY_SECMATH_SOURCES = ['${BUILDPATH}/legacy/secmath/shared/src/secmath_mod_exp.c',
+                                '${BUILDPATH}/legacy/secmath/shared/src/secmath_montmul_utils.c',
+                                '${BUILDPATH}/legacy/secmath/shared/src/secmath_barrett_reduce.c',
+                                '${BUILDPATH}/legacy/secmath/shared/src/secmath_BIGINT_read_radix.c',
+                                '${BUILDPATH}/legacy/secmath/shared/src/secmath_BIGINT_read_unsigned_bin.c',
+                                '${BUILDPATH}/legacy/secmath/shared/src/secmath_BIGINT_to_radix.c',
+                                '${BUILDPATH}/legacy/secmath/shared/src/secmath_BIGINT_to_unsigned_bin.c',
+                                '${BUILDPATH}/legacy/secmath/shared/src/secmath_BIGINT_is_prime.c',
+                                '${BUILDPATH}/legacy/secmath/shared/src/secmath_BIGINT_prime_test.c',
+                                '${BUILDPATH}/legacy/secmath/shared/src/secmath_is_prime_div_chk.c',
+                                '${BUILDPATH}/legacy/secmath/shared/src/secmath_bin_to_hex_str.c',
+                                '${BUILDPATH}/legacy/secmath/shared/src/secmath_hex_str_to_bin.c',
+                               ]
+
+UCLIB_LEGACY_SECMATH_SOURCES_OPTIMIZED = [
+                                '${BUILDPATH}/legacy/secmath/shared/src/secmath_montmul_ref.c',
+                               ]
+
+UCLIB_LEGACY_SECRSA_SOURCES = ['${BUILDPATH}/legacy/secrsa/shared/src/secrsa_exptmod.c',
+                               '${BUILDPATH}/legacy/secrsa/shared/src/secrsa_math.c',
+                               '${BUILDPATH}/legacy/secrsa/shared/src/secrsa_utils.c',
+                               '${BUILDPATH}/legacy/secrsa/shared/src/secrsa_mem.c',
+                               '${BUILDPATH}/legacy/secrsa/shared/src/secrsa_math2.c',
+                               '${BUILDPATH}/legacy/secrsa/shared/src/secrsa_padding.c',
+                               '${BUILDPATH}/legacy/secrsa/shared/src/secpkcs8.c',
+                               '${BUILDPATH}/legacy/secrsa/shared/src/secasn1.c',
+                              ]
+
+USR_UCLIB_SOURCES = USR_UCLIB_SOURCES + USR_UCLIB_LEGACY_SOURCES + UCLIB_LEGACY_ECC_SOURCES
+
+if env['CHIPSET'] in ['ipq90xx']:
+   if env.has_key('CTZL_IMAGE') or env.has_key('APPLIB32_IMAGE'):
+      if env['OFF_TARGET']:
+         USR_UCLIB_SOURCES = USR_UCLIB_SOURCES + ['${BUILDPATH}/../bin/x86_usr/uclib32.o']
+      else:
+         USR_UCLIB_SOURCES = USR_UCLIB_SOURCES + ['${BUILDPATH}/../bin/arm_usr/uclib32.o']
+   elif env.has_key('CTZL64_IMAGE') or env.has_key('APPLIB64_IMAGE'):
+      if env['OFF_TARGET']:
+         USR_UCLIB_SOURCES = USR_UCLIB_SOURCES + ['${BUILDPATH}/../bin/x86_usr/uclib64.o']
+      else:
+         USR_UCLIB_SOURCES = USR_UCLIB_SOURCES + ['${BUILDPATH}/../bin/arm_usr/uclib64.o']
+
+if env.has_key('CTZL_IMAGE') or env.has_key('CTZL64_IMAGE') or env.has_key('APPLIB32_IMAGE') or env.has_key('APPLIB64_IMAGE'):
+   sources = [x.replace('${BUILDPATH}','..') for x in USR_UCLIB_SOURCES]
+   uclib_lib = env.SecureAppLibBuilder(includes, sources, 'uclib')
+   if env.has_key('CTZL_IMAGE') or env.has_key('CTZL64_IMAGE'):
+      sources = [x.replace('${BUILDPATH}','..') for x in UCLIB_LEGACY_SECARITH_SOURCES]
+      secarith_lib = env.SecureAppLibBuilder(includes, sources, 'secarith')
+      sources = [x.replace('${BUILDPATH}','..') for x in UCLIB_LEGACY_SECRSA_SOURCES]
+      secrsa_lib = env.SecureAppLibBuilder(includes, sources, 'secrsa')
+
+   env.Append(CCFLAGS = " -DTZ_APP_LEGACY")
+   sources = [x.replace('${BUILDPATH}','..') for x in UCLIB_LEGACY_SECMATH_SOURCES]
+   secmath_lib = env.SecureAppLibBuilder(includes, sources, 'secmath')
+
+   sources = [x.replace('${BUILDPATH}','..') for x in UCLIB_LEGACY_SECMATH_SOURCES_OPTIMIZED]
+   secmath_opt_lib = env.SecureAppLibBuilder(includes,sources, 'secmath_opt')
+
+   if env.has_key('CTZL_IMAGE') or env.has_key('CTZL64_IMAGE'):
+      Return('uclib_lib','secarith_lib','secmath_lib','secmath_opt_lib','secrsa_lib')
+   else:
+      Return('uclib_lib','secmath_lib','secmath_opt_lib')
+
+env.AddBinaryLibrary(['CTZL64_IMAGE', 'CTZL_IMAGE', 'APPLIB32_IMAGE', 'APPLIB64_IMAGE'], '${BUILDPATH}/ucenv_usr', USR_UCLIB_SOURCES)
+
+if env['CHIPSET'] in ['ipq90xx']:
+   env.Deploy(['SConscript',
+              env.Glob('../../uclib/inc/*.h'),
+              env.Glob('../legacy/unifiedcrypto/environment/inc/*.h'),
+              env.Glob('../legacy/unifiedcrypto/environment/usr/inc/*.h'),
+              env.Glob('../legacy/unifiedcrypto/environment/tz/inc/*.h'),
+              env.Glob('../legacy/unifiedcrypto/shared/aes/inc/*.h'),
+              env.Glob('../legacy/unifiedcrypto/shared/des/inc/*.h'),
+              env.Glob('../legacy/unifiedcrypto/shared/ecc/inc/*.h'),
+              env.Glob('../legacy/unifiedcrypto/shared/ecc_generic/inc/*.h'),
+              env.Glob('../legacy/unifiedcrypto/shared/ecies/inc/*.h'),
+              env.Glob('../legacy/unifiedcrypto/shared/sha/inc/*.h'),
+              env.Glob('../legacy/unifiedcrypto/shared/pbkdf2/inc/*.h'),
+              env.Glob('../legacy/secrsa/shared/inc/*.h'),
+              env.Glob('../legacy/secrsa/shared/src/*.h'),
+              env.Glob('../legacy/secmath/shared/inc/secmath.h'),
+              env.Glob('../legacy/secmath/shared/inc/secmath_err.h'),])
+
+if env['CHIPSET'] in ['ipq53xx']:
+   env.Deploy(['SConscript',
+              env.Glob('../legacy/unifiedcrypto/environment/inc/*.h'),
+              env.Glob('../legacy/unifiedcrypto/environment/usr/inc/*.h'),
+              env.Glob('../legacy/unifiedcrypto/environment/tz/inc/*.h'),
+              env.Glob('../legacy/unifiedcrypto/shared/aes/inc/*.h'),
+              env.Glob('../legacy/unifiedcrypto/shared/des/inc/*.h'),
+              env.Glob('../legacy/unifiedcrypto/shared/ecc/inc/*.h'),
+              env.Glob('../legacy/unifiedcrypto/shared/ecc_generic/inc/*.h'),
+              env.Glob('../legacy/unifiedcrypto/shared/ecies/inc/*.h'),
+              env.Glob('../legacy/unifiedcrypto/shared/sha/inc/*.h'),
+              env.Glob('../legacy/unifiedcrypto/shared/pbkdf2/inc/*.h'),
+              env.Glob('../legacy/secrsa/shared/inc/*.h'),
+              env.Glob('../legacy/secrsa/shared/src/*.h'),
+              env.Glob('../legacy/secmath/shared/inc/secmath.h'),
+              env.Glob('../legacy/secmath/shared/inc/secmath_err.h'),])
+

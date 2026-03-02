@@ -1,0 +1,35 @@
+#===============================================================================
+#
+# Buses QUP Access Control Settings API Registration
+#
+# GENERAL DESCRIPTION
+#    Buses QUP Access Control Settings API Registration
+#
+# Copyright (c) 2018 by Qualcomm Technologies, Incorporated.
+# All Rights Reserved.
+# QUALCOMM Proprietary/GTDR
+#
+#-------------------------------------------------------------------------------
+#                      EDIT HISTORY FOR FILE
+#
+#  This section contains comments describing changes made to the module.
+#  Notice that changes are listed in reverse chronological order.
+#
+# when       who     what, where, why
+# --------   ---     ---------------------------------------------------------
+# 12/12/18   DPK     Removed unused rules.
+# 03/20/18   VG      Initial version.
+#
+#===============================================================================
+
+Import('env')
+
+
+#-------------------------------------------------------------------------------
+# Publish Public APIs
+#-------------------------------------------------------------------------------
+env.PublishPublicApi('BUSES', [
+   "${INC_ROOT}/core/settings/buses/qup_accesscontrol/blsp/xpuv2/interface",
+   "${INC_ROOT}/core/settings/buses/qup_accesscontrol/blsp/xpuv2/interface/${MSM_ID}",
+])
+

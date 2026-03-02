@@ -1,0 +1,15 @@
+// Copyright (c) 2018 Qualcomm Technologies, Inc.  All Rights Reserved.
+// Qualcomm Technologies Proprietary and Confidential.
+
+/**
+* @addtogroup CICE
+* @{
+  Class CICE implements \link IICE \endlink interface.
+	
+  The class ID `ICE` is not included in the default privilege set. It needs to be added to the 
+  privileges section in the metadata to allow the TA to use the CICE class.
+*/
+
+const uint32 CICE_UID = 140;
+
+/** @} */

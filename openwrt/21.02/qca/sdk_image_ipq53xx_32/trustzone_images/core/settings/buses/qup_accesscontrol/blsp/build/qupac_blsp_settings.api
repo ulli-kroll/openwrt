@@ -1,0 +1,26 @@
+#===============================================================================
+#
+# QUP Access Control Settings API Registration
+#
+# GENERAL DESCRIPTION
+#    QUP Access Control Settings API Registration
+#
+# Copyright (c) 2017-2018 Qualcomm Technologies, Inc.
+#           All Rights Reserved.
+# Qualcomm Technologies, Inc. Confidential and Proprietary.
+#
+#-------------------------------------------------------------------------------
+#                      EDIT HISTORY FOR FILE
+#
+#  This section contains comments describing changes made to the module.
+#  Notice that changes are listed in reverse chronological order.
+#
+# when       who     what, where, why
+# --------   ---     ---------------------------------------------------------
+# 03/20/18   VG     Initial version.
+#
+#===============================================================================
+
+Import('env')
+  
+env.LoadAPIUnits()

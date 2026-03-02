@@ -1,0 +1,59 @@
+#!/bin/sh
+#
+# @@-COPYRIGHT-START-@@
+#
+# Copyright (c) 2023 Qualcomm Technologies, Inc.
+# All Rights Reserved.
+# Confidential and Proprietary - Qualcomm Technologies, Inc.
+#
+# @@-COPYRIGHT-END-@@
+#
+. /lib/functions.sh
+. /lib/functions/network.sh
+. /lib/wifi_interface_helper.sh
+include /lib/wifi
+
+ubus_wds_ext_update()
+{
+	local wds_ext_name=$1
+
+	vapname=`echo ${wds_ext_name} | cut -d'.' -f1`
+
+	scan_wifi
+
+	for device in $DEVICES; do
+		scan_qcawificfg80211 $device
+		config_get vifs "$device" vifs
+		for vif in $vifs; do
+			config_get ifname "$vif" ifname
+			config_get mld "$vif" mld
+			if [ $ifname = $vapname -a -z "$mld" ]; then
+				config_get network "$vif" network
+				case "$ACTION" in
+					add)
+						ubus call network.interface.${network} add_device '{"name":"'${wds_ext_name}'","link-ext":0}'
+					;;
+					remove)
+						ubus call network.interface.${network} remove_device '{"name":"'${wds_ext_name}'","link-ext":0}'
+					;;
+				esac
+			fi
+		done
+
+	done
+}
+if [ $DEVTYPE -ne wlan ]; then
+	return;
+fi
+
+if [ $ACTION = add ] || [ $ACTION = remove ] ; then
+	case "$INTERFACE" in
+		*.sta*.*)
+			#skip the event wdsExt vlan VAPs
+		;;
+		*.sta*)
+			ubus_wds_ext_update ${INTERFACE}
+		;;
+	esac
+fi
+

@@ -1,0 +1,51 @@
+// Copyright (c) 2015 Qualcomm Technologies, Inc.  All Rights
+// Reserved.  Qualcomm Technologies Proprietary and Confidential.
+
+/** @cond */
+interface ITranslateAddr {
+/** @endcond */
+
+  /**
+   * @addtogroup ITranslateAddr
+   * @{
+   */
+
+  /** @cond */
+  /** Returned when an unsupported translation type is passed to
+      getPA() */
+  error ERROR_UNSUPPORTED_TRANSLATION_TYPE;
+
+  /** Returned when the result of a translation is a translation
+      fault. */
+  error ERROR_TRANSLATION_FAULT;
+
+  /**
+   * Supported methods of translation.
+   */
+  const uint32 EL1_Read  = 0x0;
+  const uint32 EL1_Write = 0x1;
+  const uint32 EL0_Read  = 0x2;
+  const uint32 EL0_Write = 0x3;
+  /** @endcond */
+
+  /**
+    Translates a virtual address to physical address.
+
+    @param[in]  translationMethod  Describes what processor state
+                                   should attempt the translation. \n 
+                                   Affects translation outcome depending 
+                                   on memory access permission properties.
+    @param[in]  VA                 Virtual address to translate.
+    @param[out] PA                 Physical address result of translation.
+
+    @note1hang This function truncates addresses to the page boundary. The
+               PA result is also an address on the page boundary.
+
+    @return
+    Object_OK on success.
+  */
+  method getPA(in  uint32 translationMethod,
+               in  uint64 VA,
+               out uint64 PA);
+  /* @} */ /* end_addtogroup ITranslateAddr */
+};

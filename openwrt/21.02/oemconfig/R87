@@ -1,0 +1,42 @@
+CONFIG_TARGET_ipq53xx=y
+CONFIG_TARGET_ipq53xx_ipq53xx_32=y
+CONFIG_TARGET_ipq53xx_ipq53xx_32_DEVICE_R87=y
+CONFIG_TARGET_BOARD="ipq53xx"
+CONFIG_PACKAGE_kmod-qca-nss-eip=y
+CONFIG_PACKAGE_kmod-qca-nss-eip-crypto=y
+CONFIG_PACKAGE_kmod-qca-nss-eip-ipsec=y
+CONFIG_DEVEL=y
+CONFIG_CNSS2_MODULE=y
+CONFIG_COLLECT_KERNEL_DEBUG=y
+CONFIG_GIT_MIRROR="https://git.codelinaro.org/clo/qsdk/"
+CONFIG_LOCALMIRROR="https://codelinaro.jfrog.io/artifactory/codelinaro-qsdk/"
+# CONFIG_KERNEL_CRASH_DUMP is not set
+CONFIG_KERNEL_DEBUG_ATOMIC_SLEEP=y
+CONFIG_KERNEL_DEVMEM=y
+CONFIG_KERNEL_DYNAMIC_DEBUG=y
+CONFIG_KERNEL_PERF_EVENTS=y
+# CONFIG_KERNEL_SWAP is not set
+
+CONFIG_PACKAGE_uboot-2016-ipq5332-R87=y
+
+
+CONFIG_PACKAGE_ddns-scripts_cloudflare.com-v4=y
+# CONFIG_PACKAGE_zram-swap is not set
+# CONFIG_PACKAGE_qos-scripts is not set
+# CONFIG_PACKAGE_bdinfo is not set
+
+
+# CONFIG_PACKAGE_pptpd is not set
+
+
+#add critical setting
+CONFIG_TOOLCHAINOPTS=y
+CONFIG_GCC_USE_VERSION_7=y 
+# CONFIG_GCC_USE_VERSION_8 is not set
+
+CONFIG_SYSUPGRADE_FIT=y
+CONFIG_BUSYBOX_CONFIG_USLEEP=y
+CONFIG_BUSYBOX_CONFIG_STAT=y
+CONFIG_BUSYBOX_CONFIG_DEVMEM=y
+
+

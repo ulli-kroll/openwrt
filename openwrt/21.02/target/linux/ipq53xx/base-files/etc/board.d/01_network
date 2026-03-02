@@ -1,0 +1,31 @@
+#!/bin/sh
+
+. /lib/functions.sh
+. /lib/ipq53xx.sh
+. /lib/functions/uci-defaults.sh
+. /lib/functions/system.sh
+
+qcom_setup_interfaces()
+{
+	local board="$1"
+
+	case "$board" in
+	R65)
+	ucidef_set_interfaces_lan_wan "eth1" "eth0"
+	ucidef_add_switch "switch1" "2:lan" "3:lan" "4:lan" "1:wan" "0@eth1" "5@eth0"
+		;;
+	R86)
+	ucidef_set_interfaces_lan_wan "eth1" "eth0"
+	ucidef_add_switch "switch1" "1:lan:3" "2:lan:2" "3:lan:1" "4:wan" "0@eth1" "5@eth0"
+		;;
+	R87)
+		ucidef_set_interfaces_lan_wan "eth1" "eth0"
+	esac
+}
+
+board_config_update
+board=$(ipq53xx_oem_board_name)
+qcom_setup_interfaces $board
+board_config_flush
+
+exit 0

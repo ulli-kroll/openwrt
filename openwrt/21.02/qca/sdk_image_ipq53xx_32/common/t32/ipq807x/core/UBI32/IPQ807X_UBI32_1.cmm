@@ -1,0 +1,35 @@
+;***************************************************************************
+;**           IPQ807X_UBI32_0.CMM                                         **
+;***************************************************************************
+
+SYStem.Reset
+
+&t32_version=STRing.Replace(VERSION.DATE(), "/", "", 0)
+print &t32_version
+
+; select CPU and options
+IF &t32_version<201806
+	&cpu_name="FSM90xx"
+ELSE IF &t32_version<202010
+	&cpu_name="IPQ807X-CORE1"
+ELSE
+	&cpu_name="IPQ807X-NPU1"
+print "&cpu_name"
+SYStem.CPU &cpu_name
+
+;This re-assignment is a workaround for T32 issue.
+;For some reason, T32 does not send Debug port info (JTAG)
+;toTarget unless it switches value from SWD.
+SYStem.CONFIG SWDP OFF
+SYStem.CONFIG DEBUGPORTTYPE JTAG
+
+RADIX HEX
+SETUP.VAR %HEX.ON
+MODE.HLL
+
+autostore , history
+
+SYStem.STATE
+
+ENDDO
+

@@ -1,0 +1,28 @@
+//  Copyright (c) 2017 Qualcomm Technologies, Inc.  All Rights Reserved.
+//  Qualcomm Technologies Proprietary and Confidential.
+include "IMemRegion.idl"
+
+/** @cond */
+interface IHlosRegionFinder
+{
+/** @endcond */
+
+  /**
+   * @addtogroup IHlosRegionFinder
+   * @{
+   */
+
+  /**
+    Creates a memory region to access HLOS memory. 
+
+    @param[in]  physAddr      Physical address of HLOS memory.
+    @param[in]  size          Size of physical memory region.
+    @param[out] memRegionOut  On success, HLOS Memory Region object.
+
+    @return
+    Object_OK indicates success. \n
+    Object_ERROR indicates failure.
+  */
+  method getRegion(in uint64 physAddr, in uint64 size, out IMemRegion memRegionOut);
+  /* @} */ /* end_addtogroup IHlosRegionFinder */
+};

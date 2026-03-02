@@ -1,0 +1,15 @@
+// Copyright (c) 2017 Qualcomm Technologies, Inc.  All Rights Reserved.
+// Qualcomm Technologies Proprietary and Confidential.
+
+/**
+* @addtogroup CHlosRegionFinder
+* @{
+  Class CHlosRegionFinder implements \link IHlosRegionFinder \endlink interface.
+  
+  The class ID `HlosRegionFinder` is not included in the default privilege set. It needs to be added to the 
+  privileges section in the metadata to allow the TA to use the CHlosRegionFinder class.
+*/
+
+const uint32 CHlosRegionFinder_UID = 132;
+
+/** @} */

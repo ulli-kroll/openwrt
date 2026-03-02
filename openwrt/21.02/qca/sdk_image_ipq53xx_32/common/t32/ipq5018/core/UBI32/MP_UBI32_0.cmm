@@ -1,0 +1,69 @@
+;
+; Copyright (c) 2017-2020 Qualcomm Technologies, Inc.
+; All Rights Reserved.
+; Confidential and Proprietary - Qualcomm Technologies, Inc.
+;
+
+; select CPU and options
+SYStem.Reset
+
+&t32_version=STRing.Replace(VERSION.DATE(), "/", "", 0)
+print &t32_version " " var.value(&t32_version)
+
+&ipqNPUver=202010
+IF &t32_version<201806
+	&cpu_name="FSM90xx"
+ELSE if &t32_version<&ipqNPUver
+	&cpu_name = "UBICOM32"
+ELSE
+	&cpu_name = "IPQ50XX-NPU0"
+SYStem.CPU &cpu_name
+
+SYStem.JTAGCLOCK CTCK 20MHz
+SYStem.CONFIG SLAVE ON
+
+if &t32_version<&ipqNPUver
+(
+	SYStem.CONFIG.COREDEBUG.Base 0x80134000
+;	SYStem.CONFIG.COREDEBUG.Base 0x801343c0
+	if &t32_version<201906
+	(
+		SYStem.CONFIG MEMORYACCESSPORT 3.
+		print "Old T32; please use version 202012 or newer"
+	)
+;SYStem.CONFIG AXIACCESSPORT 0.
+	SYStem.CONFIG DEBUGACCESSPORT  1.
+
+	SYStem.CONFIG DAPIRPRE 0.
+	SYStem.CONFIG DAPDRPRE 0.
+	SYStem.CONFIG DAPIRPOST 11.
+	SYStem.CONFIG DAPDRPOST 1.
+
+	SYStem.Option.OCPbase  0x3C000000
+	SYStem.Option.OCMemory  0x3E000000--0x3E02FFFF
+)
+
+;SYStem.CONFIG MULTITAP NONE
+
+;SYStem.MEMORYACCESS DAP
+
+;This re-assignment is a workaround for T32 issue.
+;For some reason, T32 does not send Debug port info (JTAG)
+;toTarget unless it switches value from SWD.
+SYStem.CONFIG SWDP OFF
+SYStem.CONFIG DEBUGPORTTYPE JTAG
+
+sys.o.E little
+
+RADIX HEX
+SETUP.VAR %HEX.ON
+MODE.HLL
+
+autostore , history
+
+SYStem.CONFIG SLAVE OFF
+
+SYStem.STATE
+
+ENDDO
+

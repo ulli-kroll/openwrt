@@ -1,0 +1,70 @@
+// Copyright (c) 2015 Qualcomm Technologies, Inc.  All Rights Reserved.
+// Qualcomm Technologies Proprietary and Confidential.
+
+/** @cond */
+interface ISecureChannel {
+/** @endcond */
+
+  /**
+   * @addtogroup ISecureChannel
+   * @{
+   */
+
+  /** @cond */
+  const uint32 SUBSYSTEM_ID_TZ          = 0;
+  const uint32 SUBSYSTEM_ID_MPSS        = 1;
+  const uint32 SUBSYSTEM_ID_LPASS       = 2;
+  const uint32 SUBSYSTEM_ID_WCNSS       = 3;
+  const uint32 SUBSYSTEM_ID_UNSUPPORTED = 127;  // 0x7F
+
+  const uint32 CLIENT_ID_SSM         = 0;
+  const uint32 CLIENT_ID_UIM         = 1;
+  const uint32 CLIENT_ID_UNSUPPORTED = 127;  // 0x7F
+  /** @endcond */
+
+  /**
+    Secures the input message.
+
+    @param[in]  subsystemId   Subsystem ID.
+    @param[in]  clientId      Client ID.
+    @param[in]  input         Buffer containing plaintext data.
+    @param[out] output        Buffer to hold the output secure blob.
+
+    @detdesc
+    - Output buffer must be large enough to hold encrypted message, some internal headers,
+      and possible padding.
+    - Recommended output buffer size is at least input message size + 100 bytes.
+    - Caller must manage memory.
+
+    @return
+    Object_OK on success.
+
+    @dependencies
+    Secure Channel must be established successfully.
+
+  */
+  method secureMessage(in uint32 subsystemId, in uint32 clientId, in buffer input, out buffer output);
+
+  /**
+    Authenticates and decrypts secure blob.
+
+    @param[in]  subsystemId  Subsystem ID.
+    @param[in]  clientId     Client ID.
+    @param[in]  input        Buffer containing secure blob.
+    @param[out] output       Buffer to hold decrypted data.
+
+    @detdesc
+    - Output buffer must be large enough to hold the decrypted message.
+    - Recommended output buffer size is at least input size.
+    - Caller must manage memory.
+
+    @return
+    Object_OK on success.
+
+    @dependencies
+    Secure Channel must be established successfully.
+
+  */
+  method authenticateDecryptMessage(in uint32 subsystemId, in uint32 clientId, in buffer input, out buffer output);
+  /* @} */ /* end_addtogroup ISecureChannel */
+};

@@ -1,0 +1,57 @@
+#!/bin/sh
+#
+
+. /lib/mediatek.sh
+
+board=$(mediatek_board_name)
+mac_suffix=$(ifconfig ra0 | grep HWaddr | awk '{ print $5 }' | awk -F: '{printf $4$5$6}')
+mac_suffix_ex=$(ifconfig ra0 | grep HWaddr | awk '{ print $5 }' | awk -F: '{printf $5$6}')
+bdinfo_mac=$(bdinfo mac)
+ssid_suffix=${bdinfo_mac:8}
+bdinfo_pin=$(bdinfo pin)
+country=$(bdinfo country)
+
+case "$board" in
+*)
+	default=$(uci -q get wireless.radio0.default)
+	if [ x"$default" != x"0" ]; then
+		uci set wireless.radio0.default='0'
+		uci set wireless.radio0.country="${country:-US}"
+		uci set wireless.radio1.country="${country:-US}"
+		uci set wireless.wlan00.def_ssid='Cudy-'${ssid_suffix:-default}
+		uci set wireless.wlan00.ssid='Cudy-'${ssid_suffix:-default}
+		uci set wireless.wlan10.ssid='Cudy-'${ssid_suffix:-default}'-5G'
+		uci set wireless.wlan10.def_ssid='Cudy-'${ssid_suffix:-default}'-5G'
+		uci set wireless.wlan00.encryption='psk-mixed'
+		uci set wireless.wlan00.key="${bdinfo_pin:-12345678}"
+		uci set wireless.wlan10.encryption='psk-mixed'
+		uci set wireless.wlan10.key="${bdinfo_pin:-12345678}"
+		uci set wireless.wlan02.ssid='Cudy-Guest-2.4G'
+		uci set wireless.wlan12.ssid='Cudy-Guest-5G'
+		bdinfo=$(bdinfo checkuuid)
+		[ "$bdinfo" == OK ] || {
+			uci set wireless.radio0.channel='6'
+			uci set wireless.radio1.channel='36'
+		}
+
+	fi
+	;;
+esac
+
+rule=$(uci -q get wireless.filter.rule)
+[ -n "$rule" ] || {
+	uci set wireless.macfilter=filter
+	uci set wireless.macfilter.rule='disabled'
+}
+uci set wireless.wds=wds-list
+
+[ x"$(uci -q get wireless.wlan01.network)" == x"lan" ] && uci set wireless.wlan01.network='wan'
+[ x"$(uci -q get wireless.wlan11.network)" == x"lan" ] && uci set wireless.wlan11.network='wan'
+
+[ -n "$(uci -q get cmagent.mqtt)" -a -z "$(uci -q get cmagent.mqtt.admin)" ] && {
+	uci set wireless.wlan02.network='wan'
+	uci set wireless.wlan12.network='wan'
+}
+
+uci commit wireless
+exit 0

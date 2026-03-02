@@ -1,0 +1,69 @@
+// Copyright (c) 2015 Qualcomm Technologies, Inc.  All Rights Reserved.
+// Qualcomm Technologies Proprietary and Confidential.
+
+/*
+ * IDataCache provides virtual address-based CPU data cache management
+ * operations.  These operations clean and/or invalidate to the Point of
+ * Coherency.
+ *
+ * This interface uses buffer arguments in an exceptional manner. It is used in
+ * scenarios where the caller of this interface executes in a
+ * process and the implementation resides in the kernel. Implementation
+ * uses the client-supplied buffer address, not buffer content (as is the case
+ * for every other interface).
+ */
+
+/** @cond */
+interface IDataCache {
+/** @endcond */
+
+  /**
+   * @addtogroup IDataCache
+   * @{
+   */
+
+  /**
+    Cleans a memory region in the cache. \n
+
+    This writes back any data that is dirty but does not invalidate the cache
+    region. Any further access to data in this region results in a cache-hit.
+
+    @param[out] region The memory region to clean.
+
+    @return
+    Object_OK if successful.
+   */
+
+  method cleanRegion(out buffer region);
+
+  /**
+    Cleans and invalidates a memory region in the cache. \n
+
+    Data in the cache is written back to the main memory if it was
+    dirty and the region is invalidated. Any further access to data
+    results in a cache-miss.
+
+    @param[out] region Memory region to clean and invalidate.
+
+    @return
+    Object_OK if successful.
+   */
+
+  method cleanAndInvalidateRegion(out buffer region);
+
+  /**
+    Invalidates a memory region in the cache. \n
+
+    Data in the cache is not written back to the main memory. Any further access
+    to data in this region results in a cache-miss.
+
+    @param[in] region Memory region to invalidate.
+
+    @return
+    Object_OK if successful.
+   */
+
+  method invalidateRegion(in buffer region);
+
+  /** @} */ /* end_addtogroup IDataCache */
+};

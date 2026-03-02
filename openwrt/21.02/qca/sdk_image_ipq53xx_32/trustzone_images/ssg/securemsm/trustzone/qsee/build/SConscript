@@ -1,0 +1,349 @@
+#===============================================================================
+#
+# Trustzone QSEE Libs
+#
+# GENERAL DESCRIPTION
+#    build script
+#
+# Copyright (c) 2011, 2017-2018,2021,2022 by Qualcomm Technologies, Inc.
+# All Rights Reserved.
+# QUALCOMM Proprietary/GTDR
+#===============================================================================
+import os
+import string
+
+Import('env')
+env = env.Clone()
+vars = Variables()
+
+
+
+# set defaults for values if they're not in the .cfg file
+if 'tzbsp_with_pil' not in env:
+  vars.Add(BoolVariable('tzbsp_with_pil',        'pil',           1))
+if 'tzbsp_with_secboot' not in env:
+  vars.Add(BoolVariable('tzbsp_with_secboot',    'secboot',       1))
+if 'tzbsp_with_mmu' not in env:
+  vars.Add(BoolVariable('tzbsp_with_mmu',        'mmu',           1))
+if 'tzbsp_with_ce' not in env:
+  vars.Add(BoolVariable('tzbsp_with_ce',         'crypto',        1))
+if 'tzbsp_with_ssd' not in env:
+  vars.Add(BoolVariable('tzbsp_with_ssd',        'ssd',           1))
+
+if 'tzbsp_no_xpu' not in env:
+  vars.Add(BoolVariable('tzbsp_no_xpu',          'no pil xpus',   0))
+if 'tzbsp_with_pil_timing' not in env:
+  vars.Add(BoolVariable('tzbsp_with_pil_timing', 'pil profiling', 0))
+if 'tzbsp_with_test_svc' not in env:
+  vars.Add(BoolVariable('tzbsp_with_test_svc',   'unit tests',    0))
+if 'tzbsp_no_abt' not in env:
+  vars.Add(BoolVariable('tzbsp_no_abt',          'ABT enable',    0))
+vars.Update(env)
+
+if env['tzbsp_with_secboot'] == 1:
+  env.Append(CCFLAGS = " -DTZBSP_WITH_SECBOOT ")
+  env.Append(CPPDEFINES = "TZBSP_WITH_SECBOOT")
+  env.Append(AFLAGS = " -DTZBSP_WITH_SECBOOT ")
+
+if env['tzbsp_with_mmu'] == 1:
+  env.Append(CCFLAGS = " -DTZBSP_WITH_MMU ")
+  env.Append(CPPDEFINES = "TZBSP_WITH_MMU")
+  env.Append(AFLAGS = " -DTZBSP_WITH_MMU ")
+
+if env['tzbsp_with_ce'] == 1:
+  env.Append(CCFLAGS = " -DTZBSP_WITH_CRYPTO_ENGINE ")
+  env.Append(CPPDEFINES = "TZBSP_WITH_CRYPTO_ENGINE")
+  env.Append(AFLAGS = " -DTZBSP_WITH_CRYPTO_ENGINE ")
+
+if env['tzbsp_with_ssd'] == 1:
+  env.Append(CCFLAGS = " -DTZBSP_WITH_SSD ")
+  env.Append(CPPDEFINES = "TZBSP_WITH_SSD")
+  env.Append(AFLAGS = " -DTZBSP_WITH_SSD ")
+
+if env['tzbsp_no_abt'] == 1:
+  env.Append(CCFLAGS = " -DTZBSP_NO_ABT")
+  env.Append(CPPDEFINES = "TZBSP_NO_ABT")
+  env.Append(AFLAGS = " -DTZBSP_NO_ABT")
+
+
+if env['tzbsp_with_mmu'] == 1:
+   env.Replace(TZBSP_TARG_PATH = "mmu")
+else:
+   env.Replace(TZBSP_TARG_PATH = "no_mmu")
+
+#env.Append(CCFLAGS = " --restrict ") #FIXME: for llvm?
+# SYSINI has FMXR/FMRX instrutions that require VFP/Neon support. Enabling
+# VFP/Neon isn't possible for C code at this point, because TZ is not
+# saving/restoring VFP/Neon registers on a context switch.
+env.Replace(ARM_CPU_SCORPION = 'QSP.no_neon')
+#env.Append(CCFLAGS = " -mcpu=arm1136jf-s ")
+#env.Append(CCFLAGS = " --fpu SoftVFP ") #FIXME llvm?
+#env.Append(ASFLAGS = " --fpu SoftVFP ")
+
+# Test version of TZ compiles with no optimizations.
+if 'tzbsp_with_test_svc' in env:
+  if env['tzbsp_with_test_svc'] == 1:
+      print "With Test is turned on"
+      env.Append(CCFLAGS = " -DTZBSP_WITH_TEST_SVC ")
+
+# PIL timing must be enabled compile time (use with_pil_timing=1).
+if env['tzbsp_with_pil_timing'] == 1:
+    env.Append(CCFLAGS = " -DTZBSP_WITH_PIL_TIMING ")
+
+#----------------------------------------------------------------------------
+# Source PATH
+#----------------------------------------------------------------------------
+QSEE_SRC = "${BUILD_ROOT}/ssg/securemsm/trustzone/qsee"
+
+env.VariantDir('${BUILDPATH}', QSEE_SRC, duplicate=0)
+
+#-------------------------------------------------------------------------------
+# External depends within CoreBSP
+#-------------------------------------------------------------------------------
+env.RequireExternalApi([
+   'BREW',
+   'CS',
+   'DSM',
+   'MODEM_PMIC',
+   'MODEM_RF',
+   'MODEM_SERVICES',
+   'RFA'
+])
+
+#-------------------------------------------------------------------------------
+# Internal depends within CoreBSP
+#-------------------------------------------------------------------------------
+SSG_API = [
+    'SECUREMSM',
+    'SSGPLATFORM',
+]
+env.RequirePublicApi(SSG_API, area = 'ssg')
+
+SSG_API_RESTRICTED = [
+   'TZCHIPSET',
+   'SECUREMSM',
+   'LISTENER_ID',
+]
+
+env.RequireRestrictedApi(SSG_API)
+
+CBSP_API = [
+    'SERVICES',
+    'DEBUGTRACE',
+]
+env.RequirePublicApi(CBSP_API, area = 'core')
+
+
+
+#-------------------------------------------------------------------------------
+# Sources, libraries
+#-------------------------------------------------------------------------------
+
+
+
+#-------------------------------------------------------------------------------
+# HWIO
+#-------------------------------------------------------------------------------
+
+if env.has_key('HWIO_IMAGE'):
+  # Modules depend on which CHIPSET is being build
+   modules = []
+   if env['CHIPSET'] in ['qcs405', 'qcs6200']:
+      modules = [
+        'APCS.*',         
+        'BIMC.*',
+        'CRYPTO.*',
+        'MPM2_PSHOLD',
+        'PRNG.*',
+        'SDC1_SDCC_ICE.*',
+        'SECURITY_CONTROL_CORE',
+        'TCSR.*',
+        'TLMM.*',
+        'LPASS.*',
+      ]
+   elif env['CHIPSET'] in ['ipq60xx']:
+      modules = [
+        'APCS.*',
+        'APCLUS0.*',
+        'MEM_NOC.*',
+        'CADENCE_MC_.*',
+        'HAWKEYE_DDR_MISC_.*',
+        'HAWKEYE_DDR4_PHY_.*',
+        'DDR.*',
+        'CRYPTO.*',
+        'MPM2_PSHOLD',
+        'PRNG.*',
+        'SDC1_SDCC_ICE.*',
+        'SECURITY_CONTROL.*',
+        'SECURITY_CONTROL_CORE2.*',
+        'QFPROM.*',
+        'SECURE_CHANNEL.*',
+        'TCSR.*',
+        'TLMM.*',
+        'LPASS.*',
+        'Q6SS_.*',
+         '.*XPU.*',
+        '.*RPU.*',
+        '.*APU.*',
+        '.*MPU.*',
+        '.*QDSP6SS.*',
+      ]
+
+   elif env['CHIPSET'] in ['ipq90xx', 'ipq53xx']:
+      modules = [
+        'APCS.*',
+        'APCLUS0.*',
+        'MEM_NOC.*',
+        'CADENCE_MC_.*',
+#       'HAWKEYE_DDR_MISC_.*',
+#       'HAWKEYE_DDR4_PHY_.*',
+        'DDR.*',
+        'CRYPTO.*',
+        'MPM2_PSHOLD',
+        'PRNG.*',
+        'SDC1_SDCC_ICE.*',
+        'SECURITY_CONTROL.*',
+#       'SECURITY_CONTROL_CORE2.*',
+        'QFPROM.*',
+#       'SECURE_CHANNEL.*',
+        'TCSR.*',
+        'TLMM.*',
+        'LPASS.*',
+        'Q6SS_.*',
+         '.*XPU.*',
+        '.*RPU.*',
+        '.*APU.*',
+        '.*MPU.*',
+        '.*QDSP6SS.*',
+        'QPIC_EBI2CR',
+        'TMELITE_IPC_EXTERNAL',
+      ]
+
+   elif env['CHIPSET'] in ['sdx24','sdx55','mdm9205']:
+      modules = [
+        'APCS.*',
+        'TLMM.*',
+        'LPASS.*',
+        'SECURITY_CONTROL_CORE',
+        'TCSR.*',
+        'GCC_CLK_CTL_REG',
+        'CRYPTO.*',
+        'PRNG.*',
+        'MSS_QDSP6SS.*',
+        'MSS.*',
+        'PSHOLD',
+        'MPM2_PSHOLD',
+        'MPM2_WDOG',
+        'WDOG',
+        'AOSS_CC_AOSS_CC_REG',
+        'LLCC.*',
+        'BIMC.*',
+        'SECURITY_CONTROL_CORE',
+        'QTMR_AC.*',
+        'EUD_MODE_MANAGER2*',
+      ]
+   else:
+      modules = [
+        'APSS.*',
+        'APCS.*',
+        'APCLUS1.*',
+        'GOLD_SAW4.*',
+        'SILVER_SAW4.*',
+        'GOLD_APSS_KRYO_CLK_CTL.*',
+        'SILVER_APSS_KRYO_CLK_CTL.*',
+        'L3_APSS_KRYO_CLK_CTL.*',
+        'TLMM.*',
+        'LPASS.*',
+        'HDMI.*',
+        'SECURITY_CONTROL_CORE',
+        'TCSR.*',
+        'GCC_CLK_CTL_REG',
+        'RAMBLUR.*',
+        'CRYPTO.*',
+        'PRNG.*',
+        'MSS.*',
+        'SSC.*',
+        'UFS_MEM_ICE.*',
+        'UFS_MEM_ICE_LUT_KEYS',
+        'UFS_CARD_ICE.*',
+        'PSHOLD',
+        'WDOG',
+        'AOSS_CC_AOSS_CC_REG',
+        'LLCC.*',
+        'APSS_OSM.*',
+        'TURING.*',
+        'PERIPH_SS_SDC1_SDCC_ICE.*',
+        'SDC1_SDCC_ICE.*',
+        'DCC.*',
+        'PERIPH_SS_EUD.*',
+        'APPS_MMU500_SMMU.*',
+        'EUD_MODE_MANAGER2',
+        'BIMC.*',
+        'GPU_GFX_MMU500_SMMU_GFX',
+      ]
+
+   env.AddHWIOFile('HWIO', [
+      {
+         'filename': '${INC_ROOT}/ssg/securemsm/trustzone/qsee/arch/${CHIPSET}/cfg/common/tzbsp_hwio.h',
+         'output-phys': True,
+         'modules': modules,
+         'header': '#include "msmhwiobase.h"'
+      }
+   ])
+
+CLEAN_SOURCES = [
+    '${BUILDPATH}/include/qsee_interface.h',
+    '${BUILDPATH}/include/tzbsp_sw_fuse.h',
+    '${BUILDPATH}/include/tzbsp_syscall_test.h',
+]
+
+if 'USES_QDSS_SWE' in env:
+   QDSS_IMG = ['QDSS_EN_IMG']
+   events = [
+      ['QDSS_SYSCALL_ERR_SMC_ID','SMC Call failed with  (SMCID: 0x%x) (ret: 0x%x) (ret[0]: %d) (ret[1]: 0x%x) (ret[2]: 0x%x)'],
+      ]
+   env.AddSWEInfo(QDSS_IMG, events)
+
+if 'QDSS_TRACER_SWE' in env:  #if SWE builder is loaded
+   tracer_event_inc="${BUILD_ROOT}/ssg/securemsm/trustzone/qsee/build/qdss/${BUILDPATH}"
+   gen_tracer_event_ids_h = tracer_event_inc+'/tz_tracer_event_ids.h'
+   gen_tracer_event_tbl_h = tracer_event_inc+'/tz_tracer_event_tbl.h'
+   gen_tracer_event_info_txt = tracer_event_inc+'/tz_tracer_event_info.txt'
+
+   env.SWEBuilder([gen_tracer_event_ids_h,
+                   gen_tracer_event_tbl_h,
+                   gen_tracer_event_info_txt],
+                   None)
+
+   env.Append(CPPPATH = [tracer_event_inc])
+
+
+CLEAN_SOURCES += env.FindFiles("*", "${BUILDPATH}/chipset/${CHIPSET}/")
+
+#-------------------------------------------------------------------------------
+# Add Libraries to image
+#-------------------------------------------------------------------------------
+env.LoadSoftwareUnits()
+env.CleanPack('TZOS_IMAGE', CLEAN_SOURCES)
+deploy_headers = [
+  '../include/CGuestVM_open.h',
+  '../include/CHwFuse_open.h',
+  '../include/CSecureDisplay_open.h',
+  '../include/tz_syscall_pub.h',
+  '../include/tzbsp_syscall.h',
+  '../include/tzbsp_syscall_priv.h',
+  '../include/tzbsp_mem.h',
+  '../include/tzbsp_util.h',
+]
+
+idl_files = env.Glob('../idl/public/*.idl')
+
+env.Deploy([deploy_headers, 'SConscript', idl_files])
+
+debug_scripts = [
+    env.Glob("../../debug/*.cmm"),
+    env.Glob("../../debug/tzlogs/*.cmm"),
+    env.Glob("../../debug/syscall/*.cmm"),
+    env.Glob("../mink/libstd/test/*.cmm"),
+]
+env.DeployInternal(debug_scripts)

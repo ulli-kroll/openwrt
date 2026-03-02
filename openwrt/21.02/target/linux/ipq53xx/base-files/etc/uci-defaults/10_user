@@ -1,0 +1,50 @@
+#!/bin/sh
+#
+
+. /lib/ipq53xx.sh
+
+board=$(ipq53xx_oem_board_name)
+
+case "$board" in
+R0)
+	uci add_list luci.main.sysauth='admin'
+	uci add_list luci.main.sysauth='user'
+	if [ -z "$(uci -q get rpcd.@login[1])" ]; then
+		user_add admin 0
+		uci add rpcd login
+		uci set rpcd.@login[1].username='admin'
+		uci set rpcd.@login[1].password='$p$admin'
+		uci set rpcd.@login[1].read='*'
+		uci set rpcd.@login[1].write='*'
+	fi
+	if [ -z "$(uci -q get rpcd.@login[2])" ]; then
+		user_add user 0
+		uci add rpcd login
+		uci set rpcd.@login[2].username='user'
+		uci set rpcd.@login[2].password='$p$user'
+		uci set rpcd.@login[2].read='*'
+		uci set rpcd.@login[2].write='*'
+	fi
+	;;
+*)
+	if [ -z "$(uci -q get luci.main.showuser)" ]; then
+		uci del_list luci.main.sysauth='admin'
+		uci add_list luci.main.sysauth='admin'
+		uci set luci.main.showuser='0'
+		salt=$(cat /proc/sys/kernel/random/uuid | md5sum | cut -c 1-32)
+		uci set luci.sauth.salt="$salt"
+	fi
+	if [ -z "$(uci -q get rpcd.@login[1])" ]; then
+		user_add admin 0
+		uci add rpcd login
+		uci set rpcd.@login[1].username='admin'
+		uci set rpcd.@login[1].password='$p$admin'
+		uci set rpcd.@login[1].read='*'
+		uci set rpcd.@login[1].write='*'
+	fi
+	;;
+esac
+
+uci commit rpcd
+uci commit luci
+exit 0

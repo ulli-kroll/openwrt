@@ -1,0 +1,62 @@
+#block info > /dev/console
+#env > /dev/console
+
+ro="no"
+config="samba4"
+
+setup_smbshare_and_restart() {
+	#echo "gonna add $1 for smbshare" > /dev/console
+	DEVICE="$1"
+	auto_mount="$2"
+	users=$(uci get samba4.@samba[0].users)
+	ro=$(uci get samba4.@samba[0].read_only)
+	passwd=$(uci get samba4.@samba[0].password)
+
+	uci show $config.$DEVICE > /dev/null
+	if [ $? -ne 0 ]; then
+		echo "!!!!Add $DEVICE section in mount hotplug." > /dev/console
+		uci set $config.$DEVICE="sambashare"
+	fi
+
+	if [ -n "$passwd" ]; then
+		uci set $config.$DEVICE.users="$users"
+	fi
+	uci set $config.$DEVICE.browseable="yes"
+	if [ "$auto_mount" = "yes" ]; then
+		#find the real mountpoint, cause it's not always /mnt/$DEVICE"
+		mp=$(block info | grep "/dev/$DEVICE")
+		mp=$(echo ${mp#*MOUNT=} | awk -F ' ' '{print $1}')
+		#echo "moutpoint -----------------$mp" >/dev/console
+	else
+		#if manually mounted, mountpoint is dev name.
+		mp="/mnt/$DEVICE"
+	fi
+
+	uci set $config.$DEVICE.path="$mp"
+	uci set $config.$DEVICE.name="$DEVICE"
+	uci set $config.$DEVICE.guest_only="no"
+	uci set $config.$DEVICE.dir_mask="0777"
+	uci set $config.$DEVICE.force_root="0"
+	uci set $config.$DEVICE.create_mask="0666"
+	if [ "$ro" = "yes" ]; then
+		uci set $config.$DEVICE.read_only="yes"
+		#uci set $config.$DEVICE.writeable="no"
+	else
+		uci set $config.$DEVICE.read_only="no"
+		#uci set $config.$DEVICE.writeable="yes"
+	fi
+	uci set $config.$DEVICE.inherit_owner="yes"
+	uci set $config.$DEVICE.guest_ok="yes"
+
+	uci commit
+
+	/etc/init.d/samba4 restart
+}
+
+[ "$ACTION" = "add" ] && {
+	if [ "$AUTOMOUNT" = "no" ]; then 
+		setup_smbshare_and_restart $DEVICE "no"
+	else
+		setup_smbshare_and_restart $DEVICE "yes"
+	fi	
+}

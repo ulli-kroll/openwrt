@@ -1,0 +1,269 @@
+;
+; Copyright (c) 2017, 2019 Qualcomm Technologies, Inc.
+; All Rights Reserved.
+; Confidential and Proprietary - Qualcomm Technologies, Inc.
+;
+
+local &cwd
+local &BootBuildPath
+local &Cdtbin
+local &BoardType
+local &serialnum
+local &vol &vol_code &pow_sel
+local &MP5496_LDO3
+
+&MP5496_LDO3=0x9
+
+entry &BootBuildPath &BoardType
+
+&cwd=os.pwd()
+
+winclear
+area.reset
+gosub SetupMainWindow
+
+sys.d
+sys.u
+
+; Qtimer - Init
+D.S ZSD:0x4A1000 %LE %Long 0x00000001
+D.S ZSD:0xB120000 %LE %Long 0x16E3600
+D.S ZSD:0xB120040 %LE %Long 0x0000003F
+D.S ZSD:0xB120044 %LE %Long 0x0000003F
+D.S ZSD:0xB12102C %LE %Long 0x00000002
+D.S ZSD:0xB12302C %LE %Long 0x00000002
+
+;clear crashdump magic
+D.S ZSD:0x193d100 %LE %LONG 0x0
+
+print "Choose the Image folder in dialog box."
+
+if (("&BootBuildPath"=="")||("&BoardType"==""))
+(
+    DIALOG.view
+    (
+             NAME "BootImage"
+             HEADER "Select the Boot loader image folder"
+             POS 1. 1. 43. 1.
+
+             POS 1. 0. 38. 1.
+             TEXT "Select Image Path"
+    Browse:  EDIT "" ""
+             POS 40. 1. 3. 1.
+             BUTTON "..."
+             (
+                 DIALOG.SetDIR Browse c:\t32\demo\*
+             )
+
+             POS 1. 3. 27. 1.
+             TEXT "Select the board"
+
+    BOARD.SEL:  DEFCOMBOBOX "AP.CP01-C1,AP.CP01-C2,AP.CP01-C3,AP.CP01-C4,AP.CP01-C5,AP.CP02,AP.CP03,DB.CP01,DB.CP02" ""
+
+             POS 30. 4. 5. 1.
+             DEFBUTTON "OK" "CONTinue"
+    )
+
+    ;set default selections
+    if ("&BootBuildPath"!="")
+    (
+        DIALOG.set Browse "&BootBuildPath"
+    )
+
+    DIALOG.SET BOARD.SEL "AP.CP01-C1"
+
+    WinRESIZE 45. 7. BootImage
+    STOP
+
+    &BootBuildPath=DIALOG.STRing(Browse)
+    ;get the string from the EDIT box
+
+    &BoardType=DIALOG.STRing(BOARD.SEL)
+
+    DIALOG.END
+    ;and then close the dialog
+)
+
+print "Loading SBL elf....."
+
+cd &BootBuildPath
+d.load.elf XBLLoader.dll
+
+if "&BoardType"=="AP.CP01-C1"
+(
+    &Cdtbin="cdt-AP-CP01-C1_256M32_DDR3.bin"
+)
+if "&BoardType"=="AP.CP01-C2"
+(
+    &Cdtbin="cdt-AP-CP01-C2_256M32_DDR3.bin"
+)
+if "&BoardType"=="AP.CP01-C3"
+(
+    &Cdtbin="cdt-AP-CP01-C3_256M32_DDR3.bin"
+)
+if "&BoardType"=="AP.CP01-C4"
+(
+    &Cdtbin="cdt-AP-CP01-C4_256M32_DDR3.bin"
+)
+if "&BoardType"=="AP.CP01-C5"
+(
+    &Cdtbin="cdt-AP-CP01-C5_256M32_DDR3.bin"
+)
+if "&BoardType"=="AP.CP02"
+(
+    &Cdtbin="cdt-AP-CP02-C1_256M32_DDR4.bin"
+)
+if "&BoardType"=="AP.CP03"
+(
+    &Cdtbin="cdt-AP-CP03-C1_256M16_DDR3.bin"
+)
+if "&BoardType"=="DB.CP01"
+(
+    &Cdtbin="cdt-DB-CP01_256M32_DDR3.bin"
+)
+if "&BoardType"=="DB.CP02"
+(
+    &Cdtbin="cdt-DB-CP02_1024M32_DDR4.bin"
+)
+
+print "Successfully Loaded SBL elf....."
+
+go sbl1_main_ctl
+
+V jtag_recovery = 1
+
+; CDT loading
+
+go boot_update_config_data_table /o
+
+wait !STATE.RUN()
+
+print "Loading CDT binary..."
+d.load.Binary &Cdtbin var.value(cdt_info_ptr->cdt_ptr) /noclear
+v cdt_contains_ddr_cdb = 1
+print "Successfully loaded CDT binary..."
+go boot_apt_test /o
+
+wait !STATE.RUN()
+
+;gosub BlowSerialNum
+
+print "Loading U-boot elf....."
+d.load.elf openwrt-ipq6018-u-boot.elf
+
+print "Successfully Loaded U-boot elf....."
+print "Stop at the u-boot prompt."
+
+go
+
+enddo
+
+;****************************************************************************
+; Setup main window
+;****************************************************************************
+SetupMainWindow:
+  WINPOS 0% 50% 68% 50% 0. 0. W001
+  Area.create MAIN
+  Area.view MAIN
+  Area.select MAIN
+  return ;SetupMainWindow
+
+BlowSerialNum:
+  &serialnum=Data.Long(eaxi:0xA60A8)
+
+  IF &serialnum==0x0
+  (
+      print "Blowing serial number"
+      gosub fuseInit
+      gosub PmicSetLdo3
+      wait 50ms
+      gosub fuseInit
+      gosub PmicSetLdo3
+      ; serial number
+      d.s 0xA0128 %LE %LONG  0x12345678
+      ;gosub fuseBlowDone
+      print "Serial number 0x12345678 is blown"
+  )
+  ELSE
+      print "Serial number &serialnum is already blown"
+  return ;BlowSerialNum
+
+PmicSetLdo3:
+  ;gpio 46 47
+  d.s 0x102E000 %LE %LONG 0x5
+  d.s 0x102F000 %LE %LONG 0x5
+
+  ;write voltage
+  &pow_sel=&MP5496_LDO3
+  &vol=1.8
+  &vol_code=0
+  GOSUB init0
+  GOSUB vol_to_code &pow_sel &vol
+  ENTRY &vol_code
+  GOSUB write0 &pow_sel &vol_code
+  print "=== *** set Ldo3 Done *** ==="
+  return ;PmicSetLdo3
+
+vol_to_code:
+  ENTRY &pow_sel &vol
+  &m_vol=&vol*0x3e8 ;1000
+  &base_vol_buck_1_3=0x258 ;600
+  &base_vol=0x320 ;800
+  &vol_code=(&m_vol-&base_vol)/0x19
+  &vol_code=CONVERT.FLOATTOINT(&vol_code)
+  &vol_code=CONVERT.INTTOHEX(&vol_code)
+  &vol_code=&vol_code|0x80
+  return &vol_code
+
+init0:
+  d.s 0x78BA00C %LE  %LONG 0x1
+  d.s 0x78BA000 %LE  %LONG 0x320F
+  d.s 0x78BA408 %LE  %LONG 0x0
+  d.s 0x78BA400 %LE  %LONG 0x0000378
+  d.s 0x78BA008 %LE  %LONG 0x0C000
+  d.s 0x78BA004 %LE  %LONG 0x1
+  RETURN
+
+;======================I2C0 Write data=====================
+write0:
+  ENTRY &pow_sel &vol_code
+
+  &write_val=(0x02<<0x18)|(&pow_sel<<0x10)|0x01d2
+  d.s 0x78BA110 %LE  %LONG &write_val
+  &write_val=(0x03<<8)|&vol_code
+  d.s 0x78BA114 %LE  %LONG &write_val
+  d.s 0x78BA018 %LE  %LONG 0x100
+  RETURN
+
+;========================================================;
+;	fuseInit
+;========================================================;
+; QFPROM 4.8MHz clock config
+fuseInit:
+  local &addr &byteData &data
+
+  ; QFPROM_ACCEL
+  &addr=0xa2044
+  d.s &addr %LE %LONG 0xC90
+  &data= Data.Long(zsd:&addr)
+  print "QFPROM_ACCEL &addr: &data"
+
+  ; BLOW_TIMER
+  &addr=0xa203c
+  d.s &addr %LE %LONG 0xF0
+  &data= Data.Long(zsd:&addr)
+  print "BLOW_TIMER &addr: &data"
+  RETURN
+
+;========================================================;
+;	fuseBlowDone
+;========================================================;
+; QFPROM 12MHz clock config
+fuseBlowDone:
+  local &addr &data
+  ; BLOW_TIMER
+  &addr=0xa203c
+  d.s &addr %LE %LONG 0x0
+  &data= Data.Long(zsd:&addr)
+  print "BLOW_TIMER &addr: &data"
+  RETURN

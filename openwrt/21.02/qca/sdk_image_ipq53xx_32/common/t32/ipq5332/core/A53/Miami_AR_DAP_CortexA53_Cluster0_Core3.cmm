@@ -1,0 +1,50 @@
+;*****************************************************************************
+;
+; Copyright (c) 2017, 2019, 2021-2022 Qualcomm Technologies, Inc.
+; All Rights Reserved.
+; Confidential and Proprietary - Qualcomm Technologies, Inc.
+;
+;*****************************************************************************
+;local &cmm_dir &cur_dir
+SYStem.Reset
+;SYStem.CPU CORTEXA53
+;SYStem.CPU KRYO2XX
+SYStem.CPU KRYO2XXG
+SYSTEM.JtagClock 2MHZ
+SYStem.CONFIG SLAVE OFF
+SYStem.Option MemStatusCheck ON
+
+global &t32_intercom_port_base
+global &t32_intercom_port
+&t32_intercom_port_base=20000.
+&t32_intercom_port=&t32_intercom_port_base+1.
+
+&cur_dir=os.ppd()
+SYStem.Option EnReset OFF
+
+SYStem.CONFIG DAPIRPRE 0.
+SYStem.CONFIG DAPDRPRE 0.
+SYStem.CONFIG DAPIRPOST 11.
+SYStem.CONFIG DAPDRPOST 1.
+
+SYStem.CONFIG CTICONFIG         ARMV8V1
+SYStem.config AXIACCESSPORT     0
+SYStem.config MEMORYACCESSPORT  0
+SYStem.config DEBUGACCESSPORT   1
+
+SYStem.CONFIG.COREDEBUG.BASE    0x005096000
+SYStem.CONFIG.ETM.BASE          0x00509F000
+SYStem.CONFIG.CTI.BASE          0x00509B000
+
+SYStem.CONFIG.STM1.BASE         0x00002000
+SYStem.CONFIG.STM1.TYPE ARM
+SYStem.CONFIG.STM1.MODE STPV2
+SYStem.CONFIG.FUNNEL1.BASE      0x00021000
+SYStem.CONFIG.ETB1.BASE         0x00027000
+
+ETM.OFF
+sys.down
+sys.up
+autostore , history
+ENDDO
+

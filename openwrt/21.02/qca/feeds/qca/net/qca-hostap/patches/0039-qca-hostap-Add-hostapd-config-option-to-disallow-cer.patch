@@ -1,0 +1,122 @@
+diff --git a/hostapd/config_file.c b/hostapd/config_file.c
+index 51aac2d90..6f13d9415 100644
+--- a/hostapd/config_file.c
++++ b/hostapd/config_file.c
+@@ -4811,6 +4811,15 @@ static int hostapd_config_fill(struct hostapd_config *conf,
+ 			return -1;
+ 		}
+ 		bss->multi_ap_profile = val;
++	} else if (os_strcmp(buf, "multi_ap_client_disallow") == 0) {
++		int val = atoi(pos);
++
++		if (val < 0 || val > 3) {
++			wpa_printf(MSG_ERROR, "Line %d: Invalid multi_ap_client_allow '%s'",
++				    line, buf);
++			return -1;
++		}
++		bss->multi_ap_client_disallow = val;
+ 	} else if (os_strcmp(buf, "rssi_reject_assoc_rssi") == 0) {
+ 		conf->rssi_reject_assoc_rssi = atoi(pos);
+ 	} else if (os_strcmp(buf, "rssi_reject_assoc_timeout") == 0) {
+diff --git a/hostapd/hostapd.conf b/hostapd/hostapd.conf
+index d27fd9be6..326bb5e7d 100644
+--- a/hostapd/hostapd.conf
++++ b/hostapd/hostapd.conf
+@@ -2571,6 +2571,12 @@ own_ip_addr=127.0.0.1
+ # 2 = Supports Multi-AP profile 2 as defined in EasyMesh spec
+ #multi_ap_profile=2
+ 
++# Multi-AP client disallow
++# Used to disallow profile specific backhaul STA association
++# 1 = Profile-1 Backhaul STA association disallowed
++# 2 = Profile-2 Backhaul STA association disallowed
++#multi_ap_client_disallow=0
++
+ # WPS UPnP interface
+ # If set, support for external Registrars is enabled.
+ #upnp_iface=br0
+diff --git a/src/ap/ap_config.h b/src/ap/ap_config.h
+index e26ec05ae..ee18d456d 100644
+--- a/src/ap/ap_config.h
++++ b/src/ap/ap_config.h
+@@ -805,6 +805,11 @@ struct hostapd_bss_config {
+ 	int multi_ap;
+ 	/* multi_ap_profile - multi ap profile default profile is 2 */
+ 	int multi_ap_profile;
++	/* multi ap profile 1 clients not allowed to connect */
++#define PROFILE1_CLIENT_ASSOC_DISALLOW BIT(0)
++	/* multi ap profile 2 clients not allowed to connect */
++#define PROFILE2_CLIENT_ASSOC_DISALLOW BIT(1)
++	int multi_ap_client_disallow;
+ 
+ #ifdef CONFIG_AIRTIME_POLICY
+ 	unsigned int airtime_weight;
+diff --git a/src/ap/ieee802_11.c b/src/ap/ieee802_11.c
+index 30c637621..feba3ca1d 100644
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -100,6 +100,13 @@ u8 * hostapd_eid_multi_ap(struct hostapd_data *hapd, u8 *eid)
+ 	if (hapd->conf->multi_ap & FRONTHAUL_BSS)
+ 		multi_ap.capability |= MULTI_AP_FRONTHAUL_BSS;
+ 
++	if (hapd->conf->multi_ap_client_disallow
++			& PROFILE1_CLIENT_ASSOC_DISALLOW)
++		multi_ap.capability |= MULTI_AP_PROFILE1_BACKHAUL_STA_DISALLOWED;
++	if (hapd->conf->multi_ap_client_disallow
++			& PROFILE2_CLIENT_ASSOC_DISALLOW)
++		multi_ap.capability |= MULTI_AP_PROFILE2_BACKHAUL_STA_DISALLOWED;
++
+ 	multi_ap.profile = hapd->conf->multi_ap_profile;
+ 
+ 	return eid + add_multi_ap_ie(eid, 9, &multi_ap);
+@@ -3450,6 +3457,26 @@ static u16 check_multi_ap(struct hostapd_data *hapd, struct sta_info *sta,
+ 				"Multi-AP IE with unexpected value 0x%02x",
+ 				multi_ap.capability);
+ 
++	if (hapd->conf->multi_ap_client_disallow) {
++		if (multi_ap.profile == MULTI_AP_PROFILE_01 &&
++				(hapd->conf->multi_ap_client_disallow &
++				 PROFILE1_CLIENT_ASSOC_DISALLOW)) {
++			hostapd_logger(hapd, sta->addr,
++					HOSTAPD_MODULE_IEEE80211,
++					HOSTAPD_LEVEL_INFO,
++					"Multi ap profile 1 clients not allowed");
++			return WLAN_STATUS_ASSOC_DENIED_UNSPEC;
++		} else if (multi_ap.profile >= MULTI_AP_PROFILE_02 &&
++				(hapd->conf->multi_ap_client_disallow &
++				 PROFILE2_CLIENT_ASSOC_DISALLOW)) {
++			hostapd_logger(hapd, sta->addr,
++					HOSTAPD_MODULE_IEEE80211,
++					HOSTAPD_LEVEL_INFO,
++					"Multi ap profile 2 clients not allowed");
++			return WLAN_STATUS_ASSOC_DENIED_UNSPEC;
++		}
++	}
++
+ 	if (!(multi_ap.capability & MULTI_AP_BACKHAUL_STA)) {
+ 		if (hapd->conf->multi_ap & FRONTHAUL_BSS)
+ 			return WLAN_STATUS_SUCCESS;
+diff --git a/src/common/ieee802_11_defs.h b/src/common/ieee802_11_defs.h
+index b02b7f5f8..a02574a50 100644
+--- a/src/common/ieee802_11_defs.h
++++ b/src/common/ieee802_11_defs.h
+@@ -1449,10 +1449,12 @@ struct ieee80211_ampe_ie {
+ #define MULTI_AP_SUB_ELEM_TYPE 0x06
+ #define MULTI_AP_PROFILE_SUB_ELEM_TYPE 0x07
+ 
+-#define MULTI_AP_TEAR_DOWN           BIT(4)
+-#define MULTI_AP_FRONTHAUL_BSS       BIT(5)
+-#define MULTI_AP_BACKHAUL_BSS        BIT(6)
+-#define MULTI_AP_BACKHAUL_STA        BIT(7)
++#define MULTI_AP_PROFILE2_BACKHAUL_STA_DISALLOWED BIT(2)
++#define MULTI_AP_PROFILE1_BACKHAUL_STA_DISALLOWED BIT(3)
++#define MULTI_AP_TEAR_DOWN                        BIT(4)
++#define MULTI_AP_FRONTHAUL_BSS                    BIT(5)
++#define MULTI_AP_BACKHAUL_BSS                     BIT(6)
++#define MULTI_AP_BACKHAUL_STA                     BIT(7)
+ 
+ #define MULTI_AP_PROFILE_01          0x01
+ #define MULTI_AP_PROFILE_02          0x02
+-- 
+2.34.1
+

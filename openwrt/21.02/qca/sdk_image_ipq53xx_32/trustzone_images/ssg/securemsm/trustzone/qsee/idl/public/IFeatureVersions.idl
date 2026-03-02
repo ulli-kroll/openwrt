@@ -1,0 +1,39 @@
+/** @file  IFeatureVersions.idl */
+
+// Copyright (c) 2018, 2023 Qualcomm Technologies, Inc.  All Rights Reserved.
+// Qualcomm Technologies Proprietary and Confidential.
+
+/** @cond */
+interface IFeatureVersions {
+/** @endcond */
+
+	/**
+    * @addtogroup IFeatureVersions
+    * @{
+    */
+    
+     /** @cond */
+    /** Return this error if the provided feature ID for getVersionId() is not valid */
+    error ERROR_INVALID_ID;
+    /** @endcond */
+
+    /** @cond */
+    const uint32 PIL = 0;
+    const uint32 DIAG = 1;
+    const uint32 MMU = 2;
+    const uint32 QSEE = 3;
+    const uint32 CDUMP_STATIC_ADDR = 4;
+    /** @endcond */
+
+    /**
+    For a given feature, return the current version.
+    @param[in]  feature_id  Unique identifier for a given feature.
+    @param[out] version     Holds the version information.
+    
+    @returns Object_OK on success, ERROR_INVALID_ID on failure.
+    */
+
+    method getVersionId (in uint32 feature_id, out uint32 version);
+
+    /** @} */ /* end_addtogroup IFeatureVersions */
+};

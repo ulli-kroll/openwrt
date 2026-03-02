@@ -1,0 +1,13 @@
+--- a/bridge.c
++++ b/bridge.c
+@@ -887,8 +887,8 @@ bridge_hotplug_del(struct device *dev, s
+ 		return UBUS_STATUS_NOT_FOUND;
+ 
+ 	bridge_hotplug_set_member_vlans(bst, vlan, member->ifname, bm, false);
+-	if (!bm->dev.hotplug)
+-		return 0;
++	//if (!bm->dev.hotplug)
++		//return 0;
+ 
+ 	vlist_delete(&bst->members, &bm->node);
+ 	return 0;

@@ -1,0 +1,133 @@
+diff --git a/hostapd/config_file.c b/hostapd/config_file.c
+index 6f13d9415..4d3451896 100644
+--- a/hostapd/config_file.c
++++ b/hostapd/config_file.c
+@@ -4820,6 +4820,15 @@ static int hostapd_config_fill(struct hostapd_config *conf,
+ 			return -1;
+ 		}
+ 		bss->multi_ap_client_disallow = val;
++	} else if (os_strcmp(buf, "multi_ap_vlanid") == 0) {
++		int val = atoi(pos);
++
++		if (val < -1 || val >= MAX_VLAN_ID) {
++			wpa_printf(MSG_ERROR, "Line %d: Invalid multi_ap_vlan_id '%s'",
++				   line, buf);
++			return -1;
++		}
++		bss->multi_ap_vlanid = val;
+ 	} else if (os_strcmp(buf, "rssi_reject_assoc_rssi") == 0) {
+ 		conf->rssi_reject_assoc_rssi = atoi(pos);
+ 	} else if (os_strcmp(buf, "rssi_reject_assoc_timeout") == 0) {
+diff --git a/hostapd/hostapd.conf b/hostapd/hostapd.conf
+index 326bb5e7d..ffa7c59c9 100644
+--- a/hostapd/hostapd.conf
++++ b/hostapd/hostapd.conf
+@@ -2577,6 +2577,10 @@ own_ip_addr=127.0.0.1
+ # 2 = Profile-2 Backhaul STA association disallowed
+ #multi_ap_client_disallow=0
+ 
++# Multi-AP VLAN ID
++# A valid non-zero VLAN ID will be used to update IEEE 802.1Q Setting
++#multi_ap_vlanid=0
++
+ # WPS UPnP interface
+ # If set, support for external Registrars is enabled.
+ #upnp_iface=br0
+diff --git a/src/ap/ap_config.h b/src/ap/ap_config.h
+index ee18d456d..d1bb7fc03 100644
+--- a/src/ap/ap_config.h
++++ b/src/ap/ap_config.h
+@@ -810,6 +810,8 @@ struct hostapd_bss_config {
+ 	/* multi ap profile 2 clients not allowed to connect */
+ #define PROFILE2_CLIENT_ASSOC_DISALLOW BIT(1)
+ 	int multi_ap_client_disallow;
++	/* primary vlan id to used in multi_ap*/
++	int multi_ap_vlanid;
+ 
+ #ifdef CONFIG_AIRTIME_POLICY
+ 	unsigned int airtime_weight;
+diff --git a/src/ap/ieee802_11.c b/src/ap/ieee802_11.c
+index feba3ca1d..19459723e 100644
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -108,6 +108,7 @@ u8 * hostapd_eid_multi_ap(struct hostapd_data *hapd, u8 *eid)
+ 		multi_ap.capability |= MULTI_AP_PROFILE2_BACKHAUL_STA_DISALLOWED;
+ 
+ 	multi_ap.profile = hapd->conf->multi_ap_profile;
++	multi_ap.vlanid = hapd->conf->multi_ap_vlanid;
+ 
+ 	return eid + add_multi_ap_ie(eid, 9, &multi_ap);
+ }
+diff --git a/src/common/ieee802_11_common.c b/src/common/ieee802_11_common.c
+index 79a14b047..493f2e1e4 100644
+--- a/src/common/ieee802_11_common.c
++++ b/src/common/ieee802_11_common.c
+@@ -2598,6 +2598,25 @@ u16 check_multi_ap_ie(const u8 *multi_ap_ie, size_t multi_ap_len,
+ 					return WLAN_STATUS_INVALID_IE;
+ 				}
+ 				break;
++			case MULTI_AP_VLAN_SUB_ELEM_TYPE:
++				if (multi_ap->profile < MULTI_AP_PROFILE_02 ||
++					multi_ap->profile > MULTI_AP_PROFILE_MAX) {
++					wpa_printf(MSG_DEBUG,
++					       "Multi-AP IE invalid profile to read VLAN IE");
++					return WLAN_STATUS_INVALID_IE;
++				}
++				if (elen == 2) {
++					if (WPA_GET_LE16(pos) < 1 || WPA_GET_LE16(pos) > 4094) {
++						wpa_printf(MSG_ERROR, "Multi-AP IE invalid Multi-AP vlanid");
++						return WLAN_STATUS_INVALID_IE;
++					}
++					multi_ap->vlanid = WPA_GET_LE16(pos);
++				} else {
++					wpa_printf(MSG_DEBUG,
++					       "Multi-AP IE invalid Multi-AP vlan element");
++					return WLAN_STATUS_INVALID_IE;
++				}
++				break;
+ 			default:
+ 				wpa_printf(MSG_DEBUG,
+ 				       "Multi-AP IE unknown Multi-AP subelement");
+@@ -2642,6 +2661,15 @@ size_t add_multi_ap_ie(u8 *buf, size_t len, struct multi_ap_params* multi_ap)
+ 		*pos++ = multi_ap->profile;
+ 	}
+ 
++		/* Add Multi-AP 802.1Q Setting TLV only for backhaul BSS */
++		if (multi_ap->vlanid && (multi_ap->capability & MULTI_AP_BACKHAUL_BSS)) {
++			ie_hdr->length += 4;
++			*pos++ = MULTI_AP_VLAN_SUB_ELEM_TYPE;
++			*pos++ = 2;
++			WPA_PUT_LE16(pos, multi_ap->vlanid);
++			pos += 2;
++		}
++
+ 	return pos - buf;
+ }
+ 
+diff --git a/src/common/ieee802_11_common.h b/src/common/ieee802_11_common.h
+index dc3f84659..66a856093 100644
+--- a/src/common/ieee802_11_common.h
++++ b/src/common/ieee802_11_common.h
+@@ -33,6 +33,7 @@ struct mb_ies_info {
+ struct multi_ap_params {
+ 	u8 capability;
+ 	u8 profile;
++	u16 vlanid;
+ };
+ 
+ struct multi_ie_hdr {
+diff --git a/src/common/ieee802_11_defs.h b/src/common/ieee802_11_defs.h
+index a02574a50..c471960e5 100644
+--- a/src/common/ieee802_11_defs.h
++++ b/src/common/ieee802_11_defs.h
+@@ -1448,6 +1448,7 @@ struct ieee80211_ampe_ie {
+ 
+ #define MULTI_AP_SUB_ELEM_TYPE 0x06
+ #define MULTI_AP_PROFILE_SUB_ELEM_TYPE 0x07
++#define MULTI_AP_VLAN_SUB_ELEM_TYPE    0x08
+ 
+ #define MULTI_AP_PROFILE2_BACKHAUL_STA_DISALLOWED BIT(2)
+ #define MULTI_AP_PROFILE1_BACKHAUL_STA_DISALLOWED BIT(3)
+-- 
+2.34.1
+

@@ -1,0 +1,1269 @@
+#!/bin/sh /etc/rc.common
+#
+# @@-COPYRIGHT-START-@@
+#
+# Copyright (c) 2013, 2015-2018 Qualcomm Technologies, Inc.
+#
+# All Rights Reserved.
+# Confidential and Proprietary - Qualcomm Technologies, Inc.
+#
+# 2013, 2015-2016 Qualcomm Atheros, Inc.
+#
+# All Rights Reserved.
+# Qualcomm Atheros Confidential and Proprietary.
+#
+# @@-COPYRIGHT-END-@@
+#
+
+
+# shellcheck disable=SC2034
+START=52
+
+# shellcheck disable=SC2034
+USE_PROCD=1
+RESPAWN_THRESHOLD=120
+RESPAWN_TIMEOUT=5
+RESPAWN_RETRIES=10
+SERVICE_PATH="/usr/sbin/wsplcd"
+WSPLCD_CONFIG_FILE="/tmp/wsplcd.conf"
+WSPLCD_CONFIG_FILE_PREFIX="/tmp/wsplcd"
+WSPLCD_RUN_FILE="/var/run/.wsplcd"
+MAP_TEMP_INTF_LIST_WSPLCD="/tmp/mapTempIntfListWsplcd"
+board_name=""
+[ -f /tmp/sysinfo/sdk_board_name  ] && {
+        board_name=ap$(cat /tmp/sysinfo/sdk_board_name | awk -F 'ap' '{print$2}')
+    }
+
+build_name=""
+[ -f /version.txt ] && {
+       build_name=$(cat /version.txt | grep imagename | cut -d "-" -f4)
+       board_name=ap$(cat /tmp/sysinfo/sdk_board_name | awk -F 'ap' '{print$2}')
+    }
+
+config_load 'repacd'
+config_get_bool ezmesh repacd 'Ezmesh' '0'
+config_get_bool enable_yocto_build MAPConfig 'EnableYoctoBuild' '0'
+    if [ "$ezmesh" -eq 1 ]; then
+        MAP='ezmesh'
+    else
+        MAP='hyd'
+    fi
+
+    if [ "$enable_yocto_build" -eq 1 ]; then
+        brprefix=''
+        primarybridgename='bridge0'
+    elif [ "$build_name" = "image_rdkb" ]; then
+        brprefix=''
+        primarybridgename='brlan0'
+    else
+        brprefix='br-'
+        primarybridgename='lan'
+    fi
+
+NON_PBC_IFACES=
+ZERO_WLAN_DEVICES=''
+MLO_RADIO_DEVICES=
+
+# Esy Mesh definitions
+ieee1905_brguest_map=""
+ieee1905_brbh=""
+
+# This restart_* command is only intended to be used after a config change
+#
+EXTRA_COMMANDS="restart_after_config_change"
+EXTRA_HELP=<<EOF
+        restart_after_config_change Restart triggered due to change in wireless configuration
+EOF
+
+. /lib/functions/hyfi-debug.sh
+. /lib/functions/hyfi-iface.sh
+. /lib/functions/hyfi-network.sh
+. /lib/functions/whc-iface.sh
+
+atf_ssidcmd_idx=1 atf_stacmd_idx=1 atf_groupcmd_idx=1 atf_radioparams_idx=1 cfg_changed=0
+
+#check wsplcd config to enable/disable cfg80211
+config_load 'wsplcd'
+config_get_bool wsplcd_wxt config 'ForceWextMode' '0'
+config_load 'repacd'
+config_get_bool multi_inst_enable repacd 'multi_inst_enable' '0'
+config_get_bool auto_config_enable repacd 'auto_config_enable' '0'
+config_get_bool disable_sync repacd 'disable_sync' '1'
+config_get MAX_ACC_MULTI_INST_SUPPORT repacd 'max_inst_supported' '4'
+config_get map_fast_onboarding MAPConfig 'MapFastOnboarding'
+config_get dot1x_support MAPConfig 'IsActive8021x' '0'
+config_get base_mld_mac_addr MAPConfig 'mld_mac_addr' ''
+config_get onboarding_done MAPConfig 'OnboardingDone'
+brindex=0
+
+#check wireless config to enable/disable cfg80211 for wsplcd
+wireless_cfg=
+config_load 'wireless'
+config_foreach __whc_check_wlan_cfg_mode wifi-device wireless_cfg
+
+# SLO config
+sta_mld_device=''
+sta_mld_index=0
+
+# Fetch the MLD section name from MLD Role
+#
+# input: $1 config: section name
+# input: $2 role_to_match: MLD Role to match the MLD Section
+# output: $3 mld_section: MLD Section name
+wsplcd_cfg_get_mld_matching_role() {
+    local config="$1"
+    local role_to_match="$2"
+    local role
+
+    config_get role "$config" role
+
+    if [ "$role" == "$role_to_match" ]; then
+        eval "$3=$config"
+    fi
+}
+
+config_foreach wsplcd_cfg_get_mld_matching_role wifi-mld "Non-AP" sta_mld_device
+# if Non-AP MLD is found then take the index
+if [ -n "$sta_mld_device" ]; then
+    sta_mld_index=$(echo "$sta_mld_device" | sed 's/[^0-9]*//g' )
+fi
+
+if [ "$multi_inst_enable" -eq 1 ] && [ "$auto_config_enable" -eq 1 ]; then
+    . /lib/functions/repacd-son.sh
+fi
+
+if [ "$wsplcd_wxt" == "0" -a "$wireless_cfg" == "1" ]; then
+    WSPLCD_CFG80211=-cfg80211
+else
+    WSPLCD_CFG80211=
+fi
+
+wsplcd_cfg_append() {
+    local configfile=$2
+    echo "$1" >> "$configfile"
+}
+
+wsplcd_cfg_add_str() {
+    local cfg="$1"
+    local key="$2"
+    local def="$3"
+    local configfile="$4"
+    local val
+
+    config_get val config "$key" "$def"
+    [ -n "$val" ] && wsplcd_cfg_append "$cfg=$val" "$configfile"
+}
+
+wsplcd_cfg_add_bool() {
+    local cfg="$1"
+    local key="$2"
+    local def="$3"
+    local configfile="$4"
+    local val
+
+    config_get_bool val config "$key" "$def"
+    [ -n "$val" ] && wsplcd_cfg_append "$cfg=$val" "$configfile"
+}
+
+wsplcd_cfg_add_debuglevel() {
+    local cfg="$1"
+    local key="$2"
+    local def="$3"
+    local configfile="$4"
+    local val
+
+    config_get val config "$key" "$def"
+    case "$val" in
+        DUMP)
+            val='0'
+        ;;
+        DEBUG)
+            val='1'
+        ;;
+        INFO)
+            val='2'
+        ;;
+        ERROR)
+            val='3'
+        ;;
+    esac
+    [ -n "$val" ] && wsplcd_cfg_append "$cfg=$val" "$configfile"
+}
+
+__wsplcd_get_default_mode() {
+	local wan_iface
+
+	config_load network
+	if [ "$openwrt_version_check" -eq 1 ]; then
+	    config_get wan_iface wan device
+	else
+	    config_get wan_iface wan ifname
+	fi
+
+	if [ -n "$wan_iface" ]; then
+		eval "$1='REGISTRAR'"
+	else
+		eval "$1='ENROLLEE'"
+	fi
+}
+
+wsplcd_cfg_add_role() {
+	local cfg="$1"
+	local key="$2"
+	local configfile="$3"
+	local default_mode
+	local val
+
+	__wsplcd_get_default_mode default_mode
+	config_get val config "$key"
+	case "$val" in
+		REGISTRAR)
+			val='0'
+		;;
+		ENROLLEE)
+			val='1'
+		;;
+		NONE)
+			val='2'
+		;;
+		*)
+			if [ "$default_mode" = "REGISTRAR" ]; then
+				val='0'
+			else
+				val='1'
+			fi
+			uci_set wsplcd config "$key" "$default_mode"
+		;;
+	esac
+	[ -n "$val" ] && wsplcd_cfg_append "$cfg=$val" "$configfile"
+}
+
+wsplcd_cfg_add_wpsmethod() {
+    local cfg="$1"
+    local key="$2"
+    local def="$3"
+    local configfile="$4"
+    local val
+
+    config_get val config "$key" "$def"
+    case "$val" in
+        WPS_M2)
+            val='M2'
+        ;;
+        WPS_M8)
+            val='M8'
+        ;;
+    esac
+    [ -n "$val" ] && wsplcd_cfg_append "$cfg=$val" "$configfile"
+}
+
+wsplcd_cfg_add_wpstxmode() {
+    local cfg="$1"
+    local key="$2"
+    local def="$3"
+    local configfile="$4"
+    local val
+
+    config_get val config "$key" "$def"
+    case "$val" in
+        WPS_TX_ENCRYPTED)
+            val='encrypted'
+        ;;
+        WPS_TX_NONE)
+            val='none'
+        ;;
+    esac
+    [ -n "$val" ] && wsplcd_cfg_append "$cfg=$val" "$configfile"
+}
+
+wsplcd_cfg_add_wpsrxmode() {
+    local cfg="$1"
+    local key="$2"
+    local def="$3"
+    local configfile="$4"
+    local val
+
+    config_get val config "$key" "$def"
+    case "$val" in
+        WPS_RX_ENCRYPTED)
+            val='encrypted'
+        ;;
+        WPS_RX_EITHER)
+            val='either'
+        ;;
+    esac
+    [ -n "$val" ] && wsplcd_cfg_append "$cfg=$val" "$configfile"
+}
+
+wsplcd_cfg_add_configsta() {
+    local cfg="$1"
+    local key="$2"
+    local def="$3"
+    local configfile="$4"
+    local val
+
+    config_get val config "$key" "$def"
+    case "$val" in
+        1)
+            val='yes'
+        ;;
+        0)
+            val='no'
+        ;;
+    esac
+    [ -n "$val" ] && wsplcd_cfg_append "$cfg=$val" "$configfile"
+}
+
+wsplcd_cfg_add_wpatype() {
+    local cfg="$1"
+    local key="$2"
+    local def="$3"
+    local configfile="$4"
+    local val
+
+    config_get val config "$key" "$def"
+    case "$val" in
+        LONG)
+            val='0'
+        ;;
+        SHORT)
+            val='1'
+        ;;
+    esac
+    [ -n "$val" ] && wsplcd_cfg_append "$cfg=$val" "$configfile"
+}
+
+wsplcd_cfg_add_buttonmode() {
+    local cfg="$1"
+    local key="$2"
+    local def="$3"
+    local configfile="$4"
+    local val
+
+    config_get val config "$key" "$def"
+    case "$val" in
+        ONEBUTTON)
+            val='1'
+        ;;
+        TWOBUTTON)
+            val='2'
+        ;;
+    esac
+    [ -n "$val" ] && wsplcd_cfg_append "$cfg=$val" "$configfile"
+}
+
+__wsplcd_iterate_wlan_ifaces_nonpbc() {
+	local config="$1"
+	local iface network mode wps_pbc
+
+	config_get iface "$config" ifname
+	config_get network "$config" network
+	config_get mode "$config" mode
+	config_get_bool wps_pbc "$config" wps_pbc 0
+
+	if [ "$2" = "$network" ] && [ "$wps_pbc" -eq "0" ]; then
+		NON_PBC_IFACES="${NON_PBC_IFACES}${NON_PBC_IFACES:+","}${iface}"
+	fi
+}
+
+wsplcd_cfg_add_nonpbc() {
+	local br_name="$1"
+	local configfile="$2"
+	NON_PBC_IFACES=
+
+	config_load wireless
+	config_foreach __wsplcd_iterate_wlan_ifaces_nonpbc wifi-iface "$br_name"
+
+	if [ -n "$NON_PBC_IFACES" ]; then
+		wsplcd_cfg_append 'NonPBCInterfaces='$NON_PBC_IFACES "$configfile"
+	fi
+}
+
+__wsplcd_iterate_wlan_radios() {
+	local config="$1"
+	local hwmode mloenabled
+
+	config_get hwmode "$config" hwmode
+	config_get mloenabled "$config" mloenabled '0'
+
+	if [ "$hwmode" == '11bea' ] || [ "$hwmode" == '11beg' ]; then
+		if [ $mloenabled -eq 1 ]; then
+			MLO_RADIO_DEVICES="${MLO_RADIO_DEVICES}${MLO_RADIO_DEVICES:+","}${config}"
+		fi
+	fi
+}
+
+wsplcd_cfg_add_mldradio() {
+	local configfile="$1"
+        MLO_RADIO_DEVICES=
+
+        config_load wireless
+        config_foreach __wsplcd_iterate_wlan_radios wifi-device
+
+	if [ -n "$MLO_RADIO_DEVICES" ]; then
+		wsplcd_cfg_append 'MLDRadio='$MLO_RADIO_DEVICES "$configfile"
+	fi
+}
+
+wsplcd_cfg_add_guest_interface() {
+	local all_ifaces wlan_ifaces mld_wlan_ifaces
+	local configfile=$1
+	local br_name_guest=$ieee1905_brguest_map
+	local br_name_bh=$ieee1905_brbh
+
+	# Add other bridge names and interface list to config file
+	if [ -n "$br_name_guest" ]; then
+		br_num=1
+		for br in $br_name_guest; do
+			if [ "$build_name" = "image_rdkb" ]; then
+				wsplcd_cfg_append bridge$br_num="br$br" "$configfile"
+			else
+				wsplcd_cfg_append bridge$br_num="$brprefix$br" "$configfile"
+			fi
+			if [ "$map_fast_onboarding" -eq 0 ]; then
+				# Get all WLAN interfaces bound to the managed bridge
+				hyfi_get_wlan_ifaces "$br" wlan_ifaces wlan_included_ifaces mld_wlan_ifaces
+			else
+				# Get all WLAN interfaces bound to the managed bridge
+				WSPLCD_GLOBAL_FLAG=1
+				hyfi_get_ifaces_fast_onboarding "$br" wlan_ifaces wlan_included_ifaces mld_wlan_ifaces
+				WSPLCD_GLOBAL_FLAG=0
+			fi
+
+			if [ -n "$wlan_ifaces" ]; then
+				wsplcd_cfg_append '1905InterfacesWlan='"$wlan_ifaces" "$configfile"
+			fi
+			br_num=$((br_num+1))
+		done
+	fi
+
+	if [ -n "$br_name_bh" ]; then
+		# Append backhaul interface to config file
+		wsplcd_cfg_append backhaul="$br_name_bh" "$configfile"
+
+		if [ "$map_fast_onboarding" -eq 0 ]; then
+			# Get all WLAN interfaces bound to the managed bridge
+			hyfi_get_wlan_ifaces "$br_name_bh" wlan_ifaces wlan_included_ifaces mld_wlan_ifaces
+		else
+			# Get all WLAN interfaces bound to the managed bridge
+			WSPLCD_GLOBAL_FLAG=1
+			hyfi_get_ifaces_fast_onboarding "$br_name_bh" wlan_ifaces wlan_included_ifaces mld_wlan_ifaces
+			WSPLCD_GLOBAL_FLAG=0
+		fi
+
+		if [ -n "$wlan_ifaces" ]; then
+			wsplcd_cfg_append '1905InterfacesWlan='"$wlan_ifaces" "$configfile"
+		fi
+	fi
+}
+
+wsplcd_cfg_add_interface() {
+	local br_name=$1
+	local configfile="$2"
+	local wlan_ifaces wlan_included_ifaces ether_ifaces plc_iface non_wlan_ifaces mld_wlan_ifaces
+	local wlan_vlan_ifaces
+	local wlan_zero_radios
+	local basic2g
+	local basic5g
+	local is_zerobss_enabled
+
+	wsplcd_cfg_append 'bridge='"$brprefix$br_name" "$configfile"
+
+	# Get all WLAN interfaces bound to the managed bridge
+	WSPLCD_GLOBAL_FLAG=1
+	hyfi_get_wlan_ifaces "$br_name" wlan_ifaces wlan_included_ifaces mld_wlan_ifaces
+	WSPLCD_GLOBAL_FLAG=0
+	wsplcd_cfg_append '1905InterfacesWlan='"$wlan_ifaces" "$configfile"
+
+	config_load $MAP
+	config_get is_zerobss_enabled MultiAP 'EnableZeroBss' '0'
+
+	if [ $is_zerobss_enabled -eq 1 ]; then
+		get_wlan_radio_zero_bss_string "$br_name" wlan_zero_radios
+		wsplcd_cfg_append 'ZeroWlanInterfaces='"$wlan_zero_radios" "$configfile"
+		config_load wsplcd
+		config_get basic5g config 5GBasic ''
+		config_get basic2g config 2GBasic ''
+		wsplcd_cfg_append '5GBasic='"$basic5g" "$configfile"
+		wsplcd_cfg_append '2GBasic='"$basic2g" "$configfile"
+		wsplcd_cfg_append 'IsZeroBssEnabled='"1" "$configfile"
+	fi
+
+	# Get all WLAN VLAN interfaces bound to the managed bridge
+	hyfi_get_wlan_vlan_ifaces "$br_name" wlan_vlan_ifaces
+
+	# Get all Ethernet interfaces and PLC interface
+	hyfi_get_ether_ifaces "$br_name" ether_ifaces
+	hyfi_get_plc_iface "$br_name" plc_iface
+	if [ -n "${plc_iface}" ] ; then
+		non_wlan_ifaces=${ether_ifaces}${ether_ifaces:+","}${plc_iface}
+	else
+		non_wlan_ifaces=${ether_ifaces}
+	fi
+	if [ -n "${wlan_vlan_ifaces}" ] ; then
+		non_wlan_ifaces=${non_wlan_ifaces}${non_wlan_ifaces:+","}${wlan_vlan_ifaces}
+	fi
+
+	non_wlan_ifaces=$(echo "$non_wlan_ifaces" | sed 's/ESWITCH/ETHER/g')
+	wsplcd_cfg_append '1905InterfacesElse='"$non_wlan_ifaces" "$configfile"
+
+	wsplcd_cfg_add_nonpbc "$br_name" "$configfile"
+}
+
+wsplcd_atf_re_mac_cfg() {
+	local configfile="$3"
+	local cfg
+	local val
+
+	cfg="REmac"
+	config_get val "$1" "$cfg"
+	[ -n "$val" ] && wsplcd_cfg_append "${2}${cfg}_entry=$val" "$configfile"
+}
+
+wsplcd_getlist_atf_grpssid() {
+	local val="$1"
+	local configfile="$2"
+
+	wsplcd_cfg_append "${2}group_ssid_${atf_groupcmd_idx}=$val"  "$configfile"
+	numssid=$((numssid + 1))
+}
+
+wsplcd_atf_group_cfg() {
+	local cfg
+	local grpname
+	local cmd
+	local dev
+	local val
+	local numssid
+	local status
+	local cmdidx=$atf_groupcmd_idx
+	local config=$1
+	local prefix=$2
+	local configfile="$3"
+
+	while :; do
+		cfg="group_wifidev"
+		config_get dev "$1" "$cfg"
+		[ -n "$dev" ] || break
+		wsplcd_cfg_append "${2}group_wifidev_${cmdidx}=$dev" "$configfile"
+
+		cfg="group_enable"
+		config_get status "$1" "$cfg"
+		if [ -n "$status" ]; then
+			wsplcd_cfg_append "${2}group_enable_${cmdidx}=$status" "$configfile"
+		fi
+
+		cfg="group"
+		config_get grpname "$1" "$cfg"
+		[ -n "$grpname" ] || break
+
+		cfg="group_cmd"
+		config_get cmd "$1" "$cfg"
+		[ -n "$cmd" ] || break
+
+		cfg="group_val"
+		config_get val "$1" "$cfg"
+		echo "group_val $val"
+		if [ -z "$val" ] && [ "$cmd" == "addgroup" ]; then
+			break
+		fi
+
+		cfg="group_ssid"
+		numssid=0
+		config_list_foreach "$config" "group_ssid" wsplcd_getlist_atf_grpssid "$prefix"
+		if [ $numssid -eq 0 ] && [ "$cmd" == "addgroup" ]; then
+			break
+		fi
+
+		wsplcd_cfg_append "${2}group_entry_${cmdidx}=$grpname"  "$configfile"
+		wsplcd_cfg_append "${2}group_cmd_${cmdidx}=$cmd"  "$configfile"
+		if [ -n "$val" ]; then
+			wsplcd_cfg_append "${2}group_val_${cmdidx}=$val"  "$configfile"
+		fi
+
+		cmdidx=$((cmdidx + 1))
+
+		break
+	done
+	atf_groupcmd_idx=$cmdidx
+}
+
+wsplcd_atf_ssid_cfg() {
+	local cfg
+	local ssid
+	local cmd
+	local dev
+	local val
+	local cmdidx=$atf_ssidcmd_idx
+	local configfile=$3
+
+	while :; do
+		cfg="ssid"
+		config_get ssid "$1" "$cfg"
+		[ -n "$ssid" ] || break
+
+		cfg="ssid_cmd"
+		config_get cmd "$1" "$cfg"
+		[ -n "$cmd" ] || break
+
+		cfg="ssid_wifidev"
+		config_get dev "$1" "$cfg"
+		[ -n "$dev" ] || break
+
+		cfg="ssid_val"
+		config_get val "$1" "$cfg"
+		if [ -z "$val" ] && [ "$cmd" == "addssid" ]; then
+			break
+		fi
+
+		wsplcd_cfg_append "${2}ssid_entry_${cmdidx}=$ssid"  "$configfile"
+		wsplcd_cfg_append "${2}ssid_cmd_${cmdidx}=$cmd"  "$configfile"
+		wsplcd_cfg_append "${2}ssid_wifidev_${cmdidx}=$dev"  "$configfile"
+		wsplcd_cfg_append "${2}ssid_val_${cmdidx}=$val"  "$configfile"
+
+		cmdidx=$((cmdidx + 1))
+
+		break
+	done
+	atf_ssidcmd_idx=$cmdidx
+}
+
+wsplcd_atf_sta_cfg() {
+	local cfg
+	local stamac
+	local cmd
+	local dev
+	local val
+	local ssid
+	local cmdidx=$atf_stacmd_idx
+	local configfile=$3
+
+	while :; do
+		cfg="sta"
+		config_get stamac "$1" "$cfg"
+		[ -n "$stamac" ] || break
+
+		cfg="sta_cmd"
+		config_get cmd "$1" "$cfg"
+		[ -n "$cmd" ] || break
+
+		cfg="sta_wifidev"
+		config_get dev "$1" "$cfg"
+		[ -n "$dev" ] || break
+
+		cfg="sta_val"
+		config_get val "$1" "$cfg"
+		if [ -z "$val" ] && [ "$cmd" == "addsta" ]; then
+			break
+		fi
+
+		cfg="sta_ssid"
+		config_get ssid "$1" "$cfg"
+
+		wsplcd_cfg_append "${2}sta_entry_${cmdidx}=$stamac"  "$configfile"
+		wsplcd_cfg_append "${2}sta_cmd_${cmdidx}=$cmd"  "$configfile"
+		wsplcd_cfg_append "${2}sta_wifidev_${cmdidx}=$dev"  "$configfile"
+		wsplcd_cfg_append "${2}sta_val_${cmdidx}=$val"  "$configfile"
+		wsplcd_cfg_append "${2}sta_ssid_${cmdidx}=$ssid"  "$configfile"
+
+		cmdidx=$((cmdidx + 1))
+
+		break
+	done
+	atf_stacmd_idx=$cmdidx
+}
+
+wsplcd_parse_re_atf_config() {
+	local cfg
+	local val
+	local config=$1
+	local configfile=$4
+
+	cfg="REname"
+	config_get val "$1" "$cfg"
+
+	if [ -n "$val" ] && [ "$val" == "$2" ] ; then
+		#Get ATF SSID Config
+		wsplcd_atf_ssid_cfg "$config" "$3" "$configfile"
+
+		#Get ATF STA Config
+		wsplcd_atf_sta_cfg "$config" "$3" "$configfile"
+
+		#Get ATF Group Config
+		wsplcd_atf_group_cfg "$config" "$3" "$configfile"
+	fi
+}
+
+wsplcd_parse_radioparams_atfconfig() {
+	local cfg
+	local val
+	local config=$1
+	local configfile=$4
+
+	cfg="REname"
+	config_get val "$1" "$cfg"
+
+	if [ -n "$val" ] && [ "$val" == "$2" ] ; then
+		#Get Radio name
+		cfg="radio_name"
+		config_get val "$1" "$cfg"
+		if [ -n "$val" ] ; then
+			wsplcd_cfg_append "${3}radio_name_${atf_radioparams_idx}=$val" "$configfile"
+		fi
+
+		#Get ATF scheduling policy
+		cfg="sched_policy"
+		config_get val "$1" "$cfg"
+		if [ -n "$val" ] ; then
+			wsplcd_cfg_append "${3}radio_sched_${atf_radioparams_idx}=$val" "$configfile"
+		fi
+
+		#Get ATF OBSS scheduling (0/1)
+		cfg="sched_obss_enable"
+		config_get val "$1" "$cfg"
+		if [ -n "$val" ] ; then
+			wsplcd_cfg_append "${3}radio_obss_${atf_radioparams_idx}=$val" "$configfile"
+		fi
+
+		#Get ATF Inter group policy
+		cfg="sched_group_policy"
+		config_get val "$1" "$cfg"
+		if [ -n "$val" ] ; then
+			wsplcd_cfg_append "${3}radio_grouppolicy_${atf_radioparams_idx}=$val" "$configfile"
+		fi
+
+		atf_radioparams_idx=$((atf_radioparams_idx + 1))
+	fi
+}
+
+wsplcd_parse_atf_config() {
+	local cfg
+	local prefix
+	local rename
+	local config=$1
+	local configfile=$2
+
+	repeater_id=$((repeater_id + 1))
+	prefix="ATF.RE${repeater_id}_"
+
+	cfg="REname"
+	config_get rename "$1" "$cfg"
+
+	#Get RE MAC
+	wsplcd_atf_re_mac_cfg "$config" $prefix "$configfile"
+
+	#reset command indexes for each repeater entry
+	atf_ssidcmd_idx=1
+	atf_stacmd_idx=1
+	atf_groupcmd_idx=1
+	atf_radioparams_idx=1
+
+	#Parse re-config section & get atf configuration
+	config_load wsplcd
+	config_foreach wsplcd_parse_re_atf_config atf-re-config "$rename" $prefix "$configfile"
+
+	config_foreach wsplcd_parse_radioparams_atfconfig atf-re-radioparams-config "$rename" $prefix "$configfile"
+}
+
+wsplcd_cfg_add_atf() {
+	local cfg="$1"
+	local key="$2"
+	local def="$3"
+	local val
+	local repeater_id=0
+	local configfile=$4
+
+	config_get_bool val config "$key" "$def"
+	[ -n "$val" ] && wsplcd_cfg_append "$cfg=$val" "$configfile"
+
+	#Read ATF Params if ATF config is enabled
+	if [ -n "$val" ] && [ "$val" == 1 ] ; then
+		config_load wsplcd
+		config_foreach wsplcd_parse_atf_config atf-config "$configfile"
+	fi
+}
+
+wsplcd_create_config() {
+	lock /var/run/wsplcd.lock
+	local br_name=$1
+	local configfile=$2
+
+	if [ "$build_name" = "image_rdkb" ]; then
+		config_load wsplcd
+	fi
+
+	config_get map_enable config 'MapEnable' '0'
+	config_get num_vlan_supported config 'NumberOfVLANSupported' '0'
+	config_load repacd
+	config_get TS_enabled repacd 'TrafficSeparationEnabled' '0'
+
+	if [ "$map_enable" -ge 2 ] && [ "$num_vlan_supported" -gt 0 ]; then
+		# Get the Guest Bridge Names
+		hyfi_get_ieee1905_brguest_map ieee1905_brguest_map ieee1905_brbh
+	else
+		[ "$multi_inst_enable" -eq 1 ] && ieee1905managed_bridge="$primarybridgename"
+		if [ "$ieee1905managed_bridge" == "$br_name" -a "$TS_enabled" == "1" -a "$map_enable" -eq 0 ]; then
+			ieee1905_brbh="backhaul"
+		else
+			ieee1905_brbh=
+		fi
+	fi
+	echo "# Config file for wsplcd, automatically created by script" > "$configfile"
+	if [ "$build_name" == 'image_rdkb' ]; then
+		config_load wsplcd
+	fi
+	wsplcd_cfg_add_str         useSpecBasedDefinitions    	 useSpecBasedDefinitions  '0'	"$configfile"
+	wsplcd_cfg_add_str         MapR1R2MixNoSupport    	 	 MapR1R2MixNoSupport  '0'	"$configfile"
+	wsplcd_cfg_add_str         WPAGetValueRetryCount         WPAGetValueRetryCount '5'		"$configfile"
+	wsplcd_cfg_add_debuglevel  debug_level                   DebugLevel           'ERROR'		"$configfile"
+
+	if [ "$map_fast_onboarding" -eq 1 ]; then
+		wsplcd_cfg_add_interface "$br_name" "$configfile"
+		wsplcd_cfg_add_guest_interface $configfile
+		cp $configfile $MAP_TEMP_INTF_LIST_WSPLCD
+	else
+		wsplcd_cfg_add_interface "$br_name" "$configfile"
+		wsplcd_cfg_add_guest_interface $configfile
+	fi
+
+	config_load ezmesh
+	config_get_bool dualalid config 'DualAlid' '0'
+	if [ "$dualalid" = 1 ];then
+		wsplcd_cfg_add_str         external_controller           external_controller  '0'               "$configfile"
+	fi
+
+	wsplcd_cfg_add_mldradio $configfile
+	wsplcd_cfg_add_role        role                          RunMode		"$configfile"
+	config_load 'wsplcd' # previous one loads network config. Loading wsplcd config
+	wsplcd_cfg_add_bool        designated_pb_ap              DesignatedPBAP       '0'		"$configfile"
+	wsplcd_cfg_add_wpsmethod   WPS_method                    WPSMethod            'WPS_M2'		"$configfile"
+	wsplcd_cfg_add_wpstxmode   WPS_tx_mode                   TXMode               'WPS_TX_ENCRYPTED' "$configfile"
+	wsplcd_cfg_add_wpsrxmode   WPS_rx_mode                   RXMode               'WPS_RX_ENCRYPTED' "$configfile"
+	wsplcd_cfg_add_configsta   config_station                ConfigSta            '1'		"$configfile"
+	wsplcd_cfg_add_str         ssid_suffix                   SSIDSuffix           ''		"$configfile"
+	wsplcd_cfg_add_str         search_timeout                SearchTimeout        '60'		"$configfile"
+	wsplcd_cfg_add_str         WPS_session_timeout           WPSSessionTimeout    '120'		"$configfile"
+	wsplcd_cfg_add_str         WPS_retransmission_timeout    WPSRetransmitTimeout '5'		"$configfile"
+	wsplcd_cfg_add_str         WPS_per_message_timeout       WPSPerMessageTimeout '15'		"$configfile"
+	wsplcd_cfg_add_bool        band_sel_enable               BandSel              '1'		"$configfile"
+	wsplcd_cfg_add_bool        band_choice                   BandChoice           '5G'		"$configfile"
+	wsplcd_cfg_add_str         rm_collect_timeout            RMCollectTimeout     '10'		"$configfile"
+	wsplcd_cfg_add_str         prefered_low_channel          Prefered5GLChannel   '40'              "$configfile"
+	wsplcd_cfg_add_str         prefered_high_channel         Prefered5GHChannel   '149'             "$configfile"
+	wsplcd_cfg_add_str         prefered_6g_channel           Prefered6GChannel    '33'       "$configfile"
+	wsplcd_cfg_add_bool        EnableNBTLV                   EnableNBTLV          '0'       "$configfile"
+	wsplcd_cfg_add_str         NBTLVbuff                     NBTLVbuff            '0'       "$configfile"
+	wsplcd_cfg_add_bool        Ezmesh6GEnable                Ezmesh6GEnable       '0'       "$configfile"
+	wsplcd_cfg_add_bool        EnableUnicastRenew            EnableUnicastRenew   '0'       "$configfile"
+	wsplcd_cfg_add_bool        EnableCloningOptimization     EnableCloningOptimization '0'  "$configfile"
+	wsplcd_cfg_add_bool        StandardCloneEnabled          StandardCloneEnabled '0'       "$configfile"
+	wsplcd_cfg_add_bool        multiBSTAOnboarding           multiBSTAOnboarding  '0'       "$configfile"
+	wsplcd_cfg_add_bool        deep_clone_enable             DeepClone            '1'		"$configfile"
+	wsplcd_cfg_add_bool        deep_clone_no_bssid           DeepCloneNoBSSID     '0'       "$configfile"
+	wsplcd_cfg_add_bool        manage_vap_ind                ManageVAPInd         '1'		"$configfile"
+	wsplcd_cfg_add_str         1905Nwkey                     NetworkKey1905       ''		"$configfile"
+	wsplcd_cfg_add_str         ucpk_salt                     UCPKSalt             ''		"$configfile"
+	wsplcd_cfg_add_wpatype     wpa_passphrase_type           WPAPassphraseType    'LONG'		"$configfile"
+	wsplcd_cfg_add_str         config_methods                config_methods       'push_button virtual_push_button physical_push_button' "$configfile"
+	wsplcd_cfg_add_str         manufacturer                  manufacturer         'Qualcomm Atheros' "$configfile"
+	wsplcd_cfg_add_str         model_name                    model_name           'ModelNameHere'    "$configfile"
+	wsplcd_cfg_add_str         model_number                  model_number         'ModelNumberHere'  "$configfile"
+	wsplcd_cfg_add_str         serial_number                 serial_number        'SerialNumberHere' "$configfile"
+	wsplcd_cfg_add_str         device_type                   device_type          '6-0050f204-1'     "$configfile"
+	wsplcd_cfg_add_str         device_name                   device_name          'ExampleWpa'       "$configfile"
+	wsplcd_cfg_add_str         os_version                    os_version           '01020300'         "$configfile"
+	wsplcd_cfg_append          '#AP Cloning 1.0 parameters' "$configfile"
+	wsplcd_cfg_add_bool        APCloning                     APCloning            '0'		"$configfile"
+	wsplcd_cfg_add_str         MapEnable                     MapEnable            '0'		"$configfile"
+	wsplcd_cfg_add_bool        MapPFCompliant                MapPFCompliant       '0'		"$configfile"
+	wsplcd_cfg_add_bool        Map2TSSetFromHYD              Map2TSSetFromHYD     '0'		"$configfile"
+	wsplcd_cfg_add_bool        Map2EnableMboOcePmf           Map2EnableMboOcePmf  '0'		"$configfile"
+	wsplcd_cfg_add_bool        MapConfigServiceEnabled       MapConfigServiceEnabled  "$mapConfigServiceEnabled"		"$configfile"
+	wsplcd_cfg_add_str         NumberOfVLANSupported         NumberOfVLANSupported '0'		"$configfile"
+	wsplcd_cfg_add_str         Map2TrafficSepEnabled         Map2TrafficSepEnabled '0'		"$configfile"
+	wsplcd_cfg_add_str         EnableBackhaulWPS             EnableBackhaulWPS     '0'		"$configfile"
+	wsplcd_cfg_add_str         CombinedR1R2Backhaul          CombinedR1R2Backhaul '0'		"$configfile"
+	wsplcd_cfg_add_str         MapMaxBss                     MapMaxBss            '0'		"$configfile"
+	wsplcd_cfg_add_str         MapQosmEnabled                MapQosmEnabled       '0'		"$configfile"
+	wsplcd_cfg_add_str         MapFastOnboarding             MapFastOnboarding    '0'		"$configfile"
+	wsplcd_cfg_add_str         IsActive8021x                 IsActive8021x        "$dot1x_support"  "$configfile"
+	wsplcd_cfg_add_buttonmode  button_mode                   ButtonMode           'TWOBUTTON'	"$configfile"
+	wsplcd_cfg_add_str         clone_timeout                 CloneTimeout         '180'		"$configfile"
+	wsplcd_cfg_add_str         walk_timeout                  WalkTimeout          '120'		"$configfile"
+	wsplcd_cfg_add_str         repeat_timeout                RepeatTimeout        '1'		"$configfile"
+	wsplcd_cfg_add_str         internal_timeout              InternalTimeout      '15'		"$configfile"
+	wsplcd_cfg_add_str         wait_wifi_config_secs_other   WaitOtherBandsSecs   '20'		"$configfile"
+	wsplcd_cfg_add_str         wait_wifi_config_secs_first   WaitFirstBandSecs    '30'		"$configfile"
+	wsplcd_cfg_add_atf         atf_config_en               	 atfConfigEnable	  '0'		"$configfile"
+	wsplcd_cfg_append          "cfg_changed=$cfg_changed"  "$configfile"
+	wsplcd_cfg_add_str         EnableMemDebug                EnableMemDebug       '0'		"$configfile"
+	wsplcd_cfg_add_str         MemDbgAuditingOnly            MemDbgAuditingOnly   '0'		"$configfile"
+	wsplcd_cfg_add_str         MemDbgDisableModule           MemDbgDisableModule  '0'		"$configfile"
+	wsplcd_cfg_add_str         MemDbgFreedMemCount           MemDbgFreedMemCount  '0'		"$configfile"
+	wsplcd_cfg_add_str         MemDbgWriteLogToFile          MemDbgWriteLogToFile '0'		"$configfile"
+	wsplcd_cfg_add_str         MemDbgEnableFilter            MemDbgEnableFilter   '0'		"$configfile"
+	wsplcd_cfg_add_str         MemDbgFilterFileName          MemDbgFilterFileName '0'		"$configfile"
+	wsplcd_cfg_add_str         MemDbgReportInterval          MemDbgReportInterval '0'		"$configfile"
+	wsplcd_cfg_add_str         EnableAFCChannelSelection     EnableAFCChannelSelection '0'          "$configfile"
+	wsplcd_cfg_add_str         EnableMLO                     EnableMLO            '0'               "$configfile"
+	wsplcd_cfg_add_str         EnableSLO                     EnableSLO            '0'               "$configfile"
+	wsplcd_cfg_add_str         config_mlo_station            config_mlo_station   '0'               "$configfile"
+	wsplcd_cfg_add_str         send_packet_onbridge          send_packet_onbridge '0'               "$configfile"
+	wsplcd_cfg_add_str         BaseMldMacAddr                BaseMldMacAddr       "$base_mld_mac_addr"  "$configfile"
+	wsplcd_cfg_add_str         STAMldIndex                   STAMldIndex          "$sta_mld_index"      "$configfile"
+	wsplcd_cfg_add_str         OnboardingDone                OnboardingDone       "$onboarding_done"    "$configfile"
+	wsplcd_cfg_add_str         Skip6GSplitBandCheck          Skip6GSplitBandCheck '0'               "$configfile"
+	wsplcd_cfg_add_str         SerialNumber                  SerialNumber         '9574'	"$configfile"
+	wsplcd_cfg_add_str         ExecutionEnvironment          ExecutionEnvironment 'Linux'	"$configfile"
+	wsplcd_cfg_add_str         ChipsetVendor                 ChipsetVendor        'QTI'		"$configfile"
+	wsplcd_cfg_add_str         SoftwareVersion               SoftwareVersion      '12.x'	"$configfile"
+	wsplcd_cfg_add_str         maxNumAPLinks                 maxNumAPLinks        '0'		"$configfile"
+	wsplcd_cfg_add_str         earlyAPCapabilitySupported    earlyAPCapabilitySupported        '1'		"$configfile"
+
+	local cfg_restart_long_timeout
+	local cfg_restart_short_timeout
+	local cfg_apply_timeout
+	local cfg_max_renew_retry
+	local cfg_renew_retransmit_interval
+	config_get cfg_restart_long_timeout config "ConfigRestartLongTimeout" "20"
+	config_get cfg_restart_short_timeout config "ConfigRestartShortTimeout" "5"
+	config_get cfg_apply_timeout config "ConfigApplyTimeout" "10"
+	config_get cfg_max_renew_retry config "MaxRenewRetry" "10"
+	config_get cfg_renew_retransmit_interval config "RenewRetryTimeout" "10"
+	wsplcd_cfg_append          "cfg_restart_long_timeout=$cfg_restart_long_timeout" "$configfile"
+	wsplcd_cfg_append          "cfg_restart_short_timeout=$cfg_restart_short_timeout" "$configfile"
+	wsplcd_cfg_append          "cfg_apply_timeout=$cfg_apply_timeout" "$configfile"
+	wsplcd_cfg_append          "cfg_max_renew_retry=$cfg_max_renew_retry" "$configfile"
+	wsplcd_cfg_append          "cfg_renew_retransmit_interval=$cfg_renew_retransmit_interval" "$configfile"
+	wsplcd_cfg_append          "TrafficSeparationEnabled=$TS_enabled" "$configfile"
+
+	[ -x "/sbin/uci2cfg.sh" ] && {
+		/sbin/uci2cfg.sh "$br_name" >> "$configfile"
+		/sbin/uci2cfg.sh wifisec "$br_name" > "/tmp/.wsplc.wifisec"
+		if [ -n "$ieee1905_brguest_map" ]; then
+			for br in $ieee1905_brguest_map; do
+				local wlan_ifaces_exist
+				if [ "$build_name" = "image_rdkb" ]; then
+					wlan_ifaces_exist=$(syscfg show | grep wireless | grep "$br")
+				else
+					wlan_ifaces_exist=$(uci show wireless | grep "$br")
+				fi
+				if [ -n "$wlan_ifaces_exist" ]; then
+					if [ "$build_name" = "image_rdkb" ]; then
+						/sbin/uci2cfg.sh "br$br" >> "$configfile"
+					else
+						/sbin/uci2cfg.sh "$br" >> "$configfile"
+					fi
+				fi
+			done
+		fi
+		if [ -n "$ieee1905_brbh" ]; then
+			local wlan_ifaces_bh_exist
+			if [ "$build_name" = "image_rdkb" ]; then
+				wlan_ifaces_bh_exist=$(syscfg show | grep wireless | grep "$ieee1905_brbh")
+			else
+				wlan_ifaces_bh_exist=$(uci show wireless | grep "$ieee1905_brbh")
+			fi
+			if [ -n "$wlan_ifaces_bh_exist" ]; then
+				/sbin/uci2cfg.sh "$ieee1905_brbh" > "/tmp/backhaul_bridge"
+				#To avoid duplicate RADIO.X entry grep WLAN while including backhaul VAP config
+				cat "/tmp/backhaul_bridge" | grep WLAN >> "$configfile"
+				rm /tmp/backhaul_bridge
+			fi
+		fi
+	}
+
+	lock -u /var/run/wsplcd.lock
+
+	return 0
+}
+
+__wsplcd_wlanif_ready() {
+	local vif vifs
+	local vifstat
+	local configfile=$1
+
+	vifs=$(grep '^1905InterfacesWlan=' "$configfile" | sed -e 's/1905InterfacesWlan=//' -e 's/@[a-zA-Z0-9]*//g' -e 's/,/ /g' -e 's/:WLAN//g' -e 's/&[a-zA-Z0-9]*//g')
+	if [ -z "$vifs" ]; then
+		echo "[wsplcd]WLAN interface is not ready" > /dev/console
+		return 0
+	fi
+
+	for vif in $vifs; do
+		vifstat=$(ifconfig "$vif" 2>/dev/null)
+		if [ -z "$vifstat" ]; then
+			echo "[wsplcd]WLAN interface $vif is not ready" > /dev/console
+			return 0
+		fi
+	done
+	return 1
+}
+
+__wsplcd_wlan_start_multi_inst(){
+	local nw_config="$1" type ieee1905managed
+	local allow_zero_ap_interfaces
+	local broption=""
+
+	config_get type "$nw_config" type
+        [ -z "$type" -o ! "$type" = "bridge" ] && return
+        config_get_bool ieee1905managed "$nw_config" ieee1905managed
+        [ -z "$ieee1905managed" -o "$ieee1905managed" -eq 0 ] && return
+        [ "$multi_inst_enable" -eq 1 -a "$brindex" -ge "$MAX_ACC_MULTI_INST_SUPPORT" ] && return
+
+        config_get allow_zero_ap_interfaces config 'AllowZeroAPInterfaces' '0'
+        if [ "$map_enable" -gt 0 ] && [ "$brindex" -gt 0 ]; then
+            hyfi_echo wsplcd "MAP mode only supports a single bridge"
+            return 1
+        fi
+        broption="-i$brindex"
+        wsplcd_create_config "$nw_config" "${WSPLCD_CONFIG_FILE_PREFIX}-${nw_config}.conf" || return 1
+        __wsplcd_wlanif_ready "${WSPLCD_CONFIG_FILE_PREFIX}-${nw_config}.conf"
+        if [ $? -eq 1 ] || [ "$allow_zero_ap_interfaces" -gt 0 ]; then
+            hyfi_echo wsplcd "starting daemon $nw_config"
+            case "$board_name" in
+                ap-sdx*)
+                    start-stop-daemon -S -a ${SERVICE_PATH} -b -- "-c" "${WSPLCD_CONFIG_FILE_PREFIX}-${nw_config}.conf" "$log_mode" "$broption" "$map_mode" "$map_policy_file" "$WSPLCD_CFG80211"
+                    ;;
+                *)
+                    if [ "$build_name" == 'image_rdkb' ]; then
+                         config_get filesize config 'LogFileSize' ''
+                         WSPLCD_DBG_FILE_SIZE=$filesize start-stop-daemon -S -a ${SERVICE_PATH} -b -- "-c" "${WSPLCD_CONFIG_FILE_PREFIX}-${nw_config}.conf" "$WSPLCD_CFG80211"
+                    else
+                         procd_open_instance
+                         config_get filesize config 'LogFileSize' ''
+                         procd_set_param env WSPLCD_DBG_FILE_SIZE=$filesize
+                         procd_set_param command ${SERVICE_PATH} -c "${WSPLCD_CONFIG_FILE_PREFIX}-${nw_config}.conf" "$log_mode" "$broption" "$map_mode" "$map_policy_file" $WSPLCD_CFG80211
+                         procd_set_param respawn ${RESPAWN_THRESHOLD} ${RESPAWN_TIMEOUT} ${RESPAWN_RETRIES}
+                         procd_add_reload_trigger "$MAP" "lbd"
+                         procd_close_instance
+                    fi
+                    ;;
+            esac
+        fi
+        brindex=`expr $brindex + 1`
+}
+
+__wsplcd_wlan_start_default() {
+        local ieee1905managed_bridge
+        local ieee1905managed_bridge2
+
+        # Get the IEEE1905.1 managed bridge name
+        hyfi_get_ieee1905_managed_iface ieee1905managed_bridge ieee1905managed_bridge2
+
+        if [ "$map_enable" -gt 0 ] && [ -n "$ieee1905managed_bridge2" ]; then
+                hyfi_echo wsplcd "MAP mode only supports a single bridge"
+                return 1
+        fi
+
+        wsplcd_create_config "$ieee1905managed_bridge" "${WSPLCD_CONFIG_FILE_PREFIX}-${ieee1905managed_bridge}.conf" || return 1
+        if [ -n "$ieee1905managed_bridge2" ]
+        then
+                wsplcd_create_config "$ieee1905managed_bridge2" "${WSPLCD_CONFIG_FILE_PREFIX}-${ieee1905managed_bridge2}.conf" || return 1
+        fi
+
+        config_get allow_zero_ap_interfaces config 'AllowZeroAPInterfaces' '0'
+        __wsplcd_wlanif_ready "${WSPLCD_CONFIG_FILE_PREFIX}-${ieee1905managed_bridge}.conf"
+        if [ $? -eq 1 ] || [ "$allow_zero_ap_interfaces" -gt 0 ]; then
+                hyfi_echo wsplcd "starting daemon"
+                case "$board_name" in
+                    ap-sdx*)
+                        start-stop-daemon -S -a ${SERVICE_PATH} -b -- "-c" "${WSPLCD_CONFIG_FILE_PREFIX}-${ieee1905managed_bridge}.conf" "$log_mode" "$map_mode" "$map_policy_file" "$WSPLCD_CFG80211"
+                        ;;
+                    *)
+                        if [ "$build_name" == 'image_rdkb' ]; then
+                              #map_policy_file will not be present for RDK-B
+                              config_get filesize config 'LogFileSize' ''
+                              WSPLCD_DBG_FILE_SIZE=$filesize start-stop-daemon -S -a ${SERVICE_PATH} -b -- "-c" "${WSPLCD_CONFIG_FILE_PREFIX}-${ieee1905managed_bridge}.conf" "$log_mode" "$WSPLCD_CFG80211"
+                        else
+                              procd_open_instance
+                              config_get filesize config 'LogFileSize' ''
+                              procd_set_param env WSPLCD_DBG_FILE_SIZE=$filesize
+                              procd_set_param command ${SERVICE_PATH} -c "${WSPLCD_CONFIG_FILE_PREFIX}-${ieee1905managed_bridge}.conf" "$log_mode" "$map_mode" "$map_policy_file" $WSPLCD_CFG80211
+                              procd_set_param respawn ${RESPAWN_THRESHOLD} ${RESPAWN_TIMEOUT} ${RESPAWN_RETRIES}
+                              procd_add_reload_trigger "$MAP" "lbd"
+                              procd_close_instance
+                        fi
+                        ;;
+                esac
+                if [ -n "$ieee1905managed_bridge2" ]
+                then
+                        case "$board_name" in
+                            ap-sdx*)
+                                start-stop-daemon -S -a ${SERVICE_PATH} -b -- "-c" "${WSPLCD_CONFIG_FILE_PREFIX}-${ieee1905managed_bridge2}.conf" "$log_mode" "-i1" "$WSPLCD_CFG80211"
+                                ;;
+                            *)
+                                if [ "$build_name" == 'image_rdkb' ]; then
+                                      config_get filesize config 'LogFileSize' ''
+                                      WSPLCD_DBG_FILE_SIZE=$filesize start-stop-daemon -S -a ${SERVICE_PATH} -b -- "-c" "${WSPLCD_CONFIG_FILE_PREFIX}-${ieee1905managed_bridge2}.conf" "$log_mode" "-i1" "$WSPLCD_CFG80211"
+                                else
+                                      procd_open_instance
+                                      config_get filesize config 'LogFileSize' ''
+                                      procd_set_param env WSPLCD_DBG_FILE_SIZE=$filesize
+                                      procd_set_param command ${SERVICE_PATH} -c "${WSPLCD_CONFIG_FILE_PREFIX}-${ieee1905managed_bridge2}.conf" "$log_mode" -i1 $WSPLCD_CFG80211
+                                      procd_set_param respawn ${RESPAWN_THRESHOLD} ${RESPAWN_TIMEOUT} ${RESPAWN_RETRIES}
+                                      procd_add_reload_trigger "$MAP" "lbd"
+                                      procd_close_instance
+                                fi
+                                ;;
+                        esac
+                fi
+        fi
+}
+
+start_service() {
+	STARTTIME=$(date +%s)
+	local enabled
+	local log_mode
+	local map_enable
+	local map_mode=''
+	local map_policy_file=''
+	local allow_zero_ap_interfaces
+	brindex=0
+	config_load 'wsplcd'
+	config_get_bool enabled config 'HyFiSecurity' '0'
+	[ "$enabled" -gt 0 ] || {
+		return 1
+	}
+
+	config_load $MAP
+	config_get_bool mapConfigServiceEnabled MAPConfigSettings 'EnableConfigService' '0'
+	config_get_bool mapRoleController MAPConfigSettings 'RoleController' '0'
+
+	if [ "$mapRoleController" -eq 0 -a "$mapConfigServiceEnabled" -eq 1 ]; then
+		hyfi_echo wsplcd "MAP Config Service Enabled . Not Starting Wsplcd on Agent"
+		return 1
+	fi
+
+	config_load 'wsplcd' # Done to load the current configuration
+	config_get log_mode config "WriteDebugLogToFile" "NONE"
+	case "$log_mode" in
+		NONE)
+			log_mode=''
+		;;
+		APPEND)
+			log_mode='-a'
+		;;
+		TRUNCATE)
+			log_mode='-w'
+		;;
+	esac
+
+	config_get map_enable config 'MapEnable' '0'
+	if [ "$map_enable" -gt 0 ]; then
+		config_get map_policy_file config 'MapGenericPolicyFile'
+		if [ -n "$map_policy_file" ]; then
+			map_mode='-M'
+		else
+			config_get map_policy_file config 'MapPolicyFile' '/etc/config/map.conf'
+			map_mode='-m'
+		fi
+	fi
+
+	if [ "$multi_inst_enable" -eq 0 ] ; then
+	    __wsplcd_wlan_start_default
+	else
+	    config_load network
+	    config_foreach __wsplcd_wlan_start_multi_inst interface
+	fi
+	touch $WSPLCD_RUN_FILE
+	ENDTIME=$(date +%s)
+	echo "wsplcd started in $(($ENDTIME - $STARTTIME)) seconds"
+}
+
+stop_service() {
+	# Save aside the old config file just for debugging purposes.
+	[ -f "$WSPLCD_CONFIG_FILE" ] &&
+		mv ${WSPLCD_CONFIG_FILE} ${WSPLCD_CONFIG_FILE}.bak &&
+		rm ${WSPLCD_CONFIG_FILE_PREFIX}-*.conf
+
+	case "$board_name" in
+		ap-sdx*)
+			start-stop-daemon -K -n "wsplcd"
+			;;
+		*)
+			if [ "$build_name" == 'image_rdkb' ]; then
+				start-stop-daemon -K -n "wsplcd"
+			fi
+			;;
+	esac
+}
+
+restart_after_config_change() {
+	[ -f "$WSPLCD_RUN_FILE" ] || return
+	hyfi_lock
+	if [ "$auto_config_enable" -eq 1 ] && [ "$disable_sync" -eq 0 ]; then
+	    if [ "$multi_inst_enable" -eq 1 ]; then
+	        config_load 'repacd'
+                config_foreach __repacd_reset_existing_config_new son-iface
+	    fi
+	fi
+	# No longer have an explicit stop function since we are now using
+	# procd, so do an explicit stop via the init script.
+	/etc/init.d/wsplcd stop
+	cfg_changed=1
+	start
+	hyfi_unlock
+}
+
+# input: $1 radio device as uci section
+# input: $2 network name
+# output: $3 zero bss string to be used in wsplcd.conf
+wsplcd_get_zero_wlan_radios() {
+	local radio="$1"
+	local network="$2"
+	local cnt=0
+	local band=''
+
+	config_load wireless
+	config_get hwmode $radio 'hwmode' ''
+	if [ $hwmode = "11bea" -o $hwmode = "11axa" -o $hwmode = "11a" -o $hwmode = "11na" ]; then
+		band=5
+	elif [ $hwmode = "11beg" -o $hwmode = "11axg" -o $hwmode = "11b" -o $hwmode = "11ng" ]; then
+		band=2
+	fi
+
+	config_foreach __wsplcd_get_zero_wlan_ifaces wifi-iface "$radio" cnt  $network
+
+	if [ $cnt -eq 0 ]; then
+		ZERO_WLAN_DEVICES="${ZERO_WLAN_DEVICES}${ZERO_WLAN_DEVICES:+","}@${radio}-${band}&${network}:WLAN"
+		eval "$3='$ZERO_WLAN_DEVICES'"
+	fi
+}
+
+# input: $1 vap interface as uci section
+# input: $2 wifi radio device
+# output: $3 number of vaps count
+# input: $4 network
+__wsplcd_get_zero_wlan_ifaces() {
+	local config="$1"
+	local radio="$2"
+	local count="$3"
+	local net="$4"
+	local iface network disabled device
+
+	config_get iface "$config" ifname
+	config_get network "$config" network
+	config_get disabled "$config" disabled '0'
+	config_get device "$config" device
+	config_get mapEnable "$config" map
+	config_get mode "$config" mode
+
+	if [ "$mode" = "ap" ]; then
+		if [ -n "$iface" ] && [ "$disabled" -eq 0 ] &&
+				[ "$device" = "$radio" ]; then
+			count=$((count + 1))
+			eval "$3='$count'"
+		fi
+	fi
+}
+
+# input: $1 network
+# output: $2 zero bss string to be used in wsplcd.conf
+get_wlan_radio_zero_bss_string() {
+	local network="$1"
+	local zero_radios=""
+
+	config_load wireless
+	config_foreach wsplcd_get_zero_wlan_radios wifi-device "$network" zero_radios
+	eval "$2='$zero_radios'"
+}

@@ -1,0 +1,62 @@
+diff --git a/src/ap/ap_drv_ops.c b/src/ap/ap_drv_ops.c
+index 856340cb0..60d66e4c0 100644
+--- a/src/ap/ap_drv_ops.c
++++ b/src/ap/ap_drv_ops.c
+@@ -1095,6 +1095,12 @@ int hostapd_drv_do_acs(struct hostapd_data *hapd)
+ 
+ 	os_memset(&params, 0, sizeof(params));
+ 	params.hw_mode = hapd->iface->conf->hw_mode;
++	params.link_id = -1;
++#ifdef CONFIG_IEEE80211BE
++	if (hapd->conf->mld_ap && hapd->iconf->ieee80211be &&
++	    !hapd->conf->disable_11be)
++		params.link_id = hapd->mld_link_id;
++#endif /* CONFIG_IEEE80211BE */
+ 
+ 	/*
+ 	 * If no chanlist config parameter is provided, include all enabled
+diff --git a/src/drivers/driver.h b/src/drivers/driver.h
+index 4974bbdc8..2cff732c9 100644
+--- a/src/drivers/driver.h
++++ b/src/drivers/driver.h
+@@ -2816,6 +2816,9 @@ struct drv_acs_params {
+ 
+ 	/* Indicates whether EHT is enabled */
+ 	bool eht_enabled;
++
++	/* Indicates the link if MLO case; -1 otherwise */
++	int link_id;
+ };
+ 
+ struct wpa_bss_trans_info {
+diff --git a/src/drivers/driver_nl80211.c b/src/drivers/driver_nl80211.c
+index 70adaca54..01d8a5ab7 100644
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -12511,17 +12511,20 @@ static int nl80211_qca_do_acs(struct wpa_driver_nl80211_data *drv,
+ 	    add_acs_ch_list(msg, params->freq_list) ||
+ 	    add_acs_freq_list(msg, params->freq_list) ||
+ 	    (params->edmg_enabled &&
+-	     nla_put_flag(msg, QCA_WLAN_VENDOR_ATTR_ACS_EDMG_ENABLED))) {
++	     nla_put_flag(msg, QCA_WLAN_VENDOR_ATTR_ACS_EDMG_ENABLED)) ||
++	    (params->link_id != NL80211_DRV_LINK_ID_NA &&
++	     nla_put_u8(msg, QCA_WLAN_VENDOR_ATTR_ACS_LINK_ID,
++			params->link_id))) {
+ 		nlmsg_free(msg);
+ 		return -ENOBUFS;
+ 	}
+ 	nla_nest_end(msg, data);
+ 
+ 	wpa_printf(MSG_DEBUG,
+-		   "nl80211: ACS Params: HW_MODE: %d HT: %d HT40: %d VHT: %d EHT: %d BW: %d EDMG: %d",
++		   "nl80211: ACS Params: HW_MODE: %d HT: %d HT40: %d VHT: %d EHT: %d BW: %d EDMG: %d, link_id: %d",
+ 		   params->hw_mode, params->ht_enabled, params->ht40_enabled,
+ 		   params->vht_enabled, params->eht_enabled, params->ch_width,
+-		   params->edmg_enabled);
++		   params->edmg_enabled, params->link_id);
+ 
+ 	ret = send_and_recv_cmd(drv, msg);
+ 	if (ret) {
+-- 
+2.17.1
+

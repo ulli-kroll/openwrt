@@ -1,0 +1,31 @@
+config WSPLCD_SUPPORT_PLC
+    bool "Support PLC credential cloning"
+    depends on PACKAGE_qca-plc-serv
+    default y
+    help
+        This enables the WSPLCD support for PLC interfaces
+
+config WSPLCD_SUPPORT_CFG80211
+        bool "Support cfg80211 config layer for WSPLCD"
+        depends on PACKAGE_qca-cfg80211
+        default y
+        help
+            CFG80211 support for WSPLCD
+
+config WSPLCD_SUPPORT_CALLTRACE
+        bool "Enable calltrace support for WSPLCD"
+        help
+            Calltrace support for WSPLCD
+
+config DOT1X_SUPPORT
+    bool "Enable dot1x support for WSPLCD"
+    default y
+    help
+        dot1x support for WSPLCD
+
+config WSPLCD_SUPPORT_11BE
+    bool "Support 11BE EHT 320 MHz for WSPLCD"
+    depends on PACKAGE_kmod-qca-wifi-perf||PACKAGE_kmod-qca-wifi-unified-perf||PACKAGE_kmod-qca-wifi-unified-profile||PACKAGE_kmod-qca-wifi-custc-profile||PACKAGE_kmod-qca-wifi-unified-profile-nonss||PACKAGE_kmod-qca-wifi-wkk-profile||PACKAGE_kmod-qca-wifi-lowmem-profile||PACKAGE_kmod-qca-wifi-lowmem-profile-nonss
+    default y
+    help
+        This enables the Support for 11BE EHT 320 MHz

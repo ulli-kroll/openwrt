@@ -1,0 +1,11 @@
+#===========================================================================
+#  Copyright (c) 2011-2018 QUALCOMM Technologies Incorporated.
+#  All Rights Reserved.
+#  Qualcomm Confidential and Proprietary
+#===============================================================================
+Import('env')
+
+env.Deploy([
+  Glob('../common/crypto_test_vectors/*.h'),
+  '../common/idl/IAppLegacyTest.idl',
+])

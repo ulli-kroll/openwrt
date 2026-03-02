@@ -1,0 +1,39 @@
+#/** @file TargetTools.inf
+#  
+#  INF used by packit.py for including target tools files into packed build.
+#  
+#  Copyright (c) 2016, Qualcomm Technologies Inc. All rights reserved.
+#
+#**/
+#
+#==============================================================================
+#                              EDIT HISTORY
+#
+#
+# when       who     what, where, why
+# --------   ---     ----------------------------------------------------------
+# 08/02/16   na      Add tlmm script
+# 08/01/16   bh      Add LogFS binary for flashing
+# 02/24/16   et      Initial revision
+#
+#==============================================================================
+
+[Sources]
+
+[UserExtensions.PackIt.PackIn]
+  ./
+  ./clock
+  ./clock/v1/
+  ./hwio
+  ./hwio/scripts
+  ./storage/UFS/
+  ./storage/eMMC/
+  ./../../Tools/binaries/logfs_ufs_8mb.bin
+  ./tlmm
+  ./PMIC/qc_pm_log_analyzer
+  ./PMIC/qc_pm_log_analyzer/framework
+  ./PMIC/qc_pm_log_analyzer/generic_log_analyzer
+  ./PMIC/qc_pm_log_analyzer/generic_log_analyzer/gui
+  ./PMIC/qc_pm_log_analyzer/sram_log_analyzer
+  ./PMIC/qc_pm_log_analyzer/sram_log_analyzer/8998
+  ./PMIC/qc_pm_log_analyzer/sram_log_analyzer/encoding_dll

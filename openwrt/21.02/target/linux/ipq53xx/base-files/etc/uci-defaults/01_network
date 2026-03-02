@@ -1,0 +1,33 @@
+#!/bin/sh
+#
+
+. /lib/functions/uci-defaults.sh
+. /lib/ipq53xx.sh
+
+
+board=$(ipq53xx_oem_board_name)
+
+case "$board" in
+*)
+	uci -q get network.lan.def_ipaddr || {
+		uci set network.lan.def_ipaddr="192.168.10.1"
+		uci set network.lan.ipaddr='192.168.10.1'
+	}
+	uci -q get network.wisp || {
+		uci set network.wisp=interface
+		uci set network.wisp.disabled='1'
+		uci set network.wisp.auto='0'
+		uci set network.wisp.proto='dhcp'
+		uci set network.wisp.metric='80'
+		uci set network.wan.metric='60'
+		uci del_list firewall.@zone[1].network='wisp'
+		uci add_list firewall.@zone[1].network='wisp'
+	}
+	;;
+esac
+
+uci delete firewall.@rule[3].src_ip
+uci delete firewall.@rule[3].dest_ip
+uci commit firewall
+uci commit network
+exit 0

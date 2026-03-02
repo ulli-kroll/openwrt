@@ -1,0 +1,14 @@
+<driver name="NULL">
+
+  <device id="oem_fips_enablement_for_testing">
+
+    <props name="oem_is_fips_enabled_for_test" type=DALPROP_ATTR_TYPE_UINT32>
+#ifdef USES_FIPS_ENABLEMENT
+      1
+#else
+      0
+#endif
+    </props>
+
+  </device>
+</driver>

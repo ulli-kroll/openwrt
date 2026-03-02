@@ -1,0 +1,79 @@
+diff --git a/src/ap/drv_callbacks.c b/src/ap/drv_callbacks.c
+index 39deacd3d..2ff77f0ba 100644
+--- a/src/ap/drv_callbacks.c
++++ b/src/ap/drv_callbacks.c
+@@ -1278,6 +1278,18 @@ void hostapd_acs_channel_selected(struct hostapd_data *hapd,
+ 	int err = 0;
+ 	struct hostapd_channel_data *pri_chan;
+ 
++#ifdef CONFIG_IEEE80211BE
++	if (acs_res->link_id != -1) {
++		hapd = hostapd_mld_get_link_bss(hapd, acs_res->link_id);
++		if (!hapd) {
++			wpa_printf(MSG_ERROR,
++				   "MLD: Failed to get link BSS for EVENT_ACS_CHANNEL_SELECTED link_id=%d",
++				   acs_res->link_id);
++			return;
++		}
++	}
++#endif /* CONFIG_IEEE80211BE */
++
+ 	if (hapd->iconf->channel) {
+ 		wpa_printf(MSG_INFO, "ACS: Channel was already set to %d",
+ 			   hapd->iconf->channel);
+diff --git a/src/drivers/driver.h b/src/drivers/driver.h
+index 2cff732c9..bff7502f1 100644
+--- a/src/drivers/driver.h
++++ b/src/drivers/driver.h
+@@ -6618,7 +6618,9 @@ union wpa_event_data {
+ 	 * @ch_width: Selected Channel width by driver. Driver may choose to
+ 	 *	change hostapd configured ACS channel width due driver internal
+ 	 *	channel restrictions.
+-	 * hw_mode: Selected band (used with hw_mode=any)
++	 * @hw_mode: Selected band (used with hw_mode=any)
++	 * @puncture_bitmap: Indicate the puncturing channels
++	 * @link_id: Indicate the link id if operating as AP MLD; -1 otherwise
+ 	 */
+ 	struct acs_selected_channels {
+ 		unsigned int pri_freq;
+@@ -6629,6 +6631,7 @@ union wpa_event_data {
+ 		u16 ch_width;
+ 		enum hostapd_hw_mode hw_mode;
+ 		u16 puncture_bitmap;
++		int link_id;
+ 	} acs_selected_channels;
+ 
+ 	/**
+diff --git a/src/drivers/driver_nl80211_event.c b/src/drivers/driver_nl80211_event.c
+index 9b58310ff..b983f162d 100644
+--- a/src/drivers/driver_nl80211_event.c
++++ b/src/drivers/driver_nl80211_event.c
+@@ -2737,8 +2737,14 @@ static void qca_nl80211_acs_select_ch(struct wpa_driver_nl80211_data *drv,
+ 	if (tb[QCA_WLAN_VENDOR_ATTR_ACS_PUNCTURE_BITMAP])
+ 		event.acs_selected_channels.puncture_bitmap =
+ 			nla_get_u16(tb[QCA_WLAN_VENDOR_ATTR_ACS_PUNCTURE_BITMAP]);
++	if (tb[QCA_WLAN_VENDOR_ATTR_ACS_LINK_ID])
++		event.acs_selected_channels.link_id =
++			nla_get_u8(tb[QCA_WLAN_VENDOR_ATTR_ACS_LINK_ID]);
++	else
++		event.acs_selected_channels.link_id = -1;
++
+ 	wpa_printf(MSG_INFO,
+-		   "nl80211: ACS Results: PFreq: %d SFreq: %d BW: %d VHT0: %d VHT1: %d HW_MODE: %d EDMGCH: %d PUNCBITMAP: 0x%x",
++		   "nl80211: ACS Results: PFreq: %d SFreq: %d BW: %d VHT0: %d VHT1: %d HW_MODE: %d EDMGCH: %d PUNCBITMAP: 0x%x, LinkId: %d",
+ 		   event.acs_selected_channels.pri_freq,
+ 		   event.acs_selected_channels.sec_freq,
+ 		   event.acs_selected_channels.ch_width,
+@@ -2746,7 +2752,8 @@ static void qca_nl80211_acs_select_ch(struct wpa_driver_nl80211_data *drv,
+ 		   event.acs_selected_channels.vht_seg1_center_ch,
+ 		   event.acs_selected_channels.hw_mode,
+ 		   event.acs_selected_channels.edmg_channel,
+-		   event.acs_selected_channels.puncture_bitmap);
++		   event.acs_selected_channels.puncture_bitmap,
++		   event.acs_selected_channels.link_id);
+ 
+ 	/* Ignore ACS channel list check for backwards compatibility */
+ 
+-- 
+2.17.1
+

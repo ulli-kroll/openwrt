@@ -1,0 +1,43 @@
+// Copyright (c) 2018 Qualcomm Technologies, Inc.
+// All Rights Reserved.
+// Confidential and Proprietary - Qualcomm Technologies, Inc.
+
+/**
+ * @file IMemManager.idl
+ *
+ * Describes the interface for a service that tracks and provides
+ * information for memory backed objects, this service returns access
+ * information and access permissions for tracked memory objects.
+ */
+
+/** @cond */
+interface IMemManager {
+/** @endcond */
+  error ERROR_INVALID_MEMREGION;
+
+  /**
+   * @addtogroup IMemManager
+   * @{
+   */
+
+  /**
+     Retrieve the memory region information associated with a memory object
+     The permission field uses the bitmask values as specified in the
+     IMemRegion interface description.
+
+     @note The memory manager service ensures the correctness of this
+     data for as long as the map object exists.
+
+     @param[in]  region HLOS memory region object.
+     @param[out] addr   Physical address of the memory area.
+     @param[out] len    Size of the memory block.
+     @param[out] perm   Access permissions for the area (see IMemRegion).
+     @param[out] map    Map object.
+
+     @return
+     Object_OK on success.
+  */
+  method getRegionInfo(in interface region, out uint64 addr, out uint64 len, out uint32 perm, out interface map);
+
+  /** @} */ /* end_addtogroup IMemManager */
+};

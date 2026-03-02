@@ -1,0 +1,329 @@
+#===============================================================================
+# TZ Build System
+#
+# Copyright (c) 2009-2017,2020,2022,2023 by Qualcomm Technologies, Incorporated.
+# All Rights Reserved.
+# Confidential and Proprietary - Qualcomm Technologies, Inc.
+#===============================================================================
+import os
+import re
+import glob
+import time
+import random
+import SCons.Script
+import time
+import platform
+import getpass
+import sys
+from SCons.Script import BUILD_TARGETS
+
+print "------------------------------------------------------------------------------"
+print "   Loading OEM build system"
+print "------------------------------------------------------------------------------"
+
+#------------------------------------------------------------------------------
+# Get system Environment
+#------------------------------------------------------------------------------
+env = DefaultEnvironment(ENV = os.environ, tools = ['mingw','textfile'])
+
+# Select sectools v1 location to use
+# order of preference
+#   1. os.environ["SECTOOLS_DIR"] if it's set
+#   2. BUILD_ROOT/sectools if it exists
+#   3. appropriate server if server select script exists
+
+sectools_dir = os.environ.get('SECTOOLS_DIR')
+if sectools_dir:
+  if not os.path.isdir(sectools_dir):
+    raise RuntimeError(
+      "Can't find sectools at SECTOOLS_DIR:'{}'".format(sectools_dir))
+elif os.path.isdir(os.path.join('..','..','sectools')):
+  sectools_dir = os.path.join('..','..','sectools')
+elif os.path.isfile("sectools_finder.py"):
+  import sectools_finder
+  sectools_dir = sectools_finder.find("int", "5.32")
+  if sectools_dir is None or not os.path.isdir(sectools_dir):
+    raise RuntimeError(
+      "Can't find sectools internally at: '{}'".format(sectools_dir))
+else:
+  raise RuntimeError("SECTOOLS_DIR environment variable not set")
+
+sectools_dir = os.path.abspath(sectools_dir)
+print "sectools_dir = {}".format(sectools_dir)
+env.Replace(SECTOOLS_DIR = sectools_dir)
+
+sectools_dir = os.path.abspath(sectools_dir)
+print "sectools_dir = {}".format(sectools_dir)
+env.Replace(SECTOOLS_DIR = sectools_dir)
+
+# Select sectools v2 location to use
+# order of preference
+#   1. os.environ["SECTOOLS"] if it's set
+#   2. appropriate server if server select script exists
+
+sectools = os.environ.get('SECTOOLS')
+if sectools:
+  if not os.path.isfile(sectools):
+    raise RuntimeError(
+      "Can't find sectools at SECTOOLS:'{}'".format(sectools))
+elif os.path.isfile("sectools_finder.py"):
+  import sectools_finder
+  sectools = sectools_finder.find("v2", "latest")
+  print("sectools = {}".format(sectools))
+  if sectools is None or not os.path.isfile(sectools):
+    raise RuntimeError(
+      "Can't find sectools internally at: '{}'".format(sectools))
+else:
+  print("SECTOOLS environment variable not set")
+
+if sectools is not None:
+    sectools = os.path.abspath(sectools)
+    print "sectools = {}".format(sectools)
+    env.Replace(SECTOOLS = sectools)
+
+#The apps component does not use QCscons APIs, and expects that the default environment,
+# as initialized above, is passed to it, without anything else. So clone the default
+# environment here, then use the clone to call the apps component
+apps_env = env.Clone()
+env = env.Clone()
+
+
+#------------------------------------------------------------------------------
+# Set global variables and defaults
+#------------------------------------------------------------------------------
+_OLD_LISTDIR = os.listdir
+os.listdir = lambda path: sorted(_OLD_LISTDIR(path))
+sys.modules["os"] = os
+
+#t_start = time.clock()
+BUILD_ROOT = os.path.join('..','..') + os.sep
+TARGET_ROOT = os.path.join('..', '..', '..')
+env.Replace(BUILD_ROOT = BUILD_ROOT)
+env.Replace(TARGET_ROOT = TARGET_ROOT)
+#env.Replace(SECTOOLS_BUILDER_VERBOSITY = 'z')
+
+off_target = ARGUMENTS.get('OFF_TARGET')
+if off_target is not None:
+  env.Replace(OFF_TARGET = bool(int(off_target)))
+  if env['OFF_TARGET'] and  sys.platform.startswith('win'):
+    raise ValueError("Cannot do offtarget testing on windows targets!")
+  
+if os.path.exists(os.path.abspath(os.path.join(BUILD_ROOT,'apps'))):
+  env['HAS_APPS_COMPONENT'] = True
+
+if ARGUMENTS.get('deterministic',1) == 1:
+  env.Replace(BUILD_TIMESTAMP = "Wed Dec 31 16:00:00 1969")
+  env.Replace(BUILD_USER_NAME = "deterministic user name")
+  env.Replace(BUILD_MACHINE_NAME = "deterministic machine name")
+else:
+  env.Replace(BUILD_TIMESTAMP = time.ctime())
+  env.Replace(BUILD_USER_NAME = getpass.getuser())
+  env.Replace(BUILD_MACHINE_NAME = platform.node())
+
+env.Tool('ssg_environment', toolpath = ['${BUILD_ROOT}/ssg/bsp/build/scripts'])
+env.AddCommandlineArgument(env.EnumVariable('TZ_EXEC_MODE','TZ_EXEC_MODE',None,('aarch32','aarch64')))
+env.AddCommandlineArgument(env.EnumVariable('XBL_SEC_EXEC_MODE','XBL_SEC_EXEC_MODE',None,('aarch32','aarch64')))
+env.AddCommandlineArgument(('PBL_VERSION','PBL_VERSION',None))
+env.AddCommandlineArgument(('SECIMAGE_CONFIG','SECIMAGE_CONFIG',None))
+env.AddCommandlineArgument(('SECIMAGE_CONFIG_QTI','SECIMAGE_CONFIG_QTI',env['SECIMAGE_CONFIG']))
+env.AddCommandlineArgument(('RAW_CHIPSET','RAW_CHIPSET',None))
+env.AddCommandlineArgument(('SOC_HW_VERSION','SOC_HW_VERSION',None))
+env.AddCommandlineArgument(('SOC_VERS','SOC_VERS',None))
+env.AddCommandlineArgument(('MAX_NUM_ROOT_CERTS','MAX_NUM_ROOT_CERTS',None))
+env.AddCommandlineArgument(env.BoolVariable('bypass_promotion_gating_checks','bypass_promotion_gating_checks',0))
+env.AddCommandlineArgument(env.BoolVariable('OFF_TARGET','OFF_TARGET',0))
+env.AddCommandlineArgument(env.EnumVariable('USES_ATF_ONLY','USES_ATF_ONLY',None,('0','1')))
+if env['OFF_TARGET'] and  sys.platform.startswith('win'):
+  raise ValueError("Cannot do offtarget testing on windows targets!")
+
+
+#offtarget tools may not be available in all builds, especially for external builds
+#so see if an offtarget toolchain is available and if not, disable building offtarget 
+try:
+  offtarget_test_env = env.Clone()
+  #offtarget is not and never will be supported on windows
+  if os.name == 'nt':
+    raise
+  offtarget_test_env.Tool('offtarget_toolchain',toolpath=['$BUILD_ROOT/ssg/bsp/build/scripts'])
+  env['OFF_TARGET_ENABLED'] = True
+  apps_env['OFF_TARGET_ENABLED'] = True
+except:
+  env['OFF_TARGET_ENABLED'] = False
+  apps_env['OFF_TARGET_ENABLED'] = False
+  env['OFF_TARGET'] = False
+  apps_env['OFF_TARGET'] = False
+  offtarget_targets = ['deploy_sdk','offtarget','unittest','unittest64','unittest32']
+  for t in offtarget_targets:
+    if t in COMMAND_LINE_TARGETS:
+      COMMAND_LINE_TARGETS.remove(t)
+    if t in BUILD_TARGETS:
+      BUILD_TARGETS.remove(t)
+  
+
+env.Tool('deploy_builder', toolpath = ['${BUILD_ROOT}/build/ms'])
+
+# Any tool scripts with env methods used in core.tz should be defined here to
+# properly establish their feature def flags. Otherwise, individual core scripts
+# must load tool scripts that may not exist in other (non-SSG) environments.
+# Note that QC SCons has not been loaded yet. Only Open Source SCons env methods
+# are available for these tool scripts.
+env.Tool('stripped_elf_builder', toolpath = ['${BUILD_ROOT}/ssg/bsp/build/scripts'])
+
+
+
+#we need to call the method to clean deploy log files before proceeding to load
+#the ComSConstruct tools. Once we call the ComSConstruct tools, the SConscripts
+#for all components are scanned prior to scanning this file. While parsing
+#these SConscript files, if deploy is enabled, the list of files getting 
+#deployed is generated and logged in the logging file. So, the call below
+#deletes the log from previous deployment to allow for the new generated list
+#to be relevant. The log file is used in deployment verification step.
+if 'deploy' in COMMAND_LINE_TARGETS:
+  #if we have any previous log files for given CHIPSET, we should delete the 
+  #deploy_(*).log files, since this run will create a new set
+  env.CleanDeployListLogFiles()
+  
+if os.path.exists('./tbc_cleanpack.py'):
+  env['USES_CLEAN_PACK'] = True
+  apps_env['USES_CLEAN_PACK']  = True
+
+#This tool need to be before ComSConstruct 
+#env.Tool('autogen_builder', toolpath=['${BUILD_ROOT}/ssg/bsp/build/scripts/'])
+
+env.Tool('ComSConstruct', toolpath = ['${BUILD_ROOT}/tools/build/scons/build'])
+env.Tool('bldcfg_builder', toolpath = ['${BUILD_ROOT}/build/ms'])
+
+auto_gen_target_config_chipsets = ['lahaina', 'cedros', 'makena', 'waipio','kodiak','tanaga',]
+if env['CHIPSET'] in auto_gen_target_config_chipsets:
+  #Generate target specific configuration header, needs to after ComSconscript 
+  env.GenTargetHeader()
+
+if env.get('HAS_APPS_COMPONENT'):
+  apps_env['ROOT_GLOBAL_ENV'] = env
+  apps_env.SConscript('../../apps/bsp/internal/SConstruct',exports={'env':apps_env})
+
+if 'deploy' in COMMAND_LINE_TARGETS:
+  env.Alias('nukedeploytree', env.NukeDeployTree())
+  d = env.NukeDeployTree()
+  #first thing is to nuke the existing deploy tree
+  env.Requires('deploy', d)
+  #we would want to install the tbc_cleanpack in deploy tree
+  #but only after nuke deploy tree has executed
+  env.Alias('tbc_cleanpack', env.Create_TBCPack_In_DeployTree())
+  BUILD_TARGETS.append('tbc_cleanpack')
+  env.Requires('tbc_cleanpack', d)
+  #If we are deploying, we want to also verify the deploy tree. This is also
+  #an order only dependency
+  #we want to generate a new deploy_stat.txt file every time we deploy
+  BUILD_TARGETS.append('verify_deploy_tree')
+  COMMAND_LINE_TARGETS.append('verify_deploy_tree')
+  src_path = os.path.join(os.getcwd(), 'deploy_stat.txt')
+  #always open with 'w' mode so we create a new file
+  with open(src_path, 'w') as f:
+    f.write('Verify deploy begin :{}\n'.format(str(random.random())))
+  dest = 'verify_deploy.txt'
+  vdt = env.VerifyDeployBuild(target = dest, source = src_path)
+  env.Alias('verify_deploy_tree', vdt)
+  env.Requires(vdt, 'deploy')
+
+  deploy_files = [
+     'bldcfg_builder.py',
+     'BuildConfigParser.py',
+     'build_all.py',
+     'deploy_builder.py',
+     'target.scons',
+     '../manifest.xml',
+  ]
+
+  # create a simplified build_config_deploy.xml to deploy in place of the
+  # original build_config.xml
+  build_config_deploy = env.BuildConfigBuilder( \
+      "${BUILD_ROOT}/build/ms/build_config_deploy.xml", \
+      "${BUILD_ROOT}/build/ms/build_config.xml")
+  env.AlwaysBuild(build_config_deploy)
+  chipset_build_config = env.Install(
+      "${BUILD_ROOT}/build/ms/bin/${BUILD_ID}/build_config_deploy.xml",
+      build_config_deploy)
+  chipset_name_build_config = env.Install(
+      "${BUILD_ROOT}/build/ms/build_config_deploy_${CHIPSET}.xml",
+      build_config_deploy)
+  deploy_files.extend([build_config_deploy, chipset_build_config, chipset_name_build_config])
+
+  #cust_header_files = Glob('../cust/*.h')
+  
+  cust_header_files = [
+    '../cust/custdiag.h',
+    '../cust/custefs.h',
+    '../cust/custipsec.h',
+    '../cust/customer.h',
+    '../cust/custpmic.h',
+    '../cust/custremoteapis.h',
+    '../cust/custsdcc.h',
+    '../cust/custsec.h',
+    '../cust/custsfs.h',
+    '../cust/custsio_8660.h',
+    '../cust/custsurf.h',
+    '../cust/custtarget.h'
+  ]
+  
+  #hard-coding following files. They need to come from corresponding builder
+  hcfiles = [
+     'cust{}a.h'.format(env['BUILD_ID'].lower()),
+     'targ{}a.h'.format(env['BUILD_ID'].lower()),
+     'tcfg_{}a.py'.format(env['BUILD_ID'].lower()),
+  ]
+  env.Deploy(deploy_files)
+  env.Deploy(cust_header_files)
+  env.Deploy(hcfiles)
+
+  env._DeployDir(os.path.join(env['BUILD_ROOT'], 'sectools'))
+  env._DeployDir(os.path.join(env['BUILD_ROOT'], 'tools'))
+
+#---------------------------------------------------------------------------
+# Print warning when using stubs
+#---------------------------------------------------------------------------
+def uses_stubs(node) :
+   stubbed_chipsets = ['sdm0000','sdx0000']
+   ret = False
+   if  any(chip_id in str(node) for chip_id in stubbed_chipsets):
+     ret = True
+   elif "trustzone_images" in str(node) and 'stub' in str(node).split("trustzone_images", 1)[1]:
+     ret = True
+   return ret
+
+stubs_file  = os.path.join(env['BUILD_ROOT'], 'build','ms', "StubsReport_"+ SCons.Script.ARGUMENTS.get("RAW_CHIPSET") + ".txt")
+def list_file_names_using_stubs(node):
+  with open(stubs_file, "a") as fh:
+    if  '.o' in str(node) and uses_stubs(node):
+      fh.write ("{}\n".format(str(node)))
+
+if os.path.exists(stubs_file):
+  os.remove(stubs_file)
+print '==========Stubs information is present at : %s========' %str(stubs_file)
+Progress(list_file_names_using_stubs)
+
+
+#------------------------------------------------------------------------------
+# Generate BuildProducts.txt
+#------------------------------------------------------------------------------
+DIR_ROOT = os.path.join('..', '..', '..') + os.sep
+env.Replace(DIR_ROOT = DIR_ROOT)
+
+with open(env['DIR_ROOT'] + "BuildProducts.txt", "a") as fh:
+  fh.write ("./trustzone_images/build/ms/bin/" + env['BUILD_ID'] + "/tz.mbn\n")
+  #-------------------------------------------------------------------------------
+  # Bear target don't have hyp image.
+  #-------------------------------------------------------------------------------
+  if env['BUILD_ID'] in ['OAPAANAA','BAHAANAA','MAPAANAA']:
+    print "Adding only tz.mbn to  Buildproducts.txt" 
+  else:
+    fh.write ("./trustzone_images/build/ms/bin/" + env['BUILD_ID'] + "/hyp.mbn\n")
+
+#-------------------------------------------------------------------------------
+# PreProcessor file cleanup
+#-------------------------------------------------------------------------------
+PP_CLEAN_SOURCES = env.FindFiles(['*.o.pp'], "${BUILD_ROOT}/core/")
+PP_CLEAN_SOURCES += env.FindFiles(['*.o.i'], "${BUILD_ROOT}/core/")
+PP_CLEAN_SOURCES += env.FindFiles(['*.o.lst'], "${BUILD_ROOT}/core/")
+
+env.CleanPack('TZOS_IMAGE', PP_CLEAN_SOURCES)

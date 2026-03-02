@@ -1,0 +1,11 @@
+--- a/interface.c
++++ b/interface.c
+@@ -448,7 +448,7 @@ interface_main_dev_cb(struct device_user
+ 		interface_set_link_state(iface, device_link_active(dep->dev));
+ 		break;
+ 	case DEV_EVENT_TOPO_CHANGE:
+-		interface_proto_event(iface->proto, PROTO_CMD_RENEW, false);
++		//interface_proto_event(iface->proto, PROTO_CMD_RENEW, false);
+ 		return;
+ 	default:
+ 		break;

@@ -1,0 +1,264 @@
+#===============================================================================
+#
+#
+# GENERAL DESCRIPTION
+#    build script
+#
+# Copyright (c) 2013,2017 by Qualcomm Technologies, Inc.
+# All Rights Reserved.
+# QUALCOMM Proprietary/GTDR
+#
+#-------------------------------------------------------------------------------
+#
+#  $Header: $
+#  $DateTime: $
+#  $Author:  $
+#  $Change: $
+#                      EDIT HISTORY FOR FILE
+#
+#  This section contains comments describing changes made to the module.
+#  Notice that changes are listed in reverse chronological order.
+#
+# when       who     what, where, why
+# --------   ---     ---------------------------------------------------------
+# 02/07/2017  sm     Move to 'ssg.tz' component.
+# 01/03/2014  hw     add secboot_img_util.c
+# 01/17/2013  hw     Initial Version
+#===============================================================================
+import os
+Import('env')
+env = env.Clone()
+
+#-------------------------------------------------------------------------------
+# Source PATH
+#-------------------------------------------------------------------------------
+SRCPATH = "${BUILD_ROOT}/ssg/securemsm/secboot"
+
+env.VariantDir('${BUILDPATH}', SRCPATH, duplicate=0)
+
+#-------------------------------------------------------------------------------
+# Request APIs from Core Platform
+#-------------------------------------------------------------------------------
+CBSP_API = [
+   'SERVICES',
+   'DAL',
+   'SYSTEMDRIVERS',
+   'BOOT',
+   'BOOT_TOOLS',
+   'KERNEL',
+   'KERNEL_API',
+]
+
+env.RequirePublicApi(CBSP_API, area='core')
+
+
+#-------------------------------------------------------------------------------
+# Request APIs from SSG
+#-------------------------------------------------------------------------------
+
+SSG_API = [
+   'SECUREMSM',
+   'SECUREFUSES',
+   'UNIFIEDCRYPTO',
+   'TZCHIPSET',
+   'TZUCLIB',
+]
+
+env.RequirePublicApi(SSG_API, area = 'ssg')
+env.RequireRestrictedApi(SSG_API)
+
+#-------------------------------------------------------------------------------
+# Publish Private Include Paths from SECBOOT
+#-------------------------------------------------------------------------------
+# Napali and family are using secboot 2.0 header file. The others should move to 3.0
+if env['CHIPSET'] in ['sdm845', 'sdm670']:
+ if env.get('IMAGE_ALIASES')[0] == 'xbl_sec' or env.get('IMAGE_ALIASES')[0] == 'qc_sec':
+  env.PublishPrivateApi('SECBOOT', [
+   "${BUILD_ROOT}/ssg/securemsm/secboot/inc/v2",
+  ])
+ else:
+  env.PublishPrivateApi('SECBOOT', [
+   "${BUILD_ROOT}/ssg/securemsm/secboot/inc",
+  ])
+else:
+ if env.get('IMAGE_ALIASES')[0] == 'xbl_sec' or env.get('IMAGE_ALIASES')[0] == 'qc_sec':
+  env.PublishPrivateApi('SECBOOT', [
+   "${INC_ROOT}/ssg/securemsm/secboot/chipset/${CHIPSET}/xbl_sec",
+   "${BUILD_ROOT}/ssg/securemsm/secboot/inc",
+  ])
+ else:
+  env.PublishPrivateApi('SECBOOT', [
+   "${INC_ROOT}/ssg/securemsm/secboot/chipset/${CHIPSET}/tz",
+   "${BUILD_ROOT}/ssg/securemsm/secboot/inc",
+  ])
+env.PublishPrivateApi('SECBOOT', [
+   "${BUILD_ROOT}/ssg/securemsm/secboot/inc/common",
+   ])
+
+INC_PATH = [
+    "${INC_ROOT}/ssg/securemsm/secboot/src",
+    "${INC_ROOT}/ssg/securemsm/secboot/env/tz",
+    "${INC_ROOT}/ssg/securemsm/secboot/chipset/${CHIPSET}",
+    "${INC_ROOT}/ssg/securemsm/secboot/src/env/tz",
+    "${INC_ROOT}/ssg/securemsm/secboot/src/secctrl",
+]
+
+env.Append(CPPPATH = INC_PATH)
+
+#-------------------------------------------------------------------------------
+# Sources, libraries, Features
+#-------------------------------------------------------------------------------
+chipset_groups = {
+  'secboot20_chips' : ['sdm845', 'sdm670',],
+  # chipsets that supports secboot 3.0 features for both mbnv5 and mbnv6 image
+  'secboot30_mbnv5' : ['sdm855', 'sdm1000', 'saipan'],
+  #others are regular secboot 3.0 target
+}
+
+# define feature key word for each chipset group
+chipset_group_features = {
+  'secboot20_chips' : ['common','pkhash_sha256','cert_ou',],
+  'secboot30_chips' : ['common','pkhash_sha384','metadata','sig_ecc',],
+  'secboot30_mbnv5' : ['common','pkhash_sha384','metadata','sig_ecc','cert_ou',],
+}
+
+# define source files and feature flags
+feature_sources = {
+  'common' : {
+    'features' : [
+      'auth_roots', 'anti_rollback'
+    ],
+    'files' : [
+      '${BUILDPATH}/src/secboot.c',
+      '${BUILDPATH}/src/secboot_x509.c',
+      '${BUILDPATH}/src/secboot_asn1.c',
+      '${BUILDPATH}/src/secboot_rsa.c',
+      '${BUILDPATH}/src/secboot_rsa_util.c',
+      '${BUILDPATH}/src/secboot_misc.c',
+      '${BUILDPATH}/src/secboot_mrc.c',
+      '${BUILDPATH}/src/secboot_stub.c',
+      '${BUILDPATH}/src/secctrl/secboot_hw.c',
+      '${BUILDPATH}/src/secctrl/adapter/secfuses/secboot_hw_secfuse.c',
+      '${BUILDPATH}/src/crypto_adapter/ceml/secboot_ceml.c',
+    ],
+    'flags' : [
+      'SECBOOT_FEAT_RSA_LOCAL_SUPPORT',
+      'SECBOOT_FEAT_MISC_ENABLE',
+      'SECBOOT_FEAT_MRC_ENABLE',
+      'SECBOOT_FEAT_CEML_HASH_SPEEDUP',
+      'SECBOOT_FEAT_CM_REDUNDANT_VERIFICATION',
+    ]
+  },
+  'cert_ou' : {
+    'files' : [
+      '${BUILDPATH}/src/secboot_metadata_cert.c',
+      '${BUILDPATH}/src/secboot_x509_mbnv5.c',
+    ],
+    'flags' : 'SECBOOT_FEAT_VALIDATE_CERT_OU'
+  },
+  'metadata' : {
+    'files' : ['${BUILDPATH}/src/secboot_metadata.c',],
+    'flags' : 'SECBOOT_FEAT_VALIDATE_METADATA'
+  },
+  'pkhash_sha256' : {
+    'files' : ['${BUILDPATH}/src/secctrl/secboot_hw_sha2rot.c',],
+    'flags' : 'SECBOOT_ROT_SHA256'
+  },
+  'pkhash_sha384' : {
+    'files' : [
+      '${BUILDPATH}/src/secctrl/secboot_hw_sha3rot.c',
+      '${BUILDPATH}/src/secctrl/adapter/secfuses/secboot_hw_secfuse_v1.c',
+      ]
+  },
+  'sig_ecc' : {
+    'files' : [
+      '${BUILDPATH}/src/secboot_ecc.c',
+      '${BUILDPATH}/src/crypto_adapter/unifiedcrypto/secboot_ecc_generic.c',
+    ],
+    'flags' : ['SECBOOT_FEAT_ECC_ENABLE',]
+  },
+  'auth_roots' : {
+    'files' : ['${BUILDPATH}/auth/src/secboot_img_util.c',]
+  },
+  'anti_rollback' : {
+    'files' : ['${BUILDPATH}/src/secboot_rollback_version.c',]
+  },
+}
+
+# Get Srouce files and Compiler flags for chipset groups
+env.LoadToolScript('${BUILD_ROOT}/ssg/bsp/build/scripts/featured_files_builder.py')
+if not env.FeatureFilesUTest(): # running unit test only once
+  exit(0)
+
+feature_list = []
+for key in chipset_groups:
+  if env['CHIPSET'] in chipset_groups[key]:
+    feature_list = chipset_group_features[key]
+
+if not feature_list:
+  feature_list = chipset_group_features['secboot30_chips']
+
+SECBOOT_LIB_SOURCES, flags = env.FeatureGenFilesAndFlags(feature_list, feature_sources)
+
+# Add Compiler options
+flags_string = " "
+for flag in flags:
+  flags_string += "-D" + flag + " "
+env.Append(CCFLAGS = flags_string)
+
+#-------------------------------------------------------------------------------
+# configure devcfg features
+#-------------------------------------------------------------------------------
+if 'USES_DEVCFG' in env:
+   DEVCFG_IMG = ['DAL_DEVCFG_OEM_QSEE_IMG']
+   test_ext= ''
+
+   if 'devcfg_with_test_svc' in env and env['devcfg_with_test_svc'] == 1:
+      print "Devcfg_with_test detected"
+      test_ext= '_test'
+
+if env['CHIPSET'] in ['sdm845', 'sdm670', 'sdm855', 'sdm1000', 'sdx24', 'sm6150', 'sm7150', 'nicobar','mdm9205', 'sdx55', 'sm8250']:
+  if 'USES_DEVCFG' in env:
+    DEVCFG_IMG = ['DAL_DEVCFG_OEM_QSEE_IMG']
+    env.AddDevCfgInfo(
+      DEVCFG_IMG,
+      {
+        'devcfg_xml' : ['${BUILD_ROOT}/ssg/securemsm/secboot/auth/src/secboot_oem.xml',
+                        '${BUILD_ROOT}/ssg/securemsm/secboot/auth/src/secboot_oem_secapp'+test_ext+'.xml',
+                        '${BUILD_ROOT}/ssg/securemsm/secboot/auth/src/secboot_deferred_oem.xml']
+      }
+    )
+
+    SECBOOT_ANTIROLLBACK_PATH = '${BUILD_ROOT}/ssg/securemsm/secboot/cfg/${TARGET_FAMILY}'
+    if env['CHIPSET'] in ['sdx24', 'sm6150', 'sm7150']:
+      SECBOOT_ANTIROLLBACK_PATH = SECBOOT_ANTIROLLBACK_PATH + '/v3'
+    elif env['CHIPSET'] in ['sdm855']:
+      SECBOOT_ANTIROLLBACK_PATH = SECBOOT_ANTIROLLBACK_PATH + '/v2'
+    elif env['CHIPSET'] in ['sdm845', 'sdm670']:
+      SECBOOT_ANTIROLLBACK_PATH = SECBOOT_ANTIROLLBACK_PATH + '/v1'
+
+    env.AddDevCfgInfo(
+      ['DAL_DEVCFG_IMG'],
+      {
+        'devcfg_xml' : env.GlobFiles(SECBOOT_ANTIROLLBACK_PATH +'/secboot_anti_rollback.xml', posix=True)
+      }
+    )
+
+#-------------------------------------------------------------------------------
+# Add Libraries to MBA Image
+#-------------------------------------------------------------------------------
+env.AddBinaryLibrary(['TZOS_IMAGE'], '${BUILDPATH}/secboot_auth',  SECBOOT_LIB_SOURCES)
+
+SECBOOT_CHIPSET_PATH=''
+if env['CHIPSET'] in ['sdm845', 'sdm670']:
+  SECBOOT_CHIPSET_PATH = '../chipset/${CHIPSET}'
+else:
+  SECBOOT_CHIPSET_PATH = '../chipset/${CHIPSET}/tz'
+  if not os.path.exists(SECBOOT_CHIPSET_PATH):
+    SECBOOT_CHIPSET_PATH = '../chipset/stubs/tz'
+
+env.Deploy(['SConscript',
+            '../auth/src/secboot_oem.h',
+            '../env/tz/secboot_env.h',
+            SECBOOT_CHIPSET_PATH + '/secboot_chipset.h',
+            ])

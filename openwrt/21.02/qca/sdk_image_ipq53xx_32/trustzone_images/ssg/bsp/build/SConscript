@@ -1,0 +1,40 @@
+#===============================================================================
+#
+# CBSP Build system
+#
+# GENERAL DESCRIPTION
+#    Calls the actual Image scripts
+#
+# Copyright 2009, 2011, 2016,2018,2019,2022 by Qualcomm Technologies, Inc.
+# All Rights Reserved.
+# QUALCOMM Proprietary/GTDR
+#
+#-------------------------------------------------------------------------------
+#
+#  $Header: //components/rel/ssg.tzw/1.2/bsp/build/SConscript#3 $
+#  $DateTime: 2022/08/11 10:06:16 $
+#  $Author: pwbldsvc $
+#  $Change: 39026624 $
+#===============================================================================
+from SCons.Script import BUILD_TARGETS
+
+Import('env')
+
+pyfiles = env.Glob('scripts/*.py')
+ldfiles = env.Glob('scripts/*.ld')
+txtfiles = env.Glob('scripts/*.txt')
+bin_files = ['scripts/bin/linux/minkidl', 'scripts/bin/win/minkidl.exe']
+if env['CHIPSET'] in ['ipq90xx']:
+   xmlprofilefiles = ['../../Alder_tz_security_profile.xml']
+else:
+   xmlprofilefiles = ['../../Miami_tz_security_profile.xml']
+env.Deploy(pyfiles + ldfiles + txtfiles + bin_files + xmlprofilefiles)
+
+# Install validated_metabuild.json to build/ms/bin/... for unit testing
+#metabuild_json = env.File("validated_metabuild.json")
+#if metabuild_json.exists():
+#    installed_json = env.Install(
+#        "${BUILD_ROOT}/build/ms/bin/${SHORT_BUILDPATH}", metabuild_json)
+#    env.Alias("metajson", installed_json)
+#    COMMAND_LINE_TARGETS.append("metajson")
+#    BUILD_TARGETS.append("metajson")

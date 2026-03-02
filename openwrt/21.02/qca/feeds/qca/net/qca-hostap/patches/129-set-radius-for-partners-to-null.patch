@@ -1,0 +1,40 @@
+diff --git a/src/ap/hostapd.c b/src/ap/hostapd.c
+index 78152ab1c..bba97f2f3 100644
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -416,6 +416,22 @@ static void hostapd_clear_drv_priv(struct hostapd_data *hapd)
+ 	hapd->drv_priv = NULL;
+ }
+ 
++#ifdef CONFIG_IEEE80211BE
++void hostapd_set_ml_partner_radius_null(struct hostapd_data *hapd)
++{
++	struct hostapd_data *tmp_hapd;
++	int i;
++
++	for (i = 0; i < hapd->iface->interfaces->count; i++) {
++		tmp_hapd = hapd->iface->interfaces->iface[i]->bss[0];
++		if (!tmp_hapd->conf->mld_ap ||
++			hapd->conf->mld_id != tmp_hapd->conf->mld_id)
++			continue;
++		tmp_hapd->radius = NULL;
++		tmp_hapd->radius_das = NULL;
++	}
++}
++#endif
+ 
+ void hostapd_free_hapd_data(struct hostapd_data *hapd)
+ {
+@@ -447,6 +463,9 @@ void hostapd_free_hapd_data(struct hostapd_data *hapd)
+ 	if (!hapd->mld_first_bss) {
+ 		radius_client_deinit(hapd->radius);
+ 		radius_das_deinit(hapd->radius_das);
++#ifdef CONFIG_IEEE80211BE
++		hostapd_set_ml_partner_radius_null(hapd);
++#endif
+ 	}
+ 	hapd->radius = NULL;
+ 	hapd->radius_das = NULL;
+-- 
+2.17.1
+

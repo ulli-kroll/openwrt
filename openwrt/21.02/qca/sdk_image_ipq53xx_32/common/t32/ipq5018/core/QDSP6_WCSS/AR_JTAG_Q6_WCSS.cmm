@@ -1,0 +1,30 @@
+;
+; Copyright (c) 2017-2019 Qualcomm Technologies, Inc.
+; All Rights Reserved.
+; Confidential and Proprietary - Qualcomm Technologies, Inc.
+;
+
+
+SYStem.Reset
+SYStem.JTAGCLOCK 20MHz
+SYStem.CONFIG SLAVE ON
+
+; select CPU and options
+
+SYStem.CPU HEXAGONV66M
+
+SYStem.CONFIG MEMORYACCESSPORT	0.
+SYStem.CONFIG DEBUGACCESSPORT	1.
+SYStem.CONFIG AXIACCESSPORT	0.
+SYStem.CONFIG APBACCESSPORT	1.
+
+SYStem.CONFIG DAPIRPRE	0.
+SYStem.CONFIG DAPDRPRE	0.
+SYStem.CONFIG DAPIRPOST	11.
+SYStem.CONFIG DAPDRPOST	1.
+
+SYStem.CONFIG.COREDEBUG.BASE	0X80129000
+SYStem.CONFIG.ETM.BASE		0X80128000
+SYStem.CONFIG.CTI.BASE          0X8012b000
+
+sys.mode attach

@@ -1,0 +1,79 @@
+--- a/drivers/net/phy/phylink.c
++++ b/drivers/net/phy/phylink.c
+@@ -18,9 +18,11 @@
+ #include <linux/spinlock.h>
+ #include <linux/timer.h>
+ #include <linux/workqueue.h>
++#include <linux/gmac_hotplug.h>
+ 
+ #include "sfp.h"
+ #include "swphy.h"
++#include "../ethernet/mediatek/mtk_eth_soc.h"
+ 
+ #define SUPPORTED_INTERFACES \
+ 	(SUPPORTED_TP | SUPPORTED_MII | SUPPORTED_FIBRE | \
+@@ -440,11 +442,27 @@ static const char *phylink_pause_to_str(
+ 		return "off";
+ 	}
+ }
+-
++#define PHY_BASEADDR 32
+ static void phylink_mac_link_up(struct phylink *pl,
+ 				struct phylink_link_state link_state)
+ {
+ 	struct net_device *ndev = pl->netdev;
++	struct mtk_mac *mac = NULL;
++	struct device_node *phy_node = NULL;
++	u32 phyaddr = PHY_BASEADDR;
++	struct phy_device *phydev = NULL;
++
++	if (ndev)
++		mac = netdev_priv(ndev);
++
++	if (mac)
++		phy_node = of_parse_phandle(mac->of_node, "phy-handle", 0);
++
++	if (phy_node)
++		phydev = of_phy_find_device(phy_node);
++
++	if (phydev)
++		phyaddr += phydev->mdio.addr;
+ 
+ 	pl->cur_interface = link_state.interface;
+ 	pl->ops->mac_link_up(pl->config, pl->phydev,
+@@ -461,17 +479,35 @@ static void phylink_mac_link_up(struct p
+ 		     phy_speed_to_str(link_state.speed),
+ 		     phy_duplex_to_str(link_state.duplex),
+ 		     phylink_pause_to_str(link_state.pause));
++	//gmac_hotplug_event(phyaddr, 1);
+ }
+ 
+ static void phylink_mac_link_down(struct phylink *pl)
+ {
+ 	struct net_device *ndev = pl->netdev;
++	struct mtk_mac *mac = NULL;
++	struct device_node *phy_node = NULL;
++	u32 phyaddr = PHY_BASEADDR;
++	struct phy_device *phydev = NULL;
++
++	if (ndev)
++		mac = netdev_priv(ndev);
++
++	if (mac)
++		phy_node = of_parse_phandle(mac->of_node, "phy-handle", 0);
++
++	if (phy_node)
++		phydev = of_phy_find_device(phy_node);
++
++	if (phydev)
++		phyaddr += phydev->mdio.addr;
+ 
+ 	if (ndev)
+ 		netif_carrier_off(ndev);
+ 	pl->ops->mac_link_down(pl->config, pl->cur_link_an_mode,
+ 			       pl->cur_interface);
+ 	phylink_info(pl, "Link is Down\n");
++	//gmac_hotplug_event(phyaddr, 0);
+ }
+ 
+ static void phylink_resolve(struct work_struct *w)

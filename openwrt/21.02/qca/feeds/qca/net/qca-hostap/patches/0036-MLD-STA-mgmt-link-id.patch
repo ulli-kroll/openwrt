@@ -1,0 +1,20 @@
+diff --git a/wpa_supplicant/driver_i.h b/wpa_supplicant/driver_i.h
+index b365de6a1..7212719b4 100644
+--- a/wpa_supplicant/driver_i.h
++++ b/wpa_supplicant/driver_i.h
+@@ -325,10 +325,14 @@ static inline int wpa_drv_send_mlme(struct wpa_supplicant *wpa_s,
+ 				    const u8 *data, size_t data_len, int noack,
+ 				    unsigned int freq, unsigned int wait)
+ {
++	int link_id = -1;
++	if (wpa_s->wpa_state < WPA_COMPLETED && wpa_s->valid_links)
++		link_id  = wpa_s->mlo_assoc_link_id;
++
+ 	if (wpa_s->driver->send_mlme)
+ 		return wpa_s->driver->send_mlme(wpa_s->drv_priv,
+ 						data, data_len, noack,
+-						freq, NULL, 0, 0, wait, -1);
++						freq, NULL, 0, 0, wait, link_id);
+ 	return -1;
+ }
+ 

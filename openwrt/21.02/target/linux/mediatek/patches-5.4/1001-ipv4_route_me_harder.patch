@@ -1,0 +1,11 @@
+--- a/net/ipv4/netfilter.c
++++ a/net/ipv4/netfilter.c
+@@ -24,7 +24,7 @@ int ip_route_me_harder(struct net *net,
+ 	struct flowi4 fl4 = {};
+ 	__be32 saddr = iph->saddr;
+ 	__u8 flags;
+-	struct net_device *dev = skb_dst(skb)->dev;
++	struct net_device *dev = skb_dst(skb) ? skb_dst(skb)->dev : NULL;
+ 	unsigned int hh_len;
+ 
+ 	sk = sk_to_full_sk(sk);

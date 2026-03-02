@@ -1,0 +1,152 @@
+#===============================================================================
+#
+# TrustZone APIs
+#
+# GENERAL DESCRIPTION
+#    build script
+#
+# Copyright (c) 2013 by Qualcomm Technologies, Incorporated.
+# All Rights Reserved.
+# QUALCOMM Proprietary/GTDR
+#
+#-------------------------------------------------------------------------------
+#
+#  $Header: //components/rel/ssg.tzw/1.2/securemsm/uclib/build/uclib.api#1 $
+#  $DateTime: 2020/11/02 23:12:26 $
+#  $Author: pwbldsvc $
+#  $Change: 27014951 $
+#                      EDIT HISTORY FOR FILE
+#
+#  This section contains comments describing changes made to the module.
+#  Notice that changes are listed in reverse chronological order.
+#
+# when       who     what, where, why
+# --------   ---     ---------------------------------------------------------
+#
+#===============================================================================
+Import('env')
+
+env.PublishPublicApi('UCLIB', '${INC_ROOT}/ssg/api/securemsm/uclib')
+
+env.PublishRestrictedApi('TZUCLIB', [
+                                     '${INC_ROOT}/ssg/api/securemsm/uclib',
+                                     '${INC_ROOT}/ssg/securemsm/uclib/tz/legacy/ce/inc',
+                                     '${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/core/inc',
+                                     '${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/environment/inc',
+                                     '${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/environment/tz/inc',
+                                     '${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/core/ecc/inc',
+                                     '${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/core/ecc_generic/inc',
+                                     '${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/core/ecies/inc',
+                                     '${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/shared/aes/inc',
+                                     '${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/shared/des/inc',
+                                     '${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/shared/ecc/inc',
+                                     '${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/shared/ecc_generic/inc',
+                                     '${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/shared/ecies/inc',
+                                     '${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/shared/sha/inc',
+                                     '${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/secrsa/shared/inc',
+                                    ])
+
+env.PublishRestrictedApi('TAUCLIB', [
+                                     '${INC_ROOT}/ssg/securemsm/uclib/inc',
+                                     '${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/core/inc',
+                                     '${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/environment/inc',
+                                     '${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/environment/usr/inc',
+                                     '${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/core/ecc/inc',
+                                     '${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/core/ecc_generic/inc',
+                                     '${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/core/ecies/inc',
+                                     '${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/shared/aes/inc',
+                                     '${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/shared/des/inc',
+                                     '${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/shared/ecc/inc',
+                                     '${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/shared/ecc_generic/inc',
+                                     '${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/shared/ecies/inc',
+                                     '${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/shared/sha/inc',
+                                     '${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/secrsa/shared/inc',
+                                    ])
+
+#===============================================================================
+# legacy API's exposed by unifiedcrypto module
+#===============================================================================
+env.PublishPublicApi('UNIFIEDCRYPTO', [
+   "${INC_ROOT}/ssg/api/securemsm/unifiedcrypto",
+])
+
+env.PublishRestrictedApi('UNIFIEDCRYPTO', [
+   "${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/environment/inc",
+   "${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/core/inc",
+   "${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/core/ecc/inc",
+   "${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/core/ecc_generic/inc",
+   "${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/core/ecies/inc",
+   "${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/shared",
+   "${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/shared/sha/inc",
+   "${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/shared/aes/inc",
+   "${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/shared/des/inc",
+   "${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/shared/ecc/inc",
+   "${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/shared/ecc_generic/inc",
+   "${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/shared/ecies/inc",
+])
+
+env.PublishRestrictedApi('TZ_ECC_INTERNALS', [
+   "${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/environment/inc",
+   "${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/environment/tz/inc",
+   "${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/core/ecc/inc",
+   "${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/core/ecc_generic/inc",
+   "${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/core/ecies/inc",
+])
+
+env.PublishRestrictedApi('USR_ECC_INTERNALS', [
+   "${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/environment/inc",
+   "${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/environment/usr/inc",
+   "${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/core/ecc/inc",
+   "${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/core/ecc_generic/inc",
+   "${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/core/ecies/inc",
+])
+
+# TZTD_845: Expose Required APIs to Core. #--
+env.PublishPublicApi('UNIFIEDCRYPTO', [
+   "${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/environment/inc",
+   "${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/shared/sha/inc",
+   "${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/core/inc",
+   "${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/core/ecc/inc",
+   "${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/core/ecc_generic/inc",
+   "${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/core/ecies/inc",
+])
+#-- TZTD_845: END
+
+# TZTD_670: Expose Required APIs to Core. #--
+env.PublishPublicApi('UNIFIEDCRYPTO', [
+   "${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/environment/inc",
+   "${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/shared/sha/inc",
+   "${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/core/inc",
+   "${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/core/ecc/inc",
+   "${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/core/ecc_generic/inc",
+   "${INC_ROOT}/ssg/securemsm/uclib/usr/legacy/unifiedcrypto/core/ecies/inc",
+])
+#-- TZTD_670: END
+
+#===============================================================================
+# legacy API's exposed by secarith, secmath and secrsa  module
+#===============================================================================
+env.PublishRestrictedApi('SECUREMSM', [
+   "${BUILD_ROOT}/ssg/securemsm/uclib/usr/legacy/secarith/shared/inc",
+   "${BUILD_ROOT}/ssg/securemsm/uclib/usr/legacy/secmath/shared/inc",
+   "${BUILD_ROOT}/ssg/securemsm/uclib/usr/legacy/secmath/shared/src",
+   "${BUILD_ROOT}/ssg/securemsm/uclib/usr/legacy/secrsa/shared/inc",
+   "${BUILD_ROOT}/ssg/securemsm/uclib/usr/legacy/secrsa/shared/src",
+])
+
+
+# This depends on the random number generator provided by TZ
+if env.has_key('TZOS_IMAGE') or env.has_key('TZBSPTEST_IMAGE') or env.has_key('TZTESTEXEC_IMAGE'):
+   env.PublishRestrictedApi('SECUREMSM', [
+      "${BUILD_ROOT}/ssg/securemsm/uclib/usr/legacy/secmath/env/tz/inc",
+      "${BUILD_ROOT}/ssg/securemsm/uclib/usr/legacy/secrsa/env/tz/inc",
+   ])
+if env.has_key('CTZL_IMAGE') or env.has_key('CTZL64_IMAGE') or env.has_key('WINSECAPP_IMAGE') or env.has_key('TPM_IMAGE'):
+   env.PublishRestrictedApi('SECUREMSM', [
+      "${BUILD_ROOT}/ssg/securemsm/uclib/usr/legacy/secmath/env/sampleapp/inc",
+      "${BUILD_ROOT}/ssg/securemsm/uclib/usr/legacy/secrsa/env/sampleapp/inc",
+   ])
+
+env.LoadAPIUnits()
+
+env.Deploy('uclib.api')

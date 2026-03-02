@@ -1,0 +1,114 @@
+// Copyright (c) 2015-2018 Qualcomm Technologies, Inc.
+// All Rights Reserved.
+// Confidential and Proprietary - Qualcomm Technologies, Inc.
+
+/**
+ * @addtogroup IGPSession
+ * @{
+ */
+
+/** @cond */
+/** Additional paramters associated to a memory object. */
+struct IGPSession_MemoryObjectParameters {
+   uint64 size;
+   /**< Size of the portion of the buffer which is being passed as parameter to the TA */
+
+   uint64 offset;
+   /**< Offset of the portion of the buffer which is being passed as parameter to the TA */
+};
+/** @endcond */
+/** @} */ /* end_addtogroup IGPSession */
+
+// Interface representing a GP session with a TA
+/** @cond */
+interface IGPSession {
+/** @endcond */
+
+  /**
+   * @addtogroup IGPSession
+   * @{
+   */
+
+  /** @cond */
+  /**
+    Error codes
+   */
+  error ERROR_CLOSED;                            /**< Session was closed */
+  /** @endcond */
+
+  /**
+    Close the session.
+
+    @return
+    Object_OK on success.
+   */
+  method close();
+
+  /**
+    Invokes a command on an open GP Session.
+
+    The content of the 4 input and output buffers is manually marshalled by the
+    caller or implementer depending on the type of the parameter.
+
+    When a memory object is passed to represent a shared buffer, the corresponding
+    input buffer is expected to contain a struct IGPSession_MemoryObjectParameters
+    to detail the size and offset of the portion of the buffer being actually
+    shared with the TA.
+
+    The memrefOutSz[1-4] parameters carry the output size of the passed memory
+    objects, or, if a larger buffer was requested, the size of the larger buffer.
+
+    @param[in]  commandID                       Numeric code for the command.
+    @param[in]  cancelCode                      Optional code to use for cancellations.
+    @param[in]  cancellationRequestTimeout      Timeout for automatic request cancellation.
+    @param[in]  paramTypes                      Types of the 4 parameters, 1 byte per parameter.
+    @param[in]  exParamTypes                    Extended information for the 4 parameters, 1 byte per parameter.
+    @param[in]  i1                              First input buffer.
+    @param[in]  i2                              Second input buffer.
+    @param[in]  i3                              Third input buffer.
+    @param[in]  i4                              Fourth input buffer.
+    @param[out] o1                              First output buffer.
+    @param[out] o2                              Second output buffer.
+    @param[out] o3                              Third output buffer.
+    @param[out] o4                              Fourth output buffer.
+    @param[in]  imem1                           First optional memory object.
+    @param[in]  imem2                           Second optional memory object.
+    @param[in]  imem3                           Third optional memory object.
+    @param[in]  imem4                           Fourth optional memory object.
+    @param[out] memrefOutSz1                    Output size for memref 1.
+    @param[out] memrefOutSz2                    Output size for memref 2.
+    @param[out] memrefOutSz3                    Output size for memref 3.
+    @param[out] memrefOutSz4                    Output size for memref 4.
+    @param[out] retValue                        GP return value.
+    @param[out] retOrigin                       Where the GP return value originated.
+
+    @return
+    Object_OK if successful.
+   */
+  method invokeCommand(in uint32 commandID,
+                       in uint32 cancelCode,
+                       in uint32 cancellationRequestTimeout,
+                       in uint32 paramTypes,
+                       in uint32 exParamTypes,
+                       in buffer i1,
+                       in buffer i2,
+                       in buffer i3,
+                       in buffer i4,
+                       out buffer o1,
+                       out buffer o2,
+                       out buffer o3,
+                       out buffer o4,
+                       in interface imem1,
+                       in interface imem2,
+                       in interface imem3,
+                       in interface imem4,
+                       out uint32 memrefOutSz1,
+                       out uint32 memrefOutSz2,
+                       out uint32 memrefOutSz3,
+                       out uint32 memrefOutSz4,
+                       out uint32 retValue,
+                       out uint32 retOrigin);
+
+  /** @} */ /* end_addtogroup IGPSession */
+};
+

@@ -1,0 +1,38 @@
+//===========================================================================
+//
+// FILE:         ABT_tz_OEM_8996.xml
+//
+// DESCRIPTION:  This file contains the DAL XML properties for the AHB
+//               Timeout Driver.
+//
+//===========================================================================
+//
+//                             Edit History
+//
+// $Header: //components/dev/tz.bf/4.0/dkammath.TZ.BF.4.0.dkammath_CR887842/trustzone_images/core/buses/icb/config/ABT_tz_OEM_8937.xml#2 $
+// $DateTime: 2015/08/10 12:50:26 $
+// $Author: dkammath $
+// $Change: 8781191 $ 
+//
+// when         who     what, where, why
+// ----------   ---     -------------------------------------------------------
+// 2019/08/26   as     Removed BIMC error entries. Not supported on IPQ60XX
+// 2015/08/11   ddk    Added BIMC error entries
+// 2014/12/09   tb     Created
+//
+//===========================================================================
+//             Copyright (c) 2014-2019 QUALCOMM Technologies Incorporated.
+//                    All Rights Reserved.
+//                  QUALCOMM Proprietary/GTDR
+//===========================================================================
+
+<driver name="NULL">
+   <global_def>
+        
+   </global_def>
+   <device id="/dev/ABTimeoutOEM">
+     <props name="ABT_Propdata_oem" type=DALPROP_ATTR_TYPE_STRUCT_PTR>
+        ABT_propdata_oem
+     </props> 
+   </device>  
+</driver>

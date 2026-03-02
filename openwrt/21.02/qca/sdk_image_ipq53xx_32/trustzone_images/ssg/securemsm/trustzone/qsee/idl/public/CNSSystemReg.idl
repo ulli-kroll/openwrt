@@ -1,0 +1,15 @@
+// Copyright (c) 2015 Qualcomm Technologies, Inc.  All Rights Reserved.
+// Qualcomm Technologies Proprietary and Confidential.
+
+/**
+* @addtogroup CNSSystemReg
+* @{
+  Class CNSSystemReg implements \link INSSystemReg \endlink interface.
+  
+  The class ID `NSSystemReg` is not included in the default privilege set. It needs to be added to the 
+  privileges section in the metadata to allow the TA to use the CNSSystemReg class.
+*/
+
+const uint32 CNSSystemReg_UID = 96;
+
+/** @} */

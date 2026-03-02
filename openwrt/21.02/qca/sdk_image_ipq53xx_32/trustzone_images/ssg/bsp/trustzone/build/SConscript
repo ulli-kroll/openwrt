@@ -1,0 +1,119 @@
+#===============================================================================
+#
+# CBSP Build system
+#
+# GENERAL DESCRIPTION
+#    Calls the actual Image scripts
+#
+# Copyright 2009, 2011, 2019,2022 by Qualcomm Technologies, Incorporated.
+# All Rights Reserved.
+# QUALCOMM Proprietary/GTDR
+#
+#-------------------------------------------------------------------------------
+#
+#  $Header: //source/qcom/qct/core/pkg/bootloaders/rel/1.0/boot_images/core/bsp/bootloaders/build/SConscript#12 $
+#  $DateTime: 2011/08/15 17:32:19 $
+#  $Author: coresvc $
+#  $Change: 1883679 $
+#                      EDIT HISTORY FOR FILE
+#
+#  This section contains comments describing changes made to the module.
+#  Notice that changes are listed in reverse chronological order.
+#
+# when       who     what, where, why
+# --------   ---     ---------------------------------------------------------
+# 05/12/22   as      Fixed Missing scons warning. cmnlib scons not needed for deploy build 
+# 07/26/19   as      Removed unused/not supported apps 
+# 03/22/11   aus     Branched to shared folder
+#===============================================================================
+import os
+import glob
+import string
+Import('env')
+
+def check_alias(env, aliases):
+  return len(set(aliases).intersection(set(COMMAND_LINE_TARGETS))) > 0
+
+base_env = env.Clone()
+
+base_env.AddMethod(check_alias,'CheckAlias')
+
+
+if env.StandaloneSdk():
+  toolpath = ['${SDK_ROOT}/scripts']
+
+  v8_env = base_env.Clone()
+  v8_env.Replace(PROC='A53_64')
+  v8_env.Replace(TZ_EXEC_MODE='aarch64')
+  v8_env.Tool('secure_app_builder',toolpath=toolpath)
+
+  v7_env = base_env.Clone()
+  v7_env.Replace(PROC='scorpion')
+  v7_env.Replace(TZ_EXEC_MODE='aarch32')
+  v7_env.Tool('secure_app_builder',toolpath=toolpath)
+
+  #env has already been loaded with all of the qcscons workarounds and stuff
+  v7_env.SConscript('${BUILD_ROOT}/ssg/securemsm/trustzone/qsapps/sampleapp/src/SConscript',exports={'env':v7_env})
+  v8_env.SConscript('${BUILD_ROOT}/ssg/securemsm/trustzone/qsapps/sampleapp/src/SConscript',exports={'env':v8_env})
+  v7_env.SConscript('${BUILD_ROOT}/ssg/securemsm/trustzone/qsapps/smplcert/src/SConscript',exports={'env':v7_env})
+  v7_env.SConscript('${BUILD_ROOT}/ssg/securemsm/trustzone/qsapps/smplserv/src/SConscript',exports={'env':v7_env})
+
+  Return()
+  
+
+env.Tool('idlcompiler',toolpath=['${BUILD_ROOT}/ssg/bsp/build/scripts'])
+env.Append(IDLINCPATH='${BUILD_ROOT}/ssg/securemsm/trustzone/qsee/idl/public')
+
+
+#QCscons is stupid and modifies BUILD_ID because ???? so let's recreate that here
+#because these dont use qcscons apis
+base_env['USES_PLATFORM_IMAGE_INTEGRITY_CHECK'] = True
+base_env.Replace(USES_MBNTOOLS = True)
+base_env.Replace(GLOBAL_DICT = {1:1})
+base_env.Replace(USES_SEC_POLICY_MULTIPLE_DEFAULT_SIGN=True)
+base_env['SHORT_BUILDPATH'] = base_env['BUILD_ID']
+base_env['BUILD_ID'] = base_env['BUILD_ID'] + 'A'
+base_env['CUST_H'] = string.lower(base_env.subst('cust${BUILD_ID}.h'))
+base_env['MBN_ROOT'] = '${BUILD_ROOT}/build/ms/bin/${SHORT_BUILDPATH}/'
+base_env['USES_PLATFORM_IMAGE_INTEGRITY_CHECK'] = True
+#base_env['ROOT_GLOBAL_ENV'] = base_env
+base_env['INSTALL_LIBPATH'] = ''
+base_env['BUILD_SCRIPTS_ROOT'] = '${BUILD_ROOT}/tools/build/scons/scripts/'
+base_env['PYTHONCMD'] = 'python'
+
+if 'cmnlib64' in COMMAND_LINE_TARGETS or 'commonlib' in COMMAND_LINE_TARGETS or 'sampleapp' in COMMAND_LINE_TARGETS:
+  base_env.SConscript('../qsapps/applib/build/SConscript',exports='env')
+  base_env.SConscript('../qsapps/commonlib/build/SConscript',exports='env')
+  base_env.SConscript('../qsapps/deploy_sdk/build/SConscript',exports='env')
+
+apps64 = [
+  '${BUILD_ROOT}/ssg/securemsm/trustzone/qsapps/sampleapp/src/SConscript',
+]
+ 
+apps32 = [
+  '${BUILD_ROOT}/ssg/securemsm/trustzone/qsapps/sampleapp/src/SConscript',
+  '${BUILD_ROOT}/ssg/securemsm/trustzone/qsapps/smplcert/src/SConscript',
+  '${BUILD_ROOT}/ssg/securemsm/trustzone/qsapps/smplserv/src/SConscript',
+]
+ 
+v8_env = base_env.Clone()
+v8_env.Replace(PROC='A53_64')
+v8_env.Replace(TZ_EXEC_MODE='aarch64')
+v8_env.Replace(APP_EXEC_MODE='aarch64')
+v8_env.Tool('secure_app_builder',toolpath=['${BUILD_ROOT}/ssg/bsp/build/scripts/'])
+
+v7_env = base_env.Clone()
+v7_env.Replace(PROC='scorpion')
+v7_env.Replace(TZ_EXEC_MODE='aarch32')
+v7_env.Replace(APP_EXEC_MODE='aarch32')
+v7_env.Tool('secure_app_builder',toolpath=['${BUILD_ROOT}/ssg/bsp/build/scripts/'])
+
+
+
+for app in apps64:
+  v8_env.SConscript(app, exports={'env':v8_env})
+  
+for app in apps32:
+  v7_env.SConscript(app, exports={'env':v7_env})
+  
+env.Deploy('SConscript')

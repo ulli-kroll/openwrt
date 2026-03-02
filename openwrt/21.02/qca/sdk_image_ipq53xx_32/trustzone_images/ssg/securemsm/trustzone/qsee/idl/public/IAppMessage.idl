@@ -1,0 +1,105 @@
+// Copyright (c) 2015 Qualcomm Technologies, Inc.  All Rights Reserved.
+// Qualcomm Technologies Proprietary and Confidential.
+
+/** @cond */
+interface IAppMessage {
+  /** @endcond */
+
+  /**
+   * @addtogroup IAppMessage
+   * @{
+   */
+
+  /** @cond */
+  const uint32 APP_NAME_MAX_LEN = 128; /**< Maximum application name length within IAppMessage. */
+
+  //--------------------------------------------------------
+  //  IAppMessage error codes
+  //--------------------------------------------------------
+  error ERROR;                        //*< Generic error occurred. */
+  error ERROR_ZERO_BUFFER_LEN;        //*< Zero buffer length. */
+  error ERROR_INSUFFCIENT_OUT_LEN;    //*< Zero buffer length. */
+  error ERROR_BAD_DEST_APPNAME;       //*< Deprecated. */
+  error ERROR_NO_DEST_APP_THREAD;     //*< Deprecated. */
+  error ERROR_NO_DEST_APP_KEYS;       //*< No destination application keys supplied. */
+  error ERROR_NO_SPACE_IN_TABLE;      //*< No space in message table. */
+  error ERROR_CIPHER_INIT;            //*< Error during initialization of the cipher. */
+  error ERROR_CIPHER_SET_PARAM;       //*< Error during parameter setting for the cipher context. */
+  error ERROR_CIPHER_ENCRYPT;         //*< Error during encryption. */
+  error ERROR_HMAC_FAIL;              //*< HMAC (Hash Message Authentication Code) failed. */
+  error ERROR_PRNG_FAIL;              //*< PRNG (Pseudo Random Number Generator) failed. */
+  error ERROR_BAD_SOURCE_NAME;        //*< Deprecated. */
+  error ERROR_MESSAGE_NOT_FOR_YOU;    //*< Message not meant for this application. */
+  error ERROR_NO_COUNTER_VALS;        //*< No counter values for this application found. */
+  error ERROR_MAC_MISMATCH;           //*< MAC (Message Authentication Code) mismatch. */
+  error ERROR_BAD_COUNTER_VALS;       //*< Counter value verification failed. */
+  error ERROR_MAXED_OUT_COUNTER_VAL;  //*< Counter value would overflow. */
+  error ERROR_MALLOC_INTERNAL_BUF;    //*< Couldn't allocate internal buffer. */
+  error ERROR_INTEGER_OVERFLOW;       //*< Supplied buffer size would create an overflow. */
+  error ERROR_INTEGER_UNDERFLOW;      //*< Supplied buffer size would create an underflow. */
+  error ERROR_MALLOC_HMAC_BUF;  //*< Couldn't allocate buffer for HMAC (Hash Message Authentication
+                                // Code). */
+  error ERROR_STRLCPY_FAIL;     //*< Deprecated. */
+  error ERROR_CIPHER_SET_PARAM_KEY;   //*< Setting cipher key failed. */
+  error ERROR_CIPHER_SET_PARAM_MODE;  //*< Setting cipher parameters failed. */
+  error ERROR_CIPHER_SET_PARAM_IV;    //*< Setting cipher input vector failed. */
+  error ERROR_SRC_NOT_LEGACY;         //*< Deprecated. */
+  error ERROR_DST_NOT_LEGACY;         //*< Deprecated. */
+  error ERROR_TZ_HEAP_MALLOC;         //*< Error due to tz heap malloc failure */
+  error ERROR_APP_REGION_MALLOC;      //*< Error due to ta app region malloc failure */
+  /** @endcond */
+
+  //--------------------------------------------------------
+  //  Interface.
+  //--------------------------------------------------------
+
+  /**
+    API for a trusted application to prepare a message that can be sent to
+    another trusted application.
+
+    This function writes the AES128-CTR encryped message into the supplied
+    output buffer, prepended with a header and appended with HMAC-SHA256.
+    This output buffer can be given to the receiving trusted application and
+    passed to decapsulateInterAppMessage to be authenticated and decrypted.
+
+    The actual data exchange (passing the encrypted buffer) between the
+    trusted applications can be done between clients running in the REE.
+
+    @param[in]  destAppName         Destination application name in plaintext
+                                    (maximum length is APP_NAME_MAX_LEN).
+    @param[in]  encryptedMessage    Buffer containing message to be encapsulated.
+    @param[out] encapsulatedMessage Buffer containing encapsulated message.
+
+    @dependencies
+    encapsulatedMessage buffer length should be greater than the
+    encryptedMessage buffer length by 144 bytes, to allow room for the header and MAC.
+
+    @return 
+    0 indicates success. \n
+    All other values indicate failure and correspond to a specific error code.
+   */
+  method encapsulateInterAppMessage(
+      in buffer destAppName, in buffer encryptedMessage, out buffer encapsulatedMessage);
+
+  /**
+    API for a trusted application to decapsulate (i.e. decrypt) a message
+    from another trusted application.  This API authenticates the message,
+    decrypts the input buffer, and writes the plaintext message into the
+    supplied output buffer. The input buffer must have been prepared by
+    encapsulateInterAppMessage(), containing a header and MAC.
+
+    @param[out] sourceAppName       Buffer populated with the message originator
+                                    application name (maximum length is
+                                    APP_NAME_MAX_LEN).
+    @param[in]  encapsulatedMessage Wrapped message to be decrypted.
+    @param[out] originalMessage     Buffer containing the unwrapped message.
+
+    @return
+    0 indicates success. \n
+    All other values indicate failure and correspond to a specific error code.
+   */
+  method decapsulateInterAppMessage(
+      out buffer sourceAppName, in buffer encapsulatedMessage, out buffer originalMessage);
+
+  /** @} */ /* end_addtogroup IAppMessage */
+};

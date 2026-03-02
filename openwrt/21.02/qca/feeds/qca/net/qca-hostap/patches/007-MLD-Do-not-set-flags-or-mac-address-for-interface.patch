@@ -1,0 +1,21 @@
+diff --git a/src/drivers/driver_nl80211.c b/src/drivers/driver_nl80211.c
+index 168c4479f..184fed20b 100644
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -2929,11 +2929,13 @@ wpa_driver_nl80211_finish_drv_init(struct wpa_driver_nl80211_data *drv,
+ 	wpa_printf(MSG_DEBUG, "nl80211: interface %s in phy %s",
+ 		   bss->ifname, drv->phyname);
+ 
++#if 0
+ 	if (set_addr &&
+ 	    (linux_set_iface_flags(drv->global->ioctl_sock, bss->ifname, 0) ||
+ 	     linux_set_ifhwaddr(drv->global->ioctl_sock, bss->ifname,
+ 				set_addr)))
+ 		return -1;
++#endif
+ 
+ 	if (first && nl80211_get_ifmode(bss) == NL80211_IFTYPE_STATION)
+ 		drv->start_mode_sta = 1;
+-- 
+2.17.1
+

@@ -1,0 +1,95 @@
+#===============================================================================
+#
+#                             Edit History
+# $Header: //components/rel/ssg.tzw/1.2/securemsm/trustzone/qsee/services/img_auth/build/SConscript#2 $
+#
+# when         who     what, where, why
+# ----------   ---     ---------------------------------------------------------
+# 2022/09/05   abs     added calls for antirollback in miami
+# 2019/10/21   gp      Remove unused xml configurations.
+# 2011/07/12   spa     Create initial version
+#
+#===============================================================================
+#                    Copyright (c) 2011, 2017,2019,2022 Qualcomm Technologies, Inc.
+#                           All Rights Reserved.
+#                         QUALCOMM Proprietary/GTDR
+#===============================================================================
+import os
+
+#-------------------------------------------------------------------------------
+# QSEE Lib
+#-------------------------------------------------------------------------------
+Import('env')
+env = env.Clone()
+#-------------------------------------------------------------------------------
+# Source PATH
+#-------------------------------------------------------------------------------
+SRCPATH = ["${BUILD_ROOT}/ssg/securemsm/trustzone/qsee/services/img_auth/src",]
+
+env.VariantDir('${BUILDPATH}', SRCPATH, duplicate=0)
+
+
+#-------------------------------------------------------------------------------
+# Internal depends within CoreBSP
+#-------------------------------------------------------------------------------
+env.RequirePublicApi([
+   'SERVICES',                    #< comdef.h
+   'SYSTEMDRIVERS',               #< HALhwio.h
+   'DAL',                         #< HALcomdef.h
+   'BOOT',                        #< qfprom.h
+   'SECUREMSM',
+   'KERNEL',
+   'STORAGE'
+], area='core')
+
+env.RequirePublicApi([
+   'AC',
+   'FUSEPROV'
+], area='ssg')
+
+
+env.RequireRestrictedApi([
+   'BOOT',                   #< miprogressive.h
+   'STORAGE',                #< sd_mgr_rpmb.h
+   'KERNEL',                 #< HALxpu2.h
+   'TZSSD',                  #< tz_ssd.h
+   'TZKS',                   #< needed for tz_ssd.h (tz_ks.h)
+   'TZIMGAUTH',
+   'TZCHIPSET',              #< tzbsp_xpu_config.h
+   'TZCRYPTO',               #< tzbsp_cipher.h
+   'SSGPLATFORM',            #< tzbsp_sys.h
+   'SECUREMSM',              #< secboot.h
+   'QSEE',                   #< tzbsp_syscall.h
+   'MINK',
+])
+
+INC_PATH = [
+      "${INC_ROOT}/ssg/securemsm/trustzone/qsee/services/keyprov/macchiato/shared/inc",
+      "${INC_ROOT}/ssg/tme/tmefuse/api",
+      "${INC_ROOT}/ssg/tme/tmeipc/api",
+]
+env.Append(CPPPATH = INC_PATH)
+
+#-------------------------------------------------------------------------------
+# Compiler options
+#-------------------------------------------------------------------------------
+#env.Append(CCFLAGS = "--gnu")
+
+#-------------------------------------------------------------------------------
+# Sources, libraries
+#-------------------------------------------------------------------------------
+
+SOURCES = [
+    '${BUILDPATH}/tzbsp_pil_syscall_def.c',
+ ]
+
+SOURCES2 = [ '${BUILDPATH}/tzbsp_rollback_version.c', ]
+
+#-------------------------------------------------------------------------------
+# Add Libraries to image
+#-------------------------------------------------------------------------------
+
+env.AddBinaryObject('TZOS_IMAGE', SOURCES)
+env.AddBinaryLibrary('TZOS_IMAGE', '${BUILDPATH}/tz_img_auth', SOURCES2)
+
+env.Deploy('SConscript')

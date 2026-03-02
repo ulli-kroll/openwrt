@@ -1,0 +1,47 @@
+From 9187bb9812575d4f7b7d61a6eda5a98c2f756636 Mon Sep 17 00:00:00 2001
+From: Adil Saeed Musthafa <adilm@qti.qualcomm.com>
+Date: Wed, 24 Apr 2024 20:49:21 -0700
+Subject: [PATCH] Initialize radius object for non-first bss
+
+Signed-off-by: Adil Saeed Musthafa <adilm@qti.qualcomm.com>
+---
+ src/ap/hostapd.c | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/src/ap/hostapd.c b/src/ap/hostapd.c
+index 78152ab1c..e8366c3c8 100644
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -1384,8 +1384,11 @@ static int hostapd_setup_bss(struct hostapd_data *hapd, int first,
+ 	}
+ #endif /* CONFIG_SQLITE */
+ 
+-	if (!hapd->mld_first_bss) {
++	if ((!hapd->mld_first_bss && !hapd->radius) ||
++	    (hapd->mld_first_bss && !hapd->mld_first_bss->radius)) {
+ 		hapd->radius = radius_client_init(hapd, conf->radius);
++		if (hapd->mld_first_bss)
++			hapd->mld_first_bss->radius = hapd->radius;
+ 		if (!hapd->radius) {
+ 			wpa_printf(MSG_ERROR,
+ 				   "RADIUS client initialization failed.");
+@@ -1410,13 +1413,15 @@ static int hostapd_setup_bss(struct hostapd_data *hapd, int first,
+ 			das_conf.disconnect = hostapd_das_disconnect;
+ 			das_conf.coa = hostapd_das_coa;
+ 			hapd->radius_das = radius_das_init(&das_conf);
++			if (hapd->mld_first_bss)
++				hapd->mld_first_bss->radius_das = hapd->radius_das;
+ 			if (!hapd->radius_das) {
+ 				wpa_printf(MSG_ERROR,
+ 					   "RADIUS DAS initialization failed.");
+ 				return -1;
+ 			}
+ 		}
+-	} else {
++	} else if (hapd->mld_first_bss) {
+ 		wpa_printf(MSG_DEBUG,
+ 			   "MLD: Using RADIUS client of the first BSS");
+ 		hapd->radius = hapd->mld_first_bss->radius;
+-- 
+2.17.1
+

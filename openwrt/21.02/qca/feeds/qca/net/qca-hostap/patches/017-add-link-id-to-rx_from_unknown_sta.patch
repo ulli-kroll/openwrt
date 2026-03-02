@@ -1,0 +1,75 @@
+diff --git a/src/ap/drv_callbacks.c b/src/ap/drv_callbacks.c
+index 76a77e498..4af0c036a 100644
+--- a/src/ap/drv_callbacks.c
++++ b/src/ap/drv_callbacks.c
+@@ -1709,8 +1709,13 @@ static struct hostapd_data * get_hapd_bssid(struct hostapd_iface *iface,
+ 
+ static void hostapd_rx_from_unknown_sta(struct hostapd_data *hapd,
+ 					const u8 *bssid, const u8 *addr,
+-					int wds)
++					int wds, int link_id)
+ {
++#ifdef CONFIG_IEEE80211BE
++	if (hapd->conf->mld_ap && link_id != -1) {
++		hapd = hostapd_mld_get_link_bss(hapd, link_id);
++	} else
++#endif /* CONFIG_IEEE80211BE */
+ 	hapd = get_hapd_bssid(hapd->iface, bssid);
+ 	if (hapd == NULL || hapd == HAPD_BROADCAST)
+ 		return;
+@@ -2325,7 +2330,8 @@ void hostapd_wpa_event(void *ctx, enum wpa_event_type event,
+ 	case EVENT_RX_FROM_UNKNOWN:
+ 		hostapd_rx_from_unknown_sta(hapd, data->rx_from_unknown.bssid,
+ 					    data->rx_from_unknown.addr,
+-					    data->rx_from_unknown.wds);
++					    data->rx_from_unknown.wds,
++					    data->rx_from_unknown.link_id);
+ 		break;
+ #endif /* NEED_AP_MLME */
+ 	case EVENT_RX_MGMT:
+diff --git a/src/drivers/driver.h b/src/drivers/driver.h
+index 8d7c2eee9..dd844413b 100644
+--- a/src/drivers/driver.h
++++ b/src/drivers/driver.h
+@@ -6212,6 +6212,7 @@ union wpa_event_data {
+ 		const u8 *bssid;
+ 		const u8 *addr;
+ 		int wds;
++		int link_id;
+ 	} rx_from_unknown;
+ 
+ 	/**
+diff --git a/src/drivers/driver_nl80211_event.c b/src/drivers/driver_nl80211_event.c
+index bd700de9a..a7e512b41 100644
+--- a/src/drivers/driver_nl80211_event.c
++++ b/src/drivers/driver_nl80211_event.c
+@@ -2527,6 +2527,18 @@ static void nl80211_spurious_frame(struct i802_bss *bss, struct nlattr **tb,
+ {
+ 	struct wpa_driver_nl80211_data *drv = bss->drv;
+ 	union wpa_event_data event;
++	int link_id;
++	struct nlattr *link;
++	struct i802_link *mld_link = NULL;
++
++	link = tb[NL80211_ATTR_MLO_LINK_ID];
++	link_id = -1;
++
++	if (link)
++		mld_link = nl80211_get_link(bss, nla_get_u8(link));
++
++	if (mld_link)
++		link_id = mld_link->link_id;
+ 
+ 	if (!tb[NL80211_ATTR_MAC])
+ 		return;
+@@ -2535,6 +2547,7 @@ static void nl80211_spurious_frame(struct i802_bss *bss, struct nlattr **tb,
+ 	event.rx_from_unknown.bssid = bss->addr;
+ 	event.rx_from_unknown.addr = nla_data(tb[NL80211_ATTR_MAC]);
+ 	event.rx_from_unknown.wds = wds;
++	event.rx_from_unknown.link_id = link_id;
+ 
+ 	wpa_supplicant_event(drv->ctx, EVENT_RX_FROM_UNKNOWN, &event);
+ }
+-- 
+2.17.1
+

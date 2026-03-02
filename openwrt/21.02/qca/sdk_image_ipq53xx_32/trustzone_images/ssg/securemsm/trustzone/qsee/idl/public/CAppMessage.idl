@@ -1,0 +1,15 @@
+// Copyright (c) 2015 Qualcomm Technologies, Inc.  All Rights Reserved.
+// Qualcomm Technologies Proprietary and Confidential.
+
+/**
+* @addtogroup CAppMessage
+* @{
+	Class CAppMessage implements \link IAppMessage \endlink interface.
+	
+	The class ID `AppMessage` is included in the default privilege set, therefore the 
+	CAppMessage class is available to every TA. 
+*/
+
+const uint32 CAppMessage_UID = 21;
+
+/** @} */

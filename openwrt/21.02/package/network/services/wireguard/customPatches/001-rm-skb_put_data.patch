@@ -1,0 +1,18 @@
+--- src/compat/compat.h
++++ src/compat/compat.h
+@@ -665,6 +665,7 @@ struct __compat_dummy_container { char d
+ #endif
+ 
+ #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 13, 0) && !defined(ISRHEL7)
++#if 0
+ static inline void *skb_put_data(struct sk_buff *skb, const void *data, unsigned int len)
+ {
+ 	void *tmp = skb_put(skb, len);
+@@ -672,6 +673,7 @@ static inline void *skb_put_data(struct
+ 	return tmp;
+ }
+ #endif
++#endif
+ 
+ #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 19, 0) && !defined(ISRHEL7)
+ #define napi_complete_done(n, work_done) napi_complete(n)

@@ -1,0 +1,16 @@
+#!/bin/sh
+
+. /lib/functions/network.sh
+
+[ "$INTERFACE" = wan -a x"$(uci -q get network.wan.type)" == x"bridge" ] && {
+	if [ "re" = "$(uci -q get system.board.type)" ]; then
+		ubus call wireless cleanup '{"iface":"wlan00"}'
+		ubus call wireless cleanup '{"iface":"wlan10"}'
+	else
+		ubus call wireless cleanup
+	fi
+
+        [ "$ACTION" = ifup ] && {
+                /etc/init.d/dnsmasq reload
+        }
+}

@@ -1,0 +1,145 @@
+// Copyright (c) 2016-2018 Qualcomm Technologies, Inc.  All Rights Reserved.
+// Qualcomm Technologies Proprietary and Confidential.
+
+include "ISecureCameraClientEvent.idl"
+
+/** @cond */
+interface ISecureCamera {
+/** @endcond */
+
+  /**
+   * @addtogroup ISecureCamera
+   * @{
+   */
+
+  /** @cond */
+  /** Registers regions for camera configuration access
+  */
+  const int32 MMSS_A_CCI     = 0;
+  const int32 MMSS_A_CSID_0  = 1;
+  const int32 MMSS_A_CSID_1  = 2;
+  const int32 MMSS_A_CSID_2  = 3;
+  const int32 MMSS_A_CSID_3  = 4;
+  const int32 MMSS_A_ISPIF   = 5;
+  const int32 INVALID_REGION = 255;
+
+
+  /**
+   *  ISecureCamera Error codes
+   */
+  error ERROR_LICENSE_IS_INVALID;
+  /** @endcond */
+
+  /**
+    Gets the current secure camera session ID.
+
+    @param[out] sessionID  Current secure camera session ID; 0 if
+                           no session is active.
+
+    @return
+    Object_OK -- Success. \n
+    ISecureCamera_ERROR_LICENSE_IS_INVALID -- License not set or invalid. \n
+    Object_ERROR -- Generic error.
+  */
+  method getSession(out uint32 sessionID);
+
+  /**
+    - Blocks camera from being released out of secure mode.
+    - Must be called by the client to ensure the secure session cannot
+      be terminated by REE or other TAs.
+
+    @param[in] sessionID  Current secure camera session ID.
+
+    @return
+    Object_OK -- Success. \n
+    ISecureCamera_ERROR_LICENSE_IS_INVALID -- License not set or invalid. \n
+    Object_ERROR -- Generic error. \n
+  */
+  method acquireCamera(in uint32 sessionID);
+
+  /**
+    - Allows camera to exit secure mode.
+    - Must be called when the client allows REE to switch camera to non-secure
+      mode.
+
+    @param [in] sessionID    Current secure camera session ID.
+
+    @return
+    Object_OK -- Success. \n
+    ISecureCamera_ERROR_LICENSE_IS_INVALID -- License not set or invalid. \n
+    Object_ERROR -- Generic error.
+  */
+  method releaseCamera(in uint32 sessionID);
+
+  /**
+    Writes 32-bit data to the specified camera register region address space.
+
+    @param[in] registerRegionId  Register region identifier, e.g., MMSS_A_CCI.
+    @param[in] offset            Offset at register region.
+    @param[in] data              Data to write.
+
+    @return
+    Object_OK -- Success. \n
+    ISecureCamera_ERROR_LICENSE_IS_INVALID -- License not set or invalid. \n
+    Object_ERROR -- Generic error.
+  */
+  method registerWrite(in uint32 registerRegionId, in uint32 offset, in uint32 data);
+
+  /**
+    Bulk writes 32-bit data to the specified camera register region address space.
+
+    @param[in] registerRegionId  Register region identifier, e.g., MMSS_A_CCI.
+    @param[in] offset            Array of offsets at the register region.
+    @param[in] data              Array of data values to write (corresponding to the offsets).
+
+    @return
+    Object_OK on success.
+  */
+  method registerBulkWrite(in uint32 registerRegionId, in uint32[] offset, in uint32[] data);
+
+  /**
+    Reads 32-bit data to the specified register address space.
+
+    @param[in]  registerRegionId  Register region identifier, e.g., MMSS_A_CCI.
+    @param[in]  offset            Offset at the register region.
+    @param[out] data              Returned data.
+
+    @return
+    Object_OK on success.
+  */
+  method registerRead(in uint32 registerRegionId, in uint32 offset, out uint32 data);
+
+  /**
+    Sets and validates Haven license certificate for Secure Camera feature.
+
+    @param[in]  LicenseCert  Buffer containing certificate in DER format.
+    @param[out] havenError   Internal error code returned by IHavenTokenApp service.\n
+                             Returned code can be used for diagnostics and is only valid
+                             when the the function completes with Object_OK , e.g., license bypass.
+
+    @detdesc
+    This method must be called at least once after the device reboots to enable the
+    secure camera feature.  Invoking secure camera without calling this method first, or if
+    the provided certificate is not valid, results in a disabled secure camera feature. \n
+    @note Non-production devices bypass the license check to support debug.
+
+    @return
+    Object_OK -- Success. \n
+    ISecureCamera_ERROR_LICENSE_IS_INVALID -- Failed license validation. \n
+    Object_ERROR -- Generic error.
+  */
+  method setOEMHavenLicense(in buffer LicenseCert, out int32 havenError);
+
+  /**
+    - Registers notification callback for secure camera framework.
+    - Callback functions are invoked once an event triggers them (see ISecureCameraClientEvent.idl).
+
+    @param[in] cb_obj  Mink object of ISecureCameraClientEvent type.
+
+    @return
+    Object_OK -- Success. \n
+    Object_ERROR -- Generic error.
+  */
+  method registerEventsCallback(in ISecureCameraClientEvent cb_obj);
+  /* @} */ /* end_addtogroup ISecureCamera */
+};

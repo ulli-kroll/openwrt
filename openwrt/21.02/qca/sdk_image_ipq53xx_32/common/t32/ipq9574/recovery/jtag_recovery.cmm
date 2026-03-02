@@ -1,0 +1,356 @@
+;
+; Copyright (c) 2017, 2019, 2021 Qualcomm Technologies, Inc.
+; All Rights Reserved.
+; Confidential and Proprietary - Qualcomm Technologies, Inc.
+;
+
+local &cwd
+local &BootBuildPath
+local &Cdtbin
+local &BoardType
+local &serialnum
+local &vol &vol_code &pow_sel
+local &MP5496_LDO3
+
+&MP5496_LDO3=0x9
+
+entry &BootBuildPath &BoardType
+
+&cwd=os.pwd()
+
+winclear
+area.reset
+gosub SetupMainWindow
+
+sys.d
+sys.u
+
+; Qtimer - Init
+D.S ZSD:0x4A1000 %LE %Long 0x00000001
+D.S ZSD:0xB120000 %LE %Long 0x16E3600
+D.S ZSD:0xB120040 %LE %Long 0x0000003F
+D.S ZSD:0xB120044 %LE %Long 0x0000003F
+D.S ZSD:0xB12102C %LE %Long 0x00000002
+D.S ZSD:0xB12302C %LE %Long 0x00000002
+
+;clear crashdump magic
+D.S ZSD:0x193d100 %LE %LONG 0x0
+
+print "Choose the Image folder in dialog box."
+
+if (("&BootBuildPath"=="")||("&BoardType"==""))
+(
+    DIALOG.view
+    (
+             NAME "BootImage"
+             HEADER "Select the Boot loader image folder"
+             POS 1. 1. 43. 1.
+
+             POS 1. 0. 38. 1.
+             TEXT "Select Image Path"
+    Browse:  EDIT "" ""
+             POS 40. 1. 3. 1.
+             BUTTON "..."
+             (
+                 DIALOG.SetDIR Browse c:\t32\demo\*
+             )
+
+             POS 1. 3. 27. 1.
+             TEXT "Select the board"
+
+    BOARD.SEL:  DEFCOMBOBOX "AL-EMU,AP.AL01-C1,AP.AL02-C1,AP.AL02-C2,AP.AL02-C3,AP.AL02-C4,AP.AL02-C5,AP.AL02-C6,AP.AL02-C7,AP.AL02-C8,AP.AL02-C9,AP.AL02-C10,AP.AL02-C11,AP.AL02-C12,AP.AL02-C13,AP.AL02-C14,AP.AL02-C15,AP.AL02-C16,AP.AL02-C17,AP.AL02-C18,AP.AL02-C19,AP.AL03-C1,AP.AL03-C2,AP.AL05,AP.AL06,DB.AL01-C1,DB.AL01-C2,DB.AL01-C3,DB.AL02-C1,DB.AL02-C2,DB.AL02-C3" ""
+
+             POS 30. 4. 5. 1.
+             DEFBUTTON "OK" "CONTinue"
+    )
+
+    ;set default selections
+    if ("&BootBuildPath"!="")
+    (
+        DIALOG.set Browse "&BootBuildPath"
+    )
+
+    DIALOG.SET BOARD.SEL "AP.AL02-C1"
+
+    WinRESIZE 45. 7. BootImage
+    STOP
+
+    &BootBuildPath=DIALOG.STRing(Browse)
+    ;get the string from the EDIT box
+
+    &BoardType=DIALOG.STRing(BOARD.SEL)
+
+    DIALOG.END
+    ;and then close the dialog
+)
+
+print "Loading SBL elf....."
+
+cd &BootBuildPath
+d.load.elf XBLLoader.dll
+
+if "&BoardType"=="AL-EMU"
+(
+    if OS.FILE("cdt-AL-EMU_512M16_DDR4.bin")
+        &Cdtbin="cdt-AL-EMU_512M16_DDR4.bin"
+    else if OS.FILE("cdt-AL-EMU_512M16_DDR4_LM512.bin")
+        &Cdtbin="cdt-AL-EMU_512M16_DDR4_LM512.bin"
+)
+if "&BoardType"=="AP.AL01-C1"
+(
+    if OS.FILE("cdt-AP-AL01-C1_256M32_DDR3.bin")
+        &Cdtbin="cdt-AP-AL01-C1_256M32_DDR3.bin"
+    else if OS.FILE("cdt-AP-AL01-C1_256M32_DDR3_LM512.bin")
+        &Cdtbin="cdt-AP-AL01-C1_256M32_DDR3_LM512.bin"
+)
+if "&BoardType"=="AP.AL02-C1"
+(
+    if OS.FILE("cdt-AP-AL02-C1_256M32_DDR4.bin")
+        &Cdtbin="cdt-AP-AL02-C1_256M32_DDR4.bin"
+    else if OS.FILE("cdt-AP-AL02-C1_256M32_DDR4_LM512.bin")
+        &Cdtbin="cdt-AP-AL02-C1_256M32_DDR4_LM512.bin"
+)
+if "&BoardType"=="AP.AL02-C2"
+(
+    if OS.FILE("cdt-AP-AL02-C2_256M32_DDR4.bin")
+        &Cdtbin="cdt-AP-AL02-C2_256M32_DDR4.bin"
+    else if OS.FILE("cdt-AP-AL02-C2_256M32_DDR4_LM512.bin")
+        &Cdtbin="cdt-AP-AL02-C2_256M32_DDR4_LM512.bin"
+)
+if "&BoardType"=="AP.AL02-C3"
+(
+    if OS.FILE("cdt-AP-AL02-C3_256M32_DDR4.bin")
+        &Cdtbin="cdt-AP-AL02-C3_256M32_DDR4.bin"
+    else if OS.FILE("cdt-AP-AL02-C3_256M32_DDR4_LM512.bin")
+        &Cdtbin="cdt-AP-AL02-C3_256M32_DDR4_LM512.bin"
+)
+if "&BoardType"=="AP.AL02-C4"
+(
+    if OS.FILE("cdt-AP-AL02-C4_256M32_DDR4.bin")
+        &Cdtbin="cdt-AP-AL02-C4_256M32_DDR4.bin"
+    else if OS.FILE("cdt-AP-AL02-C4_256M32_DDR4_LM512.bin")
+        &Cdtbin="cdt-AP-AL02-C4_256M32_DDR4_LM512.bin"
+)
+if "&BoardType"=="AP.AL02-C5"
+(
+    if OS.FILE("cdt-AP-AL02-C5_256M32_DDR4.bin")
+        &Cdtbin="cdt-AP-AL02-C5_256M32_DDR4.bin"
+    else if OS.FILE("cdt-AP-AL02-C5_256M32_DDR4_LM512.bin")
+        &Cdtbin="cdt-AP-AL02-C5_256M32_DDR4_LM512.bin"
+)
+if "&BoardType"=="AP.AL02-C6"
+(
+    if OS.FILE("cdt-AP-AL02-C6_256M32_DDR4.bin")
+        &Cdtbin="cdt-AP-AL02-C6_256M32_DDR4.bin"
+    else if OS.FILE("cdt-AP-AL02-C6_256M32_DDR4_LM512.bin")
+        &Cdtbin="cdt-AP-AL02-C6_256M32_DDR4_LM512.bin"
+)
+if "&BoardType"=="AP.AL02-C7"
+(
+    if OS.FILE("cdt-AP-AL02-C7_256M32_DDR4.bin")
+        &Cdtbin="cdt-AP-AL02-C7_256M32_DDR4.bin"
+    else if OS.FILE("cdt-AP-AL02-C7_256M32_DDR4_LM512.bin")
+        &Cdtbin="cdt-AP-AL02-C7_256M32_DDR4_LM512.bin"
+)
+if "&BoardType"=="AP.AL02-C8"
+(
+    if OS.FILE("cdt-AP-AL02-C8_256M32_DDR4.bin")
+        &Cdtbin="cdt-AP-AL02-C8_256M32_DDR4.bin"
+    else if OS.FILE("cdt-AP-AL02-C8_256M32_DDR4_LM512.bin")
+        &Cdtbin="cdt-AP-AL02-C8_256M32_DDR4_LM512.bin"
+)
+if "&BoardType"=="AP.AL02-C9"
+(
+    if OS.FILE("cdt-AP-AL02-C9_256M32_DDR4.bin")
+        &Cdtbin="cdt-AP-AL02-C9_256M32_DDR4.bin"
+    else if OS.FILE("cdt-AP-AL02-C9_256M32_DDR4_LM512.bin")
+        &Cdtbin="cdt-AP-AL02-C9_256M32_DDR4_LM512.bin"
+)
+if "&BoardType"=="AP.AL02-C10"
+(
+    if OS.FILE("cdt-AP-AL02-C10_256M32_DDR4.bin")
+        &Cdtbin="cdt-AP-AL02-C10_256M32_DDR4.bin"
+    else if OS.FILE("cdt-AP-AL02-C10_256M32_DDR4_LM512.bin")
+        &Cdtbin="cdt-AP-AL02-C10_256M32_DDR4_LM512.bin"
+)
+if "&BoardType"=="AP.AL02-C11"
+(
+    if OS.FILE("cdt-AP-AL02-C11_256M32_DDR4.bin")
+        &Cdtbin="cdt-AP-AL02-C11_256M32_DDR4.bin"
+    else if OS.FILE("cdt-AP-AL02-C11_256M32_DDR4_LM512.bin")
+        &Cdtbin="cdt-AP-AL02-C11_256M32_DDR4_LM512.bin"
+)
+if "&BoardType"=="AP.AL02-C12"
+(
+    if OS.FILE("cdt-AP-AL02-C12_256M32_DDR4.bin")
+        &Cdtbin="cdt-AP-AL02-C12_256M32_DDR4.bin"
+    else if OS.FILE("cdt-AP-AL02-C12_256M32_DDR4_LM512.bin")
+        &Cdtbin="cdt-AP-AL02-C12_256M32_DDR4_LM512.bin"
+)
+if "&BoardType"=="AP.AL02-C13"
+(
+    if OS.FILE("cdt-AP-AL02-C13_256M32_DDR4.bin")
+        &Cdtbin="cdt-AP-AL02-C13_256M32_DDR4.bin"
+    else if OS.FILE("cdt-AP-AL02-C13_256M32_DDR4_LM512.bin")
+        &Cdtbin="cdt-AP-AL02-C13_256M32_DDR4_LM512.bin"
+)
+if "&BoardType"=="AP.AL02-C14"
+(
+    if OS.FILE("cdt-AP-AL02-C14_256M16_DDR4.bin")
+        &Cdtbin="cdt-AP-AL02-C14_256M16_DDR4.bin"
+    else if OS.FILE("cdt-AP-AL02-C14_256M16_DDR4_LM512.bin")
+        &Cdtbin="cdt-AP-AL02-C14_256M16_DDR4_LM512.bin"
+)
+if "&BoardType"=="AP.AL02-C15"
+(
+    if OS.FILE("cdt-AP-AL02-C15_256M32_DDR4.bin")
+        &Cdtbin="cdt-AP-AL02-C15_256M32_DDR4.bin"
+    else if OS.FILE("cdt-AP-AL02-C15_256M32_DDR4_LM512.bin")
+        &Cdtbin="cdt-AP-AL02-C15_256M32_DDR4_LM512.bin"
+)
+if "&BoardType"=="AP.AL02-C16"
+(
+    if OS.FILE("cdt-AP-AL02-C16_512M32_DDR4.bin")
+        &Cdtbin="cdt-AP-AL02-C16_512M32_DDR4.bin"
+    else if OS.FILE("cdt-AP-AL02-C16_512M32_DDR4_LM512.bin")
+        &Cdtbin="cdt-AP-AL02-C16_512M32_DDR4_LM512.bin"
+)
+if "&BoardType"=="AP.AL02-C17"
+(
+    if OS.FILE("cdt-AP-AL02-C17_256M32_DDR4.bin")
+	&Cdtbin="cdt-AP-AL02-C17_256M32_DDR4.bin"
+    else if OS.FILE("cdt-AP-AL02-C17_256M32_DDR4_LM512.bin")
+	&Cdtbin="cdt-AP-AL02-C17_256M32_DDR4_LM512.bin"
+)
+if "&BoardType"=="AP.AL02-C18"
+(
+    if OS.FILE("cdt-AP-AL02-C18_256M32_DDR4.bin")
+        &Cdtbin="cdt-AP-AL02-C18_256M32_DDR4.bin"
+    else if OS.FILE("cdt-AP-AL02-C18_256M32_DDR4_LM512.bin")
+        &Cdtbin="cdt-AP-AL02-C18_256M32_DDR4_LM512.bin"
+)
+if "&BoardType"=="AP.AL02-C19"
+(
+    if OS.FILE("cdt-AP-AL02-C19_256M32_DDR4.bin")
+        &Cdtbin="cdt-AP-AL02-C19_256M32_DDR4.bin"
+    else if OS.FILE("cdt-AP-AL02-C19_256M32_DDR4_LM512.bin")
+        &Cdtbin="cdt-AP-AL02-C19_256M32_DDR4_LM512.bin"
+)
+if "&BoardType"=="AP.AL02-C20"
+(
+    if OS.FILE("cdt-AP-AL02-C20_512M32_DDR4.bin")
+        &Cdtbin="cdt-AP-AL02-C20_512M32_DDR4.bin"
+    else if OS.FILE("cdt-AP-AL02-C20_512M32_DDR4_LM512.bin")
+        &Cdtbin="cdt-AP-AL02-C20_512M32_DDR4_LM512.bin"
+)
+if "&BoardType"=="AP.AL03-C1"
+(
+    if OS.FILE("cdt-AP-AL03-C1_256M32_DDR3.bin")
+        &Cdtbin="cdt-AP-AL03-C1_256M32_DDR3.bin"
+    else if OS.FILE("cdt-AP-AL03-C1_256M32_DDR3_LM512.bin")
+        &Cdtbin="cdt-AP-AL03-C1_256M32_DDR3_LM512.bin"
+)
+if "&BoardType"=="AP.AL03-C2"
+(
+    if OS.FILE("cdt-AP-AL03-C2_256M32_DDR3.bin")
+        &Cdtbin="cdt-AP-AL03-C2_256M32_DDR3.bin"
+    else if OS.FILE("cdt-AP-AL03-C2_256M32_DDR3_LM512.bin")
+        &Cdtbin="cdt-AP-AL03-C2_256M32_DDR3_LM512.bin"
+)
+if "&BoardType"=="AP.AL05"
+(
+    if OS.FILE("cdt-AP-AL05_256M32_DDR4.bin")
+        &Cdtbin="cdt-AP-AL05_256M32_DDR4.bin"
+    else if OS.FILE("cdt-AP-AL05_256M32_DDR4_LM512.bin")
+        &Cdtbin="cdt-AP-AL05_256M32_DDR4_LM512.bin"
+)
+if "&BoardType"=="AP.AL06"
+(
+    if OS.FILE("cdt-AP-AL06_256M32_DDR4.bin")
+        &Cdtbin="cdt-AP-AL06_256M32_DDR4.bin"
+    else if OS.FILE("cdt-AP-AL06_256M32_DDR4_LM512.bin")
+        &Cdtbin="cdt-AP-AL06_256M32_DDR4_LM512.bin"
+)
+if "&BoardType"=="DB.AL01-C1"
+(
+    if OS.FILE("cdt-DB-AL01-C1_256M32_DDR3.bin")
+        &Cdtbin="cdt-DB-AL01-C1_256M32_DDR3.bin"
+    else if OS.FILE("cdt-DB-AL01-C1_256M32_DDR3_LM512.bin")
+        &Cdtbin="cdt-DB-AL01-C1_256M32_DDR3_LM512.bin"
+)
+if "&BoardType"=="DB.AL01-C2"
+(
+    if OS.FILE("cdt-DB-AL01-C2_256M32_DDR3.bin")
+        &Cdtbin="cdt-DB-AL01-C2_256M32_DDR3.bin"
+    else if OS.FILE("cdt-DB-AL01-C2_256M32_DDR3_LM512.bin")
+        &Cdtbin="cdt-DB-AL01-C2_256M32_DDR3_LM512.bin"
+)
+if "&BoardType"=="DB.AL01-C3"
+(
+    if OS.FILE("cdt-DB-AL01-C3_256M32_DDR3.bin")
+        &Cdtbin="cdt-DB-AL01-C3_256M32_DDR3.bin"
+    else if OS.FILE("cdt-DB-AL01-C3_256M32_DDR3_LM512.bin")
+        &Cdtbin="cdt-DB-AL01-C3_256M32_DDR3_LM512.bin"
+)
+if "&BoardType"=="DB.AL02-C1"
+(
+    if OS.FILE("cdt-DB-AL02-C1_1024M32_DDR4.bin")
+        &Cdtbin="cdt-DB-AL02-C1_1024M32_DDR4.bin"
+    else if OS.FILE("cdt-DB-AL02-C1_1024M32_DDR4_LM512.bin")
+        &Cdtbin="cdt-DB-AL02-C1_1024M32_DDR4_LM512.bin"
+)
+if "&BoardType"=="DB.AL02-C2"
+(
+    if OS.FILE("cdt-DB-AL02-C2_1024M32_DDR4.bin")
+        &Cdtbin="cdt-DB-AL02-C2_1024M32_DDR4.bin"
+    else if OS.FILE("cdt-DB-AL02-C2_1024M32_DDR4_LM512.bin")
+        &Cdtbin="cdt-DB-AL02-C2_1024M32_DDR4_LM512.bin"
+)
+if "&BoardType"=="DB.AL02-C3"
+(
+    if OS.FILE("cdt-DB-AL02-C3_1024M32_DDR4.bin")
+        &Cdtbin="cdt-DB-AL02-C3_1024M32_DDR4.bin"
+    else if OS.FILE("cdt-DB-AL02-C3_1024M32_DDR4_LM512.bin")
+        &Cdtbin="cdt-DB-AL02-C3_1024M32_DDR4_LM512.bin"
+)
+
+print "Successfully Loaded SBL elf....."
+
+go sbl1_main_ctl
+
+V jtag_recovery = 1
+
+; CDT loading
+
+go boot_update_config_data_table /o
+
+wait !STATE.RUN()
+
+print "Loading CDT binary..."
+d.load.Binary &Cdtbin var.value(cdt_info_ptr->cdt_ptr) /noclear
+v cdt_contains_ddr_cdb = 1
+print "Successfully loaded CDT binary..."
+go boot_apt_test /o
+
+wait !STATE.RUN()
+
+print "Loading U-boot elf....."
+d.load.elf openwrt-ipq9574-u-boot.elf
+
+print "Successfully Loaded U-boot elf....."
+print "Stop at the u-boot prompt."
+
+go
+
+enddo
+
+;****************************************************************************
+; Setup main window
+;****************************************************************************
+SetupMainWindow:
+  WINPOS 0% 50% 68% 50% 0. 0. W001
+  Area.create MAIN
+  Area.view MAIN
+  Area.select MAIN
+  return ;SetupMainWindow
+

@@ -1,0 +1,31 @@
+#===============================================================================
+#
+# GENERAL DESCRIPTION
+#    Buses Settings
+#
+# Copyright (c) 2017-2018 Qualcomm Technologies, Inc.
+#           All Rights Reserved.
+# Qualcomm Technologies, Inc. Confidential and Proprietary.
+#
+#
+#-------------------------------------------------------------------------------
+#                      EDIT HISTORY FOR FILE
+#
+#  This section contains comments describing changes made to the module.
+#  Notice that changes are listed in reverse chronological order.
+#
+# when       who     what, where, why
+# --------   ---     ---------------------------------------------------------
+# 12/12/18   DPK     Removed temporary changes added for Nicobar
+# 02/13/18   VG      Copyright Updated
+# 05/12/17   MJS     Initial version.
+#
+#===============================================================================
+import os
+Import('env')
+
+#-------------------------------------------------------------------------------
+# Load sub scripts
+#-------------------------------------------------------------------------------
+env.LoadSoftwareUnits()
+

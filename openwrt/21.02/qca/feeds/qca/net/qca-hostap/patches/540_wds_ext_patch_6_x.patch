@@ -1,0 +1,22 @@
+diff --git a/src/ap/ieee802_11.c b/src/ap/ieee802_11.c
+index 047dc9c..d4d491d 100644
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -6876,6 +6876,17 @@ void ieee802_11_rx_from_unknown(struct hostapd_data *hapd, const u8 *src,
+ 	struct sta_info *sta;
+ 
+ 	sta = ap_get_sta(hapd, src);
++
++	if(!sta && hapd->conf->wds_bridge) {
++		wpa_printf(MSG_DEBUG, "Add new STA " MACSTR " based on ctrl_iface "
++			"notification", MAC2STR(src));
++		sta = ap_sta_add(hapd, src);
++		if (sta ) {
++			sta->flags |= WLAN_STA_ASSOC;
++			hostapd_new_assoc_sta(hapd, sta, hostapd_get_aid(hapd, sta));
++		}
++	}
++
+ 	if (sta &&
+ 	    ((sta->flags & WLAN_STA_ASSOC) ||
+ 	     ((sta->flags & WLAN_STA_ASSOC_REQ_OK) && wds))) {

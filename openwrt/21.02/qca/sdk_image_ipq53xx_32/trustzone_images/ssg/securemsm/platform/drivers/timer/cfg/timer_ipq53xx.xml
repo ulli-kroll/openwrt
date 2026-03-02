@@ -1,0 +1,16 @@
+#include "timer_defs.h"
+
+<driver name="NULL">
+  <device id="timer">
+    <props id=1 type="timer_reg_data_t">
+      {
+        1,                        <!--Number of Qtimers present in ipq60xx-->
+        7,                        <!--Number of Qtimer frames per Qtimer present in ipq60xx-->
+        18,                       <!--TIMER_SEC_CP15_INT_ID--> <!-- TODO : Verify -->
+        42,                       <!--TIMER_SEC_QTIMER_INT_ID-->
+        0x4000,                   <!--Offset for frame 2 of Qtimer from Qtimer base-->
+        {0x0B120000},             <!--Base addresses of Qtimer0 (APCS_QTMR0_QTMR_AC_REG_BASE)-->
+      }
+    </props>
+  </device>
+</driver>

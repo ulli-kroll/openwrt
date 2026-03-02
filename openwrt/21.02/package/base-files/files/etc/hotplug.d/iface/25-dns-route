@@ -1,0 +1,23 @@
+#!/bin/sh
+
+. /lib/functions/network.sh
+
+[ "$(uci -q get system.board.type)" = "router" -a "$ACTION" = ifup ] && {
+	network_get_gateway gateway "$INTERFACE"
+	network_get_dnsserver dnsserver "$INTERFACE"
+	[ -n "$gateway" -a -n "dnsserver" ] && {
+		for dns in $dnsserver ; do
+			network_get_ipaddr ipaddr "lan"
+			subnet=$(uci get network.lan.netmask)
+			ret=$(/bin/network-conflict-calc.sh "$ipaddr" "$subnet" "$dns" "$subnet")
+			if [ "$ret" != "0" ]; then
+				ip route add "$dns" dev "$DEVICE" via "$gateway"
+			elif [ "$(uci -q get network.guest)" = "interface" -a x"$(uci -q get network.guest.disabled)" != x"1" ]; then
+				network_get_ipaddr ipaddr "guest"
+				network_get_subnet subnet "guest"
+				ret=$(/bin/network-conflict-calc.sh "$ipaddr" "$subnet" "$dns" "$subnet")
+				[ "$ret" != "0" ] && ip route add "$dns" dev "$DEVICE" via "$gateway"
+			fi
+		done
+	}
+}

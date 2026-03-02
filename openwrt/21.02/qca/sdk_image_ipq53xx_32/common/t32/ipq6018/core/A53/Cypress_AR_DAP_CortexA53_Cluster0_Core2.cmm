@@ -1,0 +1,56 @@
+;
+; Copyright (c) 2017, 2019 Qualcomm Technologies, Inc.
+; All Rights Reserved.
+; Confidential and Proprietary - Qualcomm Technologies, Inc.
+;
+
+;local &cmm_dir &cur_dir
+SYStem.Reset
+SYStem.CPU KRYO2XX
+SYSTEM.JtagClock 20MHZ
+SYStem.CONFIG SLAVE OFF
+
+global &t32_intercom_port_base
+global &t32_intercom_port
+&t32_intercom_port_base=20000.
+&t32_intercom_port=&t32_intercom_port_base+1.
+
+&cur_dir=os.ppd()    	; directory where this script is running from
+
+; select CPU and options
+
+;;ntimescc  ; time out ignored only for debugging
+SYStem.Option EnReset OFF
+TrOnchip.Set reset OFF
+
+SYStem.CONFIG	DAPIRPRE	0.
+SYStem.CONFIG	DAPDRPRE	0.
+SYStem.CONFIG	DAPIRPOST	11.
+SYStem.CONFIG	DAPDRPOST	1.
+
+SYStem.CONFIG.COREDEBUG.BASE	0x80194000
+SYStem.CONFIG.ETM.BASE		0x8019E000
+SYStem.CONFIG.CTI.BASE		0x8019A000
+SYStem.CONFIG CTICONFIG        ARMV8V1
+; Upto BETA-5 Release Addresses
+;SYStem.CONFIG COREBASE         DAP:0x80040000
+;SYStem.CONFIG.CTIBASE	       DAP:0x80051000
+
+; BETA-6 Release Addresses
+;;SYStem.CONFIG COREBASE          DAP:0x800D0000
+;;SYStem.CONFIG.CTIBASE	       DAP:0x800D8000
+
+SYStem.CONFIG CTICONFIG        ARMV8v1
+SYStem.config AXIACCESSPORT 0
+SYStem.config MEMORYACCESSPORT 0
+SYStem.config DEBUGACCESSPORT 1
+
+ETM.OFF
+;sys.up
+sys.attach
+;system.mode attach
+;break
+
+autostore , history
+ENDDO
+

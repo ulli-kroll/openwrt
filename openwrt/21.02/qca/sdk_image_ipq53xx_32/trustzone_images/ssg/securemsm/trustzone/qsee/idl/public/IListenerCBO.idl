@@ -1,0 +1,28 @@
+// Copyright (c) 2018 Qualcomm Technologies, Inc.  All Rights Reserved.
+// Qualcomm Technologies Proprietary and Confidential.
+
+/**
+ * Interface implemented by callback object listeners.
+ */
+ /** @cond */
+interface IListenerCBO {
+/** @endcond */
+
+  /**
+   * @addtogroup IListenerCBO
+   * @{
+   */
+
+   /**
+     Used to invoke the callback object of a CBO-style listener,
+     instructing it to inspect its associated shared memory object
+     and perform the specified service.
+
+     @return
+     Object_OK on success.
+    */
+   method request ();
+
+   /* @} */ /* end_addtogroup IListenerCBO */
+};
+

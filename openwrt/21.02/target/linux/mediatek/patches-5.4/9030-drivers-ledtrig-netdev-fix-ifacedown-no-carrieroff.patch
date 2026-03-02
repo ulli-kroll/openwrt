@@ -1,0 +1,12 @@
+--- a/drivers/leds/trigger/ledtrig-netdev.c
++++ b/drivers/leds/trigger/ledtrig-netdev.c
+@@ -133,7 +133,8 @@ static ssize_t device_name_store(struct
+ 
+ 	clear_bit(NETDEV_LED_MODE_LINKUP, &trigger_data->mode);
+ 	if (trigger_data->net_dev != NULL)
+-		if (netif_carrier_ok(trigger_data->net_dev))
++		//if (netif_carrier_ok(trigger_data->net_dev))
++		if ((dev_get_flags(trigger_data->net_dev) & IFF_LOWER_UP) != 0)
+ 			set_bit(NETDEV_LED_MODE_LINKUP, &trigger_data->mode);
+ 
+ 	trigger_data->last_activity = 0;

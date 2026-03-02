@@ -1,0 +1,40 @@
+#===============================================================================
+#
+# QUP Access Control Settings API Registration
+#
+# GENERAL DESCRIPTION
+#    QUP Access Control Settings API Registration
+#
+# Copyright (c) 2017-2019 by Qualcomm Technologies, Incorporated.
+# All Rights Reserved.
+# QUALCOMM Proprietary/GTDR
+#
+#-------------------------------------------------------------------------------
+#                      EDIT HISTORY FOR FILE
+#
+#  This section contains comments describing changes made to the module.
+#  Notice that changes are listed in reverse chronological order.
+#
+# when       who     what, where, why
+# --------   ---     ---------------------------------------------------------
+# 01/30/19   dpk     Updated the rule to identify the targets and its families.
+# 10/08/18   DPK     Added stubs to support un-ported targets.
+# 05/12/17   MJS     Initial version.
+#
+#===============================================================================
+
+Import('env')
+
+#--------------------------------------------------------------------------- #
+# Search for additional APIs                                                 #
+#--------------------------------------------------------------------------- #
+#env.LoadAPIUnits()
+if env['TARGET_FAMILY'] in ['bear']:
+   env.LoadAPIUnits(dir_patterns='../blsp/xpuv2/build')
+elif env['TARGET_FAMILY'] in ['hoya', 'bruin']:
+   if any([env['CHIPSET'].startswith(prefix) for prefix in ['sdx', 'mdm']]):
+      env.LoadAPIUnits(dir_patterns='../blsp/xpuv3/build')
+   else:
+      env.LoadAPIUnits(dir_patterns='../qupv3/build')
+else:
+   env.LoadAPIUnits(dir_patterns='../qupv3/build')

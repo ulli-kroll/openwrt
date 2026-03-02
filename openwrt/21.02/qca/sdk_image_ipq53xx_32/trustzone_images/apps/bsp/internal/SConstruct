@@ -1,0 +1,73 @@
+# Copyright 2018 by QUALCOMM Technologies, Incorporated.
+# All Rights Reserved.
+# QUALCOMM Proprietary/GTDR
+
+import os
+import random
+import time
+import getpass
+import platform
+import sys
+
+
+def dummy(*args, **kwargs):
+  pass
+
+code_base = Dir('.').abspath
+BUILD_ROOT = os.path.abspath(os.path.join(code_base,'..','..','..'))
+TARGET_ROOT = os.path.abspath(os.path.join( code_base,'..','..','..','..'))
+try:
+  #This is not a standalone build using the SDK
+  Import('env')
+  env.Replace(STANDALONE_SDK = False)
+except:
+  env = DefaultEnvironment(ENV = os.environ, tools = ['mingw','textfile'])
+  env.Replace(STANDALONE_SDK = True)
+
+env.Replace(SECTOOLS_BUILDER_VERBOSITY = 'z')
+env.Decider('MD5-timestamp')
+
+if ARGUMENTS.get('deterministic',0) == 1:
+  env.Replace(BUILD_TIMESTAMP = "Wed Dec 31 16:00:00 1969")
+  env.Replace(BUILD_USER_NAME = "deterministic user name")
+  env.Replace(BUILD_MACHINE_NAME = "deterministic machine name")
+else:
+  env.Replace(BUILD_TIMESTAMP = time.ctime())
+  env.Replace(BUILD_USER_NAME = getpass.getuser())
+  env.Replace(BUILD_MACHINE_NAME = platform.node())
+
+
+if not env['STANDALONE_SDK']:
+  env.Replace(BUILD_ROOT = BUILD_ROOT)
+  env.Replace(TARGET_ROOT = TARGET_ROOT)
+  env.Tool('ssg_environment', toolpath = ['$BUILD_ROOT/ssg/bsp/build/scripts'])
+  env.Tool('deploy_builder', toolpath = ['$BUILD_ROOT/build/ms'])
+  env.Tool('qcscons_replacement', toolpath= ['$BUILD_ROOT/apps/bsp/build/scripts/'])
+  env.Deploy('SConstruct')
+  env.Deploy(env.Glob('${BUILD_ROOT}/apps/bsp/build/scripts'))
+  env.Deploy('${BUILD_ROOT}/apps/bsp/trustzone/build/entry.sconscript')
+  env.Deploy('${BUILD_ROOT}/apps/bsp/trustzone/build/apps_config.py')
+  env.Tool('idlcompiler',toolpath=['${BUILD_ROOT}/ssg/bsp/build/scripts'])
+else:
+  #this file will be located at the sdk root
+  env.Replace(SDK_ROOT=code_base)
+  env.Replace(BUILD_ROOT=os.path.join(env['SDK_ROOT'],'build'))
+  env = env.Clone()
+  #Load the Tools and methods
+  env.Tool('ssg_environment', toolpath = ['${SDK_ROOT}/scripts'])
+  #TODO: do we need to deploy in an sdk build?
+  env.Tool('deploy_builder',  toolpath = ['${SDK_ROOT}/scripts'])
+  env.Tool('qcscons_replacement', toolpath= ['${SDK_ROOT}/scripts'])
+
+  env.Tool('idlcompiler',toolpath=['${SDK_ROOT}/scripts'])
+
+
+
+env.Append(IDLINCPATH='${BUILD_ROOT}/ssg/securemsm/trustzone/qsee/idl/public')
+if env.StandaloneSdk():
+  env.RunMinkidl()
+
+env.SConscript('${BUILD_ROOT}/apps/bsp/trustzone/build/entry.sconscript',exports='env')
+if env.StandaloneSdk():
+  #env.SConscript('${BUILD_ROOT}/ssg/bsp/trustzone/build/SConscript',exports='env')
+  env.SConscript('${BUILD_ROOT}/ssg/bsp/sdk/CA/build/SConscript',exports='env')

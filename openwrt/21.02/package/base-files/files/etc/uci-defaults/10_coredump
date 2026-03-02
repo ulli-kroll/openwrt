@@ -1,0 +1,5 @@
+#!/bin/sh
+
+rom_version=$(awk '{if (NR == 1){print $1}}' /etc/rom_version)
+sed -i "/core_pattern/s/%e.%t.%p.%s.core/coredump\/%e.%t.%p.%s.${rom_version:0:32}.core/g" /etc/sysctl.conf
+exit 0

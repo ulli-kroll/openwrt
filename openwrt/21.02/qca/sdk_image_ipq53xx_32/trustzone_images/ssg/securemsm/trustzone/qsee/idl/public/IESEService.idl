@@ -1,0 +1,113 @@
+// Copyright (c) 2015 - 2017 Qualcomm Technologies, Inc.  All Rights Reserved.
+// Qualcomm Technologies Proprietary and Confidential.
+
+/** @cond */
+interface IESEService
+{
+/** @endcond */
+
+  /**
+   * @addtogroup IESEService
+   * @{
+   */
+
+  /** @cond */
+  //--------------------------------------------------------
+  //  IESEService error/status codes
+  //--------------------------------------------------------
+  error STATUS_ERROR_BAD_STATE;           /**< QCOM: Tried to resume a blocked API when it was not in a pending state */
+  error STATUS_ERROR_BAD_PARAMETERS;      /**< Bad arguments supplied to the API call */
+  error STATUS_ERROR_ITEM_NOT_FOUND;      /**< Handle supplied cannot be found */
+  error STATUS_ERROR_OUT_OF_MEMORY;       /**< Out of memory when creating new handles */
+  error STATUS_ERROR_COMMUNICATION;       /**< Problems with SPI communication */
+  error STATUS_ERROR_SHORT_BUFFER;        /**< Read buffer supplied not big enough for message received */
+  error STATUS_ERROR_ACCESS_CONFLICT;     /**< Multiple clients trying to access same resource */
+  error STATUS_ERROR_ACCESS_DENIED;       /**< Access Control Enforcer: no APDU access allowed */
+  error STATUS_ERROR_TIMEOUT;             /**< Timeout waiting for a response from Secure Element */
+  error STATUS_WTX;                       /**< Secure Element Send Waiting Time Extension */
+  error STATUS_GENERIC;                   /**< Must always be last */
+
+  //--------------------------------------------------------
+  //  IESEService T=1 transmission protocol block types
+  //--------------------------------------------------------
+  const uint8 FRAME_TYPE_I     = 0x00; /**< Information block (I-block) */
+  const uint8 FRAME_TYPE_R     = 0x80; /**< Receive Ready block (R-Block) */
+  const uint8 FRAME_TYPE_S     = 0xC0; /**< Supervisory block (S-block) */
+  /** @endcond */
+
+  /**
+    Performs Secure Element Access Control (SEAC) based on Application Identifier.
+
+    @param[in] aid    Applet Application Identifier.
+    @param[in] apdu   APDU where SEAC filtering should be applied. \n
+                      NULL means no APDU filtering should be applied.
+
+    @return
+    Object_OK on success; otherwise access denied.
+  */
+  method seac(in buffer aid, in buffer apdu);
+
+  /**
+    Writes to slave data on the logical connection handle.
+
+    @param[in] capdu  Write buffer information.
+
+    @return
+    Object_OK on success.
+  */
+  method write(in buffer capdu);
+
+  /**
+    Reads from slave data on the logical connection handle.
+
+    @param[out] rapdu         Reads buffer information.
+
+    @return
+    Object_OK on success.
+  */
+  method read(out buffer rapdu);
+
+  /**
+    Gets the value of the OEM Configuration, given the identifier.
+
+    @param[in]  id     Unique identifier for Secure Element property.
+    @param[out] value  Property value.
+
+    @return
+    Object_OK on success.
+  */
+  method getOemProperty(in uint32 id, out uint32 value);
+
+  /**
+    Sends a command to the Embedded Secure Element (ESE).
+
+    Similar to write function but allows user to specify type and result pointer.
+
+    @param[in]  type   Identifies frame as I/R/S-Block.
+    @param[in]  capdu  Write buffer information.
+    @param[out] result eseservice error/status.
+
+    @return
+    Object_OK on success.
+
+    @see
+  */
+  method send(in uint8 type, in buffer capdu, out int32 result);
+
+  /**
+    Receives response from the embedded secured element.
+
+    Similar to the read() method but allows user to specify the result pointer
+    so that the response buffer may have content even when there is no complete
+    read yet, e.g., when result contains a WTX indication.
+
+    @param[out] rapdu  Read buffer information.
+    @param[out] result eseservice error/status.
+
+    @return
+    Object_OK on success.
+  */
+  method receive(out buffer rapdu, out int32 result);
+
+  /** @} */ /* end_addtogroup IESEService */
+};

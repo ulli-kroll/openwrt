@@ -1,0 +1,84 @@
+#!/bin/sh
+
+. /lib/functions/system.sh
+
+board=$(system_board_name)
+
+case "$board" in
+*)
+	uci -q get network.guest || {
+		uci set network.guest=interface
+		uci set network.guest.proto='static'
+		uci set network.guest.netmask='255.255.255.0'
+		uci set network.guest.ifname='br-lan.8'
+		uci set network.guest.disabled='1'
+
+		uci set dhcp.guest='dhcp'
+		uci set dhcp.guest.start='100'
+		uci set dhcp.guest.leasetime='12h'
+		uci set dhcp.guest.limit='150'
+		uci set dhcp.guest.interface='guest'
+		uci set dhcp.guest.force='1'
+
+		uci add firewall zone
+		uci set firewall.@zone[-1].name='guest'
+		uci set firewall.@zone[-1].input='REJECT'
+		uci set firewall.@zone[-1].output='ACCEPT'
+		uci set firewall.@zone[-1].forward='REJECT'
+		uci set firewall.@zone[-1].network='guest'
+
+		uci add firewall forwarding
+		uci set firewall.@forwarding[-1].dest='wan'
+		uci set firewall.@forwarding[-1].src='guest'
+
+		uci add firewall rule
+		uci set firewall.@rule[-1].src='guest'
+		uci set firewall.@rule[-1].proto='udp'
+		uci set firewall.@rule[-1].dest_port='67'
+		uci set firewall.@rule[-1].target='ACCEPT'
+		uci set firewall.@rule[-1].family='ipv4'
+
+		uci add firewall rule
+		uci set firewall.@rule[-1].src='guest'
+		uci set firewall.@rule[-1].proto='tcp udp'
+		uci set firewall.@rule[-1].dest_port='53'
+		uci set firewall.@rule[-1].target='ACCEPT'
+		uci set firewall.@rule[-1].family='ipv4'
+
+		uci add firewall rule
+		uci set firewall.@rule[-1].src='guest'
+		uci set firewall.@rule[-1].proto='tcp'
+		uci set firewall.@rule[-1].dest_port='80 443'
+		uci set firewall.@rule[-1].target='REJECT'
+		uci set firewall.@rule[-1].family='ipv4'
+
+		uci add firewall rule
+		uci set firewall.@rule[-1].src='guest'
+		uci set firewall.@rule[-1].proto='all'
+		uci set firewall.@rule[-1].dest='lan'
+		uci set firewall.@rule[-1].target='DROP'
+	}
+	;;
+esac
+
+[ x"$(uci -q get wireless.wlan02.network)" == x"guest" ] && {
+	[ x"$(uci -q get wireless.wlan12.network)" == x"guest" ] && {
+		uci set wireless.wlan12.network='lan'
+	}
+
+	uci set wireless.wlan02.network='lan'
+	uci commit wireless
+
+	uci delete network.guest.type
+	uci set network.guest.ifname='br-lan.8'
+	uci commit network
+}
+
+[ x"$(uci -q get firewall.@rule[14].name)" == x"Allow-Ping-Guest" ] && {
+	uci delete firewall.@rule[14]
+}
+
+uci commit network
+uci commit dhcp
+uci commit firewall
+exit 0

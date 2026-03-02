@@ -1,0 +1,16 @@
+// Copyright (c) 2022 Qualcomm Technologies, Inc. All Rights Reserved.
+// Qualcomm Technologies Proprietary and Confidential.
+
+/**
+* @addtogroup CHWKeyFactory
+* @{
+  Class CHWKeyFactory implements \link IHWKeyFactory \endlink interface.
+
+  The class ID `HWKeyFactory` is included in the default privilege set, therefore the
+  CHWKeyFactory class is available to every TA.
+
+*/
+
+const uint32 CHWKeyFactory_UID = 301;
+
+/** @} */

@@ -1,0 +1,88 @@
+//  Copyright (c) 2015, 2017, 2019 Qualcomm Technologies, Inc.  All Rights Reserved.
+//  Qualcomm Technologies Proprietary and Confidential.
+
+/** @cond */
+interface ISharedBuffer {
+/** @endcond */
+
+  /**
+   * @addtogroup ISharedBuffer
+   * @{
+   */
+
+  /** @cond */
+  /**
+   * Buffer passed for register shared buffer is not in whitelist entry.
+   */
+  error ERROR_WHITELIST_VAL_FAILED;
+  /** @endcond */
+
+  /**
+    Deregisters the shared buffer with QTEE for trusted applications.
+
+    @param[in] start Buffer reference, must match registered buffer.
+    @param[in] size  Buffer size.
+
+    @return Object_OK -- Success. \n
+            Object_ERROR -- Failure.
+   */
+  method registerSharedBuffer(in uint64 start, in uint64 size);
+
+  /**
+    Deregisters the shared buffer previously registered with QTEE for trusted applications.
+
+    @param[in] start Buffer reference, must match registered buffer.
+    @param[in] size  Buffer size (deprecated).
+
+    @return Object_OK -- Success. \n
+            Object_ERROR -- Failure.
+   */
+  method deregisterSharedBuffer(in uint64 start, in uint64 size);
+
+  /**
+    - Flushes cachelines for the shared memory buffer.
+    - Must be called prior to passing buffer contents to consumer.
+
+    @param[in] start Buffer reference, must match registered buffer.
+
+    @return Object_OK -- Success. \n
+            Object_ERROR -- Failure.
+   */
+  method flushCache(in uint64 start);
+
+  /**
+    - Invalidates cachelines for the shared memory buffer.
+    - Must be called prior to accessing memory region.
+
+    @param[in] start Buffer reference, must match registered buffer.
+
+    @return Object_OK -- Success. \n
+            Object_ERROR -- Failure.
+   */
+  method invalidateCache(in uint64 start);
+
+  /**
+    Memory maps the OEM Imem buffer with QTEE for trusted applications.
+
+    @param[out] start Pointer for OEM Buffer Base address
+    @param[out] size  OEM Buffer size.
+
+    @return Object_OK -- Success. \n
+            Object_ERROR -- Failure.
+   */
+  method mapOEMImemBuffer(out uint64 start, out uint32 size);
+
+  /**
+    Unmap the OEM Imem buffer previously registered with QTEE for trusted applications.
+
+    @param[in] start Buffer reference, must match registered buffer.
+    @param[in] size  Buffer size (deprecated).
+
+    @return Object_OK -- Success. \n
+            Object_ERROR -- Failure.
+   */
+  method unmapOEMImemBuffer(in uint64 start, in uint32 size);
+
+
+  /** @} */ /* end_addtogroup ISharedBUffer */
+};

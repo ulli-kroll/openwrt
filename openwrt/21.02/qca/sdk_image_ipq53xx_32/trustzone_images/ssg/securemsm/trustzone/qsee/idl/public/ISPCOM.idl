@@ -1,0 +1,120 @@
+// Copyright (c) 2016 Qualcomm Technologies, Inc.  All Rights Reserved.
+// Qualcomm Technologies Proprietary and Confidential.
+
+/** @cond */
+interface ISPCOM
+{
+/** @endcond */
+
+  /**
+   * @addtogroup ISPCOM
+   * @{
+   */
+
+  /** @cond */
+  /**
+   * Maximum size (including null) for channel name.
+   */
+  const uint32 SPCOM_CHANNEL_NAME_SIZE = 32;
+
+  /**
+   * Request buffer size.
+   * Any large data (multiply of 4KB) is provided by temp buffer in DDR.
+   * Request shall provide the temp buffer physical address (align to 4KB).
+   * Maximum request/response size of 268 is used to accommodate APDU size.
+   */
+  const uint32 SPCOM_MAX_REQUEST_SIZE = 268;
+
+  /**
+   * Response buffer size.
+   * Any large data (multiply of 4KB) is provided by temp buffer in DDR.
+   * Response shall provide the temp buffer physical address (align to 4KB).
+   * Maximum request/response size of 268 is used to accommodate APDU size.
+   */
+  const uint32 SPCOM_MAX_RESPONSE_SIZE = 268;
+  /** @endcond */
+
+  /**
+    Registers client for communication channel.
+
+    @param[in]  chName     Channel name string.
+    @param[out] retHandle  Client handle.
+
+    @return
+    Object_OK on success. \n
+    Object_ERROR or negative value on failure.
+  */
+  method register_client( in buffer chName,
+                          out uint64 retHandle );
+
+  /**
+    Unregisters client for communication channel.
+
+    @param[in] handle  Client handle.
+
+    @return
+    Object_OK on success. \n
+    Object_ERROR or negative value on failure.
+  */
+  method unregister_client(in uint64 handle);
+
+  /**
+    Sends a request and receives a response.
+
+    @param[in]  handle        Client handle.
+    @param[in]  req_ptr       Request buffer.
+    @param[in]  req_size      Request buffer size.
+    @param[in]  resp_ptr      Response buffer.
+    @param[in]  resp_size     Response buffer size (max response size).
+    @param[in]  timeout_msec  Timeout in msec between command and response.\n
+                              0=no timeout.
+    @param[out] retRespSize   Actual response size.
+
+    @return
+    Object_OK on success. \n
+    Object_ERROR or negative value on failure.
+  */
+  method client_send_message_sync(in uint64 handle,
+                                  in buffer req_ptr,
+                                  in uint32 req_size,
+                                  in buffer resp_ptr,
+                                  in uint32 resp_size,
+                                  in uint32 timeout_msec,
+                                  out uint32 retRespSize);
+
+  /**
+    - Checks if remote server is connected.
+    - Checks that logical channel is fully connected between the TZ client and SP server.
+
+    @param[in]  handle        Client handle.
+    @param[out] is_connected  Boolean value indicates whether channel is connected.
+
+    @return
+    Object_OK on success. \n
+    Object_ERROR or negative value on failure.
+  */
+  method client_is_server_connected(in uint64 handle,
+                                    out uint32 is_connected);
+
+  /**
+    Check if SPSS link is up.
+
+    @param[out] is_link_up  Boolean value indicates if link is up.
+
+    @return
+    Object_OK on success. \n
+    Object_ERROR or negative value on failure.
+  */
+  method is_sp_subsystem_link_up(out uint32 is_link_up);
+
+  /**
+    - Sends reset command to secure processor.
+    - Ask remote SP to reset itself. SP initiates a Watch-Dog-Bite.
+
+    @return
+    Object_OK on success. \n
+    Object_ERROR or negative value on failure.
+  */
+  method reset_sp_subsystem();
+  /* @} */ /* end_addtogroup ISPCOM */
+};

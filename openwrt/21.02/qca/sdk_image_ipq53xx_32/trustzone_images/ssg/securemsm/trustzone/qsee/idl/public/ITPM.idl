@@ -1,0 +1,49 @@
+// Copyright (c) 2017 Qualcomm Technologies, Inc. All Rights Reserved.
+// Qualcomm Technologies Proprietary and Confidential.
+
+//-------------------------------------------------------------------
+// Interface to send TPM commands to WinSecApp
+//------------------------------------------------------------------
+/** @cond */
+interface ITPM {
+/** @endcond */
+
+  /**
+   * @addtogroup ITPM
+   * @{
+   */
+
+  /** @cond */
+  const int32 MAX_REQ_BUFF_SIZE = 0x1000;   //4KB
+  const int32 MAX_RSP_BUFF_SIZE = 0x1000;   //4KB
+
+  const uint8 FLUSH_PENDING_TRUE = 1;
+  const uint8 FLUSH_PENDING_FALSE = 0;
+  /** @endcond */
+
+  /**
+    Sends TPM command to WinSecApp.
+
+    @param[in]  locality   Locality for the command (4 < locality < 32).
+    @param[in]  reqBuffer  Request buffer containing command.
+    @param[out] rspBuffer  Response buffer.
+
+    @return
+    Object_OK on success.
+  */
+  method SendTPMCommand(in uint8 locality, in buffer reqBuffer, out buffer rspBuffer);
+
+  /**
+    Returns status of NV Flush to storage.
+
+    @param[out] flushPending 1 if NV flush is pending. \n
+                             0 if NV has been flushed.
+
+    @return
+    Object_OK on success.
+  */
+  method CheckNVFlushState(out uint8 flushPending);
+  /* @} */ /* end_addtogroup ITPM */
+};
+
+

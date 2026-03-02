@@ -1,0 +1,53 @@
+#===============================================================================
+#
+# Biometric Library
+#
+# GENERAL DESCRIPTION
+#    build script
+#
+#===========================================================================
+#  Copyright (c) 2015, 2017 Qualcomm Technologies, Incorporated.
+# All Rights Reserved.
+#  Qualcomm Technologies Confidential and Proprietary
+#===========================================================================
+#
+#-------------------------------------------------------------------------------
+#
+#  $Header: //components/rel/ssg.tzw/1.2/securemsm/trustzone/qsapps/libs/biometric/build/SConscript#1 $
+#  $DateTime: 2020/11/02 23:12:26 $
+#  $Author: pwbldsvc $
+#  $Change: 27014951 $
+#                      EDIT HISTORY FOR FILE
+#
+# when       who     what, where, why
+# --------   ---     ---------------------------------------------------------
+# Jul/23/15  cb      Add lib to fidocrypto and sampleauth
+# Apr/15/15  el      Initial Implementation
+#===============================================================================
+Import('env')
+env = env.Clone()
+
+sources = [
+        '../src/biometric.c',
+        '../src/biometric_serializer.c',
+]
+
+includes = ['../inc',
+    "${BUILD_ROOT}/core/api/services",
+    "${BUILD_ROOT}/ssg/api/securemsm/trustzone/qsee",
+    "${BUILD_ROOT}/ssg/securemsm/trustzone/qsee/services/inc/",
+    "${BUILD_ROOT}/core/api/kernel/libstd/stringl/",]
+
+lib = env.SecureAppLibBuilder(includes, sources, 'biometric')
+
+
+env.Deploy([lib, 
+          'SConscript',
+          '../inc/biometric.h',
+          '../inc/biometric_interrupt.h',
+          '../inc/biometric_result.h', 
+          ]
+        )
+env.DeploySdkLib(lib)
+
+Return('lib')

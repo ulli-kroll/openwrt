@@ -1,0 +1,17 @@
+// Copyright (c) 2015 Qualcomm Technologies, Inc.  All Rights Reserved.
+// Qualcomm Technologies Proprietary and Confidential.
+
+/**
+* @addtogroup CPrngSource
+* @{
+  Class CPrngSource implements \link ISource \endlink interface.
+  
+  The class ID `PrngSource` is included in the default privilege set, therefore the 
+  CPrngSource class is available to every TA.
+*/
+
+// This class provides a stream of pseudo-random data.
+
+const uint32 CPrngSource_UID = 17;
+
+/** @} */

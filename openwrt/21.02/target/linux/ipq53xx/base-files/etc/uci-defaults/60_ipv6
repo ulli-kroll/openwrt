@@ -1,0 +1,44 @@
+#!/bin/sh
+#
+
+ipv6=$(uci -q get network.lan.ipv6)
+[ x"$ipv6" == x"1" ] && {
+	ip6type=$(uci -q get network.lan.ip6type)
+	[ -n "$ip6type" ] || {
+		uci set network.lan.ip6type='dhcp'
+		uci commit network
+	}
+	[ x"$ip6type" == x"464xlat" ] || {
+		uci set network.wan6.iface_464xlat='0'
+		uci commit network
+	}
+}
+
+def_ifname=$(uci -q get network.wan.def_ifname)
+[ -n "$def_ifname" ] && {
+	uci set network.wan6.ifname="$def_ifname"
+	uci commit network
+}
+
+[ x"$(uci -q get network.lan.ip6type)" == x"relay" ] && {
+	uci batch <<-EOF
+		set dhcp.wan6.ndproxy_routing='0'
+		commit dhcp
+	EOF
+	[ -n "$(uci -q get dhcp.4g6)" ] && {
+		uci batch <<-EOF
+			set dhcp.4g6.ndproxy_routing='0'
+			commit dhcp
+		EOF
+	}
+}
+
+uci batch <<-EOF
+	set pingcheck.wan6=interface
+	set pingcheck.wan6.name='wan6'
+	set pingcheck.wan6.host='@dns6'
+	set pingcheck.wan6.protocol='nslookup'
+	commit pingcheck
+EOF
+
+exit 0

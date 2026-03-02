@@ -1,0 +1,104 @@
+#!/bin/sh /etc/rc.common
+#
+# Copyright (c) 2022-2023 Qualcomm Technologies, Inc.
+# All Rights Reserved.
+# Confidential and Proprietary - Qualcomm Technologies, Inc.
+#
+[ -e /lib/wifi/wifi-utils.sh ] && . /lib/wifi/wifi-utils.sh
+
+START=00
+
+boot_cnss2() {
+	local cnss2_args=""
+	local cnssdaemon_log_file=""
+	local cnssd_args=""
+
+	for arg in $(cat /proc/cmdline); do
+		case "$arg" in
+			cnss2*)
+				arg="$(echo $arg | awk -F '.' '{print$2}')"
+				cnss2_args="$cnss2_args $arg"
+				;;
+		esac
+	done
+
+	echo "Loading cnss2: $cnss2_args" > /dev/console
+	insmod ipq_cnss2 "$cnss2_args"
+
+	if [ ! -z "$cnssdaemon_log_file" ];then
+		cnssd_args=" -dddd -f $cnssdaemon_log_file"
+	else
+		cnssd_args=" -s"
+	fi
+
+	/usr/bin/cnssdaemon $cnssd_args &
+}
+
+start_service() {
+	local cnss2_args=""
+	local cnssdaemon_log_file=""
+	local cnssd_args=""
+	local KO_PATH=""
+	local BOOT_KPI_NODE=/sys/kernel/boot_kpi/kpi_values
+
+	for arg in $(cat /proc/cmdline); do
+		case "$arg" in
+			cnss2*)
+				arg="$(echo $arg | awk -F '.' '{print$2}')"
+				cnss2_args="$cnss2_args $arg"
+				;;
+		esac
+	done
+
+	echo "Loading cnss2: $cnss2_args" > /dev/console
+	# Set board_name for the target
+	if [ ! -d /tmp/sysinfo ]; then
+		mkdir -p /tmp/sysinfo
+	fi
+
+	if [ ! -f /tmp/sysinfo/model ] || [ $(grep -c "V2" /tmp/sysinfo/model) = 0 ]; then
+		echo "ap-sdxpinn-qcn9224-V1" > /tmp/sysinfo/sdk_board_name
+	else
+		echo "ap-sdxpinn-qcn9224-V2" > /tmp/sysinfo/sdk_board_name
+	fi
+
+	echo -n "M - QCA cnss2 module load" >> $BOOT_KPI_NODE
+	KO_PATH="$(get_ap_sdxpinn_ko_path)"
+	insmod $KO_PATH/ipq_cnss2.ko log_level=4 enable_mlo_support=0 "$cnss2_args"
+	if [ ! -z "$cnssdaemon_log_file" ];then
+		cnssd_args=" -dddd -f $cnssdaemon_log_file"
+	else
+		cnssd_args=" -s"
+	fi
+
+	procd_open_instance $SVC_NAME
+	procd_set_param command /usr/bin/cnssdaemon $cnssd_args
+	procd_set_param stdout 1
+	procd_set_param stderr 1
+
+	[ -x /sbin/ujail -a -e /etc/capabilities/cnss-daemon.json ] && {
+		if [ ! -d /var/run/cnss ]; then
+			mkdir -p /var/run/cnss
+			chmod 777 /var/run/cnss
+			chmod 777 /data/vendor/wifi
+		fi
+		chown wifi:wifi /var/run/cnss
+		procd_add_jail $SVC_NAME
+		procd_set_param user wifi
+		procd_set_param group wifi
+		procd_set_param capabilities /etc/capabilities/cnss-daemon.json
+	}
+	procd_close_instance
+}
+
+if [ ! -f /sys/firmware/devicetree/base/model ] || [ $(grep -c "SDXPINN" /sys/firmware/devicetree/base/model) = 0 ]; then
+       boot() {
+               boot_cnss2
+       }
+else
+       SVC_NAME=load_cnss2
+       USE_PROCD=1
+       PROCD_DEBUG=1
+
+fi
+

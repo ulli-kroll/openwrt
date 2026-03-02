@@ -1,0 +1,66 @@
+
+/dts-v1/;
+
+/ {
+        description = "R65";
+        images {
+                u-boot {
+                        description = "u-boot image";
+                        data = /incbin/("./oem-uboot.mbn");
+                        type = "firmware";
+                        arch = "arm";
+                        compression = "none";
+                        hash@1 { algo = "crc32"; };
+				};
+                sbl1 {
+                        description = "sbl1 image";
+                        data = /incbin/("./xbl_nand.elf");
+                        type = "firmware";
+                        arch = "arm";
+                        compression = "none";
+                        hash@1 { algo = "crc32"; };
+				};
+                tz {
+                        description = "sbl1 image";
+                        data = /incbin/("./tz.mbn");
+                        type = "firmware";
+                        arch = "arm";
+                        compression = "none";
+                        hash@1 { algo = "crc32"; };
+				};
+                devcfg {
+                        description = "sbl1 image";
+                        data = /incbin/("./devcfg.mbn");
+                        type = "firmware";
+                        arch = "arm";
+                        compression = "none";
+                        hash@1 { algo = "crc32"; };
+				};
+                tme {
+                        description = "sbl1 image";
+                        data = /incbin/("./tmel-ipq53xx-patch.elf");
+                        type = "firmware";
+                        arch = "arm";
+                        compression = "none";
+                        hash@1 { algo = "crc32"; };
+				};
+                ddr-AP-MI01.6_512M16_DDR4 {
+                        description = "sbl1 image";
+                        data = /incbin/("./cdt-AP-MI01.6_256M16_DDR4.bin");
+                        type = "firmware";
+                        arch = "arm";
+                        compression = "none";
+                        hash@1 { algo = "crc32"; };
+				};
+				/* the node name ubi is used for uboot upgrade, do not change the name */
+                ubi {
+                        description = "ubi-root image";
+                        data = /incbin/("./openwrt-ipq53xx-ipq53xx_32-ubi-root.img");
+                        type = "firmware";
+                        arch = "arm";
+                        compression = "none";
+                        hash@1 { algo = "crc32"; };
+                };
+
+        };
+};

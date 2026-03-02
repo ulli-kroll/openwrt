@@ -1,0 +1,140 @@
+--- a/drivers/usb/serial/option.c
++++ b/drivers/usb/serial/option.c
+@@ -581,6 +581,8 @@ static void option_instat_callback(struc
+ #define OPPO_VENDOR_ID				0x22d9
+ #define OPPO_PRODUCT_R11			0x276c
+ 
++/* ucloudlink vendor id */
++#define UKL_VENDOR_ID				0x1782
+ 
+ /* Device flags */
+ 
+@@ -633,6 +635,9 @@ static const struct usb_device_id option
+ 	{ USB_DEVICE(QUANTA_VENDOR_ID, QUANTA_PRODUCT_GLE) },
+ 	{ USB_DEVICE(QUANTA_VENDOR_ID, 0xea42),
+ 	  .driver_info = RSVD(4) },
++	{ USB_DEVICE_AND_INTERFACE_INFO(0x2c7c,0x6004,0x0a,0x00,0xff) },
++	{ USB_DEVICE_AND_INTERFACE_INFO(0x2c7c,0x6004,0xff,0x00,0x00) },
++	{ USB_DEVICE_AND_INTERFACE_INFO(0x2c7c,0x6004,0x0a,0x00,0x00) },
+ 	{ USB_DEVICE_AND_INTERFACE_INFO(HUAWEI_VENDOR_ID, 0x1c05, USB_CLASS_COMM, 0x02, 0xff) },
+ 	{ USB_DEVICE_AND_INTERFACE_INFO(HUAWEI_VENDOR_ID, 0x1c1f, USB_CLASS_COMM, 0x02, 0xff) },
+ 	{ USB_DEVICE_AND_INTERFACE_INFO(HUAWEI_VENDOR_ID, 0x1c23, USB_CLASS_COMM, 0x02, 0xff) },
+@@ -1487,6 +1492,7 @@ static const struct usb_device_id option
+ 	  .driver_info = RSVD(4) },
+ 	{ USB_DEVICE_AND_INTERFACE_INFO(ZTE_VENDOR_ID, 0x0414, 0xff, 0xff, 0xff) },
+ 	{ USB_DEVICE_AND_INTERFACE_INFO(ZTE_VENDOR_ID, 0x0417, 0xff, 0xff, 0xff) },
++	{ USB_DEVICE_AND_INTERFACE_INFO(ZTE_VENDOR_ID, 0x0579, 0xff, 0xff, 0xff) },	
+ 	{ USB_DEVICE_INTERFACE_CLASS(ZTE_VENDOR_ID, 0x0601, 0xff) },	/* GosunCn ZTE WeLink ME3630 (RNDIS mode) */
+ 	{ USB_DEVICE_INTERFACE_CLASS(ZTE_VENDOR_ID, 0x0602, 0xff) },	/* GosunCn ZTE WeLink ME3630 (MBIM mode) */
+ 	{ USB_DEVICE_AND_INTERFACE_INFO(ZTE_VENDOR_ID, 0x1008, 0xff, 0xff, 0xff),
+@@ -1735,6 +1741,14 @@ static const struct usb_device_id option
+ 	{ USB_DEVICE_AND_INTERFACE_INFO(ZTE_VENDOR_ID, 0x0168, 0xff, 0xff, 0xff),
+ 	  .driver_info = RSVD(4) },
+ 	{ USB_DEVICE_AND_INTERFACE_INFO(ZTE_VENDOR_ID, 0x0170, 0xff, 0xff, 0xff) },
++	{ USB_DEVICE_AND_INTERFACE_INFO(ZTE_VENDOR_ID, 0x0532, 0xff, 0xff, 0xff) },
++	{ USB_DEVICE(0x1a8d,                           0x1032) },
++	{ USB_DEVICE(UKL_VENDOR_ID,                    0x4030) },
++	{ USB_DEVICE(UKL_VENDOR_ID,                    0x4034) },
++	{ USB_DEVICE(UKL_VENDOR_ID,                    0x5d24) },
++	{ USB_DEVICE(UKL_VENDOR_ID,                    0x5d21) },
++	{ USB_DEVICE_AND_INTERFACE_INFO(ZTE_VENDOR_ID, 0x0412, 0xff, 0xff, 0xff), /* Telewell TW-LTE 4G  7810*/ 
++	  .driver_info = RSVD(4) },
+ 	{ USB_DEVICE_AND_INTERFACE_INFO(ZTE_VENDOR_ID, 0x0176, 0xff, 0xff, 0xff),
+ 	  .driver_info = RSVD(3) },
+ 	{ USB_DEVICE_AND_INTERFACE_INFO(ZTE_VENDOR_ID, 0x0178, 0xff, 0xff, 0xff),
+@@ -1908,6 +1922,27 @@ static const struct usb_device_id option
+ 	{ USB_VENDOR_AND_INTERFACE_INFO(ZTE_VENDOR_ID, 0xff, 0x86, 0x10) },
+ 
+ 	{ USB_DEVICE(BENQ_VENDOR_ID, BENQ_PRODUCT_H10) },
++	{ USB_DEVICE(0x05c6,                      0x9025) },   //域格 9X07 模块
++	{ USB_DEVICE(0x05c6,                      0x9003) },
++	{ USB_DEVICE(0x05c6,                      0x9090) },
++	{ USB_DEVICE(0x05c6,                      0x9215) },
++	{ USB_DEVICE(0x05c6,                      0x9020) },
++	{ USB_DEVICE(0x2c7c,                      0x0125) },
++	{ USB_DEVICE(0x05c6,                      0x5042) },
++	{ USB_DEVICE(0x05c6,                      0x6001) },     //R1C 4G USB
++	{ USB_DEVICE(0x305a,                      0x1415) },     //高新兴GM510	
++	{ USB_DEVICE(0x05c6,                      0xf601) },
++	{ USB_DEVICE(0x2C7C,                      0x0191) }, /* Quectel EG91 */
++	{ USB_DEVICE(0x2C7C,                      0x0195) }, /* Quectel EG95 */
++	{ USB_DEVICE(0x2C7C,                      0x0435) }, /* Quectel AG35 */
++	{ USB_DEVICE(0x2C7C,                      0x0512) }, /* Quectel EG12/EG18 */
++	{ USB_DEVICE(0x2C7C,                      0x6026) }, /* Quectel EC200 */
++	{ USB_DEVICE(0x2C7C,                      0x6120) }, /* Quectel UC200 */
++	{ USB_DEVICE(0x2C7C,                      0x6005) }, /* Quectel EC200A */
++	{ USB_DEVICE(0x2C7C,                      0x030B) }, /* Quectel EG065K/EG060K */
++	{ USB_DEVICE(0x2c7c,                      0x0620) },
++	{ USB_DEVICE(0x2c7c,                      0x0800) },
++	{ USB_DEVICE(0x2C7C,                      0x0801) }, /* Quectel RG520/RM520/SG520 */
+ 	{ USB_DEVICE(DLINK_VENDOR_ID, DLINK_PRODUCT_DWM_652) },
+ 	{ USB_DEVICE(ALINK_VENDOR_ID, DLINK_PRODUCT_DWM_652_U5) }, /* Yes, ALINK_VENDOR_ID */
+ 	{ USB_DEVICE(ALINK_VENDOR_ID, DLINK_PRODUCT_DWM_652_U5A) },
+@@ -1919,6 +1954,7 @@ static const struct usb_device_id option
+ 	{ USB_DEVICE(TOSHIBA_VENDOR_ID, TOSHIBA_PRODUCT_G450) },
+ 	{ USB_DEVICE(TOSHIBA_VENDOR_ID, TOSHIBA_PRODUCT_HSDPA_MINICARD ) }, /* Toshiba 3G HSDPA == Novatel Expedite EU870D MiniCard */
+ 	{ USB_DEVICE(ALINK_VENDOR_ID, 0x9000) },
++	{ USB_DEVICE(ALCATEL_VENDOR_ID,0x192) },
+ 	{ USB_DEVICE(ALINK_VENDOR_ID, ALINK_PRODUCT_PH300) },
+ 	{ USB_DEVICE_AND_INTERFACE_INFO(ALINK_VENDOR_ID, ALINK_PRODUCT_3GU, 0xff, 0xff, 0xff) },
+ 	{ USB_DEVICE(ALINK_VENDOR_ID, SIMCOM_PRODUCT_SIM7100E),
+@@ -2031,6 +2067,11 @@ static const struct usb_device_id option
+ 	{ USB_DEVICE(OLIVETTI_VENDOR_ID, OLIVETTI_PRODUCT_OLICARD500),
+ 	  .driver_info = RSVD(4) },
+ 	{ USB_DEVICE(CELOT_VENDOR_ID, CELOT_PRODUCT_CT680M) }, /* CT-650 CDMA 450 1xEVDO modem */
++	{ USB_DEVICE(0x1c9e,0x9b05) }, /* LongShang 4G mini-pci */
++	{ USB_DEVICE(0x1c9e,0x9b3c) }, /* LongShang 4G mini-pci 9300C */
++	{ USB_DEVICE(0x1508,0x1001) }, //诺控�?x15
++	{ USB_DEVICE(0x2df3,0x9b3e) }, //LongShang 4G mini-pci 9507E
++	{ USB_DEVICE(UKL_VENDOR_ID, 0x5d22) },
+ 	{ USB_DEVICE_AND_INTERFACE_INFO(SAMSUNG_VENDOR_ID, SAMSUNG_PRODUCT_GT_B3730, USB_CLASS_CDC_DATA, 0x00, 0x00) }, /* Samsung GT-B3730 LTE USB modem.*/
+ 	{ USB_DEVICE(YUGA_VENDOR_ID, YUGA_PRODUCT_CEM600) },
+ 	{ USB_DEVICE(YUGA_VENDOR_ID, YUGA_PRODUCT_CEM610) },
+@@ -2211,6 +2252,9 @@ static struct usb_serial_driver option_1
+ #ifdef CONFIG_PM
+ 	.suspend           = usb_wwan_suspend,
+ 	.resume            = usb_wwan_resume,
++#if 1 //Added by Quectel
++	.reset_resume      = usb_wwan_resume,
++#endif
+ #endif
+ };
+
+--- a/drivers/usb/serial/usb_wwan.c
++++ b/drivers/usb/serial/usb_wwan.c
+@@ -481,6 +481,14 @@ static struct urb *usb_wwan_setup_urb(st
+ 	if (intfdata->use_zlp && dir == USB_DIR_OUT)
+ 		urb->transfer_flags |= URB_ZERO_PACKET;
+ 
++#if 1 //Added by Quectel for zero packet
++	if (dir == USB_DIR_OUT) {
++ 		struct usb_device_descriptor *desc = &serial->dev->descriptor;
++ 		if (desc->idVendor == cpu_to_le16(0x2C7C))
++ 		urb->transfer_flags |= URB_ZERO_PACKET;
++ 	}
++#endif
++
+ 	return urb;
+ }
+  
+--- a/drivers/net/usb/qmi_wwan.c
++++ b/drivers/net/usb/qmi_wwan.c
+@@ -1402,8 +1402,6 @@ static const struct usb_device_id produc
+ 	{QMI_GOBI_DEVICE(0x05c6, 0x9225)},	/* Sony Gobi 2000 Modem device (N0279, VU730) */
+ 	{QMI_GOBI_DEVICE(0x05c6, 0x9245)},	/* Samsung Gobi 2000 Modem device (VL176) */
+ 	{QMI_GOBI_DEVICE(0x03f0, 0x251d)},	/* HP Gobi 2000 Modem device (VP412) */
+-	{QMI_GOBI_DEVICE(0x05c6, 0x9215)},	/* Acer Gobi 2000 Modem device (VP413) */
+-	{QMI_FIXED_INTF(0x05c6, 0x9215, 4)},	/* Quectel EC20 Mini PCIe */
+ 	{QMI_GOBI_DEVICE(0x05c6, 0x9265)},	/* Asus Gobi 2000 Modem device (VR305) */
+ 	{QMI_GOBI_DEVICE(0x05c6, 0x9235)},	/* Top Global Gobi 2000 Modem device (VR306) */
+ 	{QMI_GOBI_DEVICE(0x05c6, 0x9275)},	/* iRex Technologies Gobi 2000 Modem device (VR307) */ 
+--- a/drivers/usb/serial/qcserial.c
++++ b/drivers/usb/serial/qcserial.c
+@@ -92,7 +92,6 @@
+ 	{USB_DEVICE(0x03f0, 0x241d)},	/* HP Gobi 2000 QDL device (VP412) */
+ 	{USB_DEVICE(0x03f0, 0x251d)},	/* HP Gobi 2000 Modem device (VP412) */
+ 	{USB_DEVICE(0x05c6, 0x9214)},	/* Acer Gobi 2000 QDL device (VP413) */
+-	{USB_DEVICE(0x05c6, 0x9215)},	/* Acer Gobi 2000 Modem device (VP413) */
+ 	{USB_DEVICE(0x05c6, 0x9264)},	/* Asus Gobi 2000 QDL device (VR305) */
+ 	{USB_DEVICE(0x05c6, 0x9265)},	/* Asus Gobi 2000 Modem device (VR305) */
+ 	{USB_DEVICE(0x05c6, 0x9234)},	/* Top Global Gobi 2000 QDL device (VR306) */

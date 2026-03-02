@@ -1,0 +1,6 @@
+config FEATURE_IPQ_PROVISION_SUPPORT
+        bool "Enables device provisioning in FTM"
+        default no
+        select PACKAGE_qti-mfg-provision
+        help
+                Enables Device provisioning in FTM

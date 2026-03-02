@@ -1,0 +1,18 @@
+// Copyright (c) 2015 Qualcomm Technologies, Inc.  All Rights Reserved.
+// Qualcomm Technologies Proprietary and Confidential.
+
+/**
+* @addtogroup CHmac
+* @{
+  Class CHmac implements \link IHmac \endlink interface.
+	
+  The class IDs `HmacSHA1`, `HmacSHA256`, `HmacSHA384` and `HmacSHA512` are included 
+  in the default privilege set, therefore the CHmac class is available to every TA. 
+*/
+
+const uint32 CHmacSHA1_UID = 41;
+const uint32 CHmacSHA256_UID = 42;
+const uint32 CHmacSHA384_UID = 60;
+const uint32 CHmacSHA512_UID = 61;
+
+/** @} */

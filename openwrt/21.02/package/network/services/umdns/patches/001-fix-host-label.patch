@@ -1,0 +1,46 @@
+--- a/util.c
++++ b/util.c
+@@ -28,6 +28,7 @@
+ 
+ #include <libubox/uloop.h>
+ #include <libubox/utils.h>
++#include <bdinfo.h>
+ 
+ #include "dns.h"
+ #include "util.h"
+@@ -63,16 +64,20 @@
+ 
+ void get_hostname(void)
+ {
++	char bdmac[BDINFO_LINE_BUF_LEN];
+ 	struct utsname utsname;
+ 
+ 	umdns_host_label[0] = 0;
+ 	mdns_hostname_local[0] = 0;
+ 
++	memset(bdmac, 0, sizeof(bdmac));
++	bdinfo_get_value("mac", bdmac);
++
+ 	if (uname(&utsname) < 0)
+ 		return;
+ 
+-	snprintf(umdns_host_label, sizeof(umdns_host_label), "%s", utsname.nodename);
+-	snprintf(mdns_hostname_local, sizeof(mdns_hostname_local), "%s.local", utsname.nodename);
++	snprintf(umdns_host_label, sizeof(umdns_host_label), "%s@%s", bdmac, utsname.nodename);
++	snprintf(mdns_hostname_local, sizeof(mdns_hostname_local), "%s@%s.local", bdmac, utsname.nodename);
+ }
+ 
+ time_t monotonic_time(void)
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -15,8 +15,9 @@
+ FIND_LIBRARY(ubus NAMES ubus)
+ FIND_LIBRARY(blobmsg_json NAMES blobmsg_json)
+ FIND_LIBRARY(json NAMES json json-c)
++FIND_LIBRARY(bdinfo NAMES bdinfo)
+ 
+-SET(LIBS ${ubox} ${ubus} ${blobmsg_json} ${json} resolv)
++SET(LIBS ${ubox} ${ubus} ${blobmsg_json} ${json} ${bdinfo} resolv)
+ 
+ IF(DEBUG)
+   ADD_DEFINITIONS(-DDEBUG -g3)

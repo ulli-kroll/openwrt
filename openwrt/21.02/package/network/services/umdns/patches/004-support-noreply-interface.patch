@@ -1,0 +1,136 @@
+--- a/dns.c
++++ b/dns.c
+@@ -148,6 +148,9 @@
+ 	int answer_len, rem;
+ 	int n_iov = 0;
+ 
++	if (iface->noreply)
++		return;
++
+ 	if (!dns_answer_cnt)
+ 		return;
+ 
+--- a/interface.c
++++ b/interface.c
+@@ -528,7 +528,7 @@
+ 	}
+ }
+ 
+-static struct interface* _interface_add(const char *name, int multicast, int v6)
++static struct interface* _interface_add(const char *name, int multicast, int v6, int noreply)
+ {
+ 	struct interface *iface;
+ 	char *name_buf;
+@@ -544,6 +544,7 @@
+ 	iface->ifindex = if_nametoindex(name);
+ 	iface->fd.fd = -1;
+ 	iface->multicast = multicast;
++	iface->noreply = noreply;
+ 	iface->v6 = v6;
+ 	if (v6)
+ 		iface->mcast_addr = MCAST_ADDR6;
+@@ -561,7 +562,7 @@
+ 	return NULL;
+ }
+ 
+-int interface_add(const char *name)
++int interface_add(const char *name, int noreply)
+ {
+ 	struct interface *v4 = NULL, *v6 = NULL, *unicast;
+ 	struct ifaddrs *ifap, *ifa;
+@@ -579,10 +580,10 @@
+ 			if (cfg_proto && (cfg_proto != 4))
+ 				continue;
+ 
+-			unicast = _interface_add(name, 0, 0);
++			unicast = _interface_add(name, 0, 0, noreply);
+ 			if (!unicast)
+ 				continue;
+-			v4 = _interface_add(name, 1, 0);
++			v4 = _interface_add(name, 1, 0, noreply);
+ 			if (!v4)
+ 				continue;
+ 
+@@ -612,10 +613,10 @@
+ 			if (memcmp(&sa6->sin6_addr, &ll_prefix, 2))
+ 				continue;
+ 
+-			unicast = _interface_add(name, 0, 1);
++			unicast = _interface_add(name, 0, 1, noreply);
+ 			if (!unicast)
+ 				continue;
+-			v6 = _interface_add(name, 1, 1);
++			v6 = _interface_add(name, 1, 1, noreply);
+ 			if (!v6)
+ 				continue;
+ 
+--- a/interface.h
++++ b/interface.h
+@@ -37,6 +37,7 @@
+ 	int v6;
+ 	int multicast;
+ 	int ifindex;
++	int noreply;
+ 
+ 	struct in_addr v4_addr;
+ 	struct in_addr v4_netmask;
+@@ -51,7 +52,7 @@
+ 	char *mcast_addr;
+ };
+ 
+-int interface_add(const char *name);
++int interface_add(const char *name, int noreply);
+ void interface_shutdown(void);
+ int interface_send_packet(struct interface *iface, struct sockaddr *to, struct iovec *iov, int iov_len);
+ struct interface* interface_get(const char *name, int v6, int multicast);
+--- a/main.c
++++ b/main.c
+@@ -66,7 +66,7 @@
+ 			debug++;
+ 			break;
+ 		case 'i':
+-			interface_add(optarg);
++			interface_add(optarg, 0);
+ 			break;
+ 		case '4':
+ 			cfg_proto = 4;
+diff -Naur a/ubus.c b/ubus.c
+--- a/ubus.c
++++ b/ubus.c
+@@ -119,12 +119,14 @@
+ enum {
+ 	CFG_INTERFACES,
+ 	CFG_KEEP,
++	CFG_NOREPLY,
+ 	CFG_MAX
+ };
+ 
+ static const struct blobmsg_policy config_policy[] = {
+ 	[CFG_INTERFACES]	= { "interfaces", BLOBMSG_TYPE_ARRAY },
+ 	[CFG_KEEP]		= { "keep", BLOBMSG_TYPE_BOOL },
++	[CFG_NOREPLY]	= { "noreply", BLOBMSG_TYPE_STRING },
+ };
+ 
+ static int
+@@ -134,6 +136,7 @@
+ {
+ 	struct blob_attr *data[CFG_MAX], *cur;
+ 	int rem, keep = false;
++	const char *noreply = NULL;
+ 
+ 	blobmsg_parse(config_policy, CFG_MAX, data, blob_data(msg), blob_len(msg));
+ 	if (!data[CFG_INTERFACES])
+@@ -148,8 +151,12 @@
+ 		ubus_notify(ctx, obj, "set_config", NULL, 1000);
+ 	}
+ 
++	if (data[CFG_NOREPLY]) {
++		noreply = blobmsg_get_string(data[CFG_NOREPLY]);
++	}
++
+ 	blobmsg_for_each_attr(cur, data[CFG_INTERFACES], rem)
+-		interface_add(blobmsg_data(cur));
++		interface_add(blobmsg_data(cur), noreply && !strcmp(blobmsg_data(cur), noreply)?1:0);
+ 
+ 	if (!keep)
+ 		vlist_flush(&interfaces);

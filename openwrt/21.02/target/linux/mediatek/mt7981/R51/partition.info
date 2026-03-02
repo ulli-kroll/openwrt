@@ -1,0 +1,14 @@
+n=6
+1	BL2			0x0		0x100000		bl2.img
+2	u-boot-env		0x100000		0x80000
+3	Factory			0x180000		0x200000
+4	bdinfo			0x380000		0x40000	factory.bin
+5	FIP			0x3C0000		0x200000		openwrt-mediatek-mt7981-R51-uboot-atf-mtk.bin
+6	ubi			0x5C0000		0x4000000	openwrt-mediatek-mt7981-R51-squashfs-factory.bin
+
+
+#第一列：序号
+#第二列：分区名
+#第三列：分区基地址
+#第四列：分区大小
+#第五列：分区文件；为空，表示该分区不需要烧进Flash文件

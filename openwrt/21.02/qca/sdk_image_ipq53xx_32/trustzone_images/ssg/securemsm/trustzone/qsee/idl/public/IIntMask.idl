@@ -1,0 +1,82 @@
+// Copyright (c) 2015 Qualcomm Technologies, Inc.  All Rights
+// Reserved.  Qualcomm Technologies Proprietary and Confidential.
+
+/** @cond */
+interface IIntMask {
+/** @endcond */
+
+  /**
+   * @addtogroup IIntMask
+   * @{
+   */
+
+  /** @cond */
+  /** Returned when unsupported bits are passed into mask
+      parameters. */
+  error ERROR_UNSUPPORTED_INTERRUPT_BIT;
+  /** Returned when an app tries to unmask IRQs for an atomic secure
+      service call. */
+  error ERROR_MAY_NOT_UNMASK_IRQ;
+
+  /**
+   * Supported values for the interrupt mask parameters
+   */
+  const uint32 FIQ            = 0x1;
+  const uint32 IRQ            = 0x2;
+  const uint32 SError         = 0x4;
+  const uint32 DebugException = 0x8;
+  /** @endcond */
+
+  /**
+    Modifies system behavior to prevent interrupts.
+
+    @param[out] restoreMask Bit mask (as FIQ, IRQ, SError, and
+                            DebugException) that may be passed to
+                            setIntMask() to restore system to state prior
+                            to calling this function.
+
+    @return Object_OK on success.
+   */
+  method disableAllInterrupts(out uint32 restoreMask);
+
+  /**
+    Modifies system behavior to allow interrupts.
+
+    @param[in] intMask Bit mask of different interrupt sources
+                       (IRQ, FIQ, SError, and DebugException) to
+                       disable. \n
+                       A value of 1 for each interrupt source masks
+                       that interrupt source. \n
+                       A value of zero for each interrupt source unmasks
+                       that interrupt source.
+
+    @return Object_OK on success.
+   */
+  method setIntMask(in uint32 intMask);
+
+  /**
+    Returns the current status of interrupt masking.
+
+    @param[out] intMask Bit mask that represents the current state of
+                        interrupt masking (as IRQ, FIQ, SError, and
+                        DebugException). \n
+                        A value of 1 for each interrupt source indicates
+                        masked interrupt source. \n
+                        A value of zero indicates interrupt source is
+                        not masked.
+
+    @return Object_OK on success.
+   */
+  method getIntMask(out uint32 intMask);
+
+  /**
+    Returns the interrupt bit used to mask secure interrupts.
+
+    @param[out] secIrq IIntMask_IRQ or IIntMask_FIQ.
+
+    @return Object_OK on success.
+   */
+  method getSecureIrq(out uint32 secIrq);
+
+  /** @} */ /* end_addtogroup IIntMask */
+};

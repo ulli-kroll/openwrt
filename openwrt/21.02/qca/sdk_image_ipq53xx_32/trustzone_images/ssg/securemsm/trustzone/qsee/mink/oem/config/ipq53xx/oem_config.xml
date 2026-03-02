@@ -1,0 +1,197 @@
+<driver name="NULL">
+  <global_def>
+        <var_seq name="pub_mod" type=DALPROP_DATA_TYPE_STRING>bb8af9a900b58d60528aca7dd1013c4836bc878e24e3bbaca92673c198c261cfaf6c1d200e019985efb0fa2e110fb977f0d1ab7173c6e1049d0379e89b59207a1f6be9efc1c7ce4dbac837f942326e82ee653ad3b4a2c10fe2e582da94f0ee43d29be0485d6c96dbcecb2047b16ab093241501a9cad6df38c59b4adab9a64579e4304491e561bf5ef65984e0ee08447152c1b758ba853103d91dad69e3d554a19d6de8e9d52520c19cc4f2dbeb431024c74d5c6f23ed3e82c2872fe83703a1be9e7155cff4d289f0d2694987a4987559a7d11b15405bd63ea6951dd321760edc41fca5908b04d09820d1535873ebdf4c516c09f4cd7c950183c609db38169f55
+        </var_seq>
+        <var_seq name="pub_exp" type=DALPROP_DATA_TYPE_STRING>10001
+        </var_seq>
+  </global_def>
+  <device id="/tz/oem">
+    <props name="OEM_keystore_enable_rpmb" type=DALPROP_ATTR_TYPE_UINT32>
+      1
+    </props>
+    <props name="OEM_keystore_wrong_passwd_penalty" type=DALPROP_ATTR_TYPE_UINT32>
+      2000
+    </props>
+    <props name="OEM_keystore_retain_wrong_passwd_attempt" type=DALPROP_ATTR_TYPE_UINT32>
+      1
+    </props>
+    <props name="OEM_counter_enable_rpmb" type=DALPROP_ATTR_TYPE_UINT32>
+      1
+    </props>
+
+    <!-- Note !!! The OEM_allow_rpmb_key_provision property is used for the below condition only: !!!
+      A customer wants to replace the storage part (eMMC/UFS), but since RPMB key provision fuse is blown,
+      RPMB auto production key provision wont happen for the new part.
+
+      The return TRUE value can override RPMB key provision fuse and let RPMB be provsioned with
+      the new storage part (1 = Re-provisioning allowed in XBL and HLOS, 2 = Re-provisioning allowed in XBL only)
+
+      This functions MUST always return FALSE for production devices.
+      Otherwise the security of the RPMB will be compromised  -->
+    <props name="OEM_allow_rpmb_key_provision" type=DALPROP_ATTR_TYPE_UINT32>
+      0
+    </props>
+    <props name="OEM_disable_rpmb_autoprovisioning" type=DALPROP_ATTR_TYPE_UINT32>
+      0
+    </props>
+    <props name="OEM_sec_wdog_bark_time" type="0x00000002">
+      6000
+    </props>
+    <props name="OEM_sec_wdog_bite_time" type=DALPROP_ATTR_TYPE_UINT32>
+      22000
+    </props>
+    <props name="OEM_reset_reason_list" type=DALPROP_ATTR_TYPE_STRUCT_PTR>
+      oem_rst_reason_list
+    </props>
+    <props name="OEM_l2_wa_enable" type="0x00000002">
+    1
+    </props>
+    <!-- Set TZ logging level --> 
+    <!-- Fatal : 0 -->
+    <!-- Error : 1 -->
+    <!-- Debug : 2 -->
+    <props name="OEM_tz_log_level" type=DALPROP_ATTR_TYPE_UINT32>
+      2
+    </props>	
+    <!-- RoT transfer: enable feature and provide pk_hash1/encryption key1 fuse data -->
+    <props name="OEM_rot_enable_transfer_APPS" type=DALPROP_ATTR_TYPE_UINT32>
+      0
+    </props>
+    <props name="OEM_rot_enable_transfer_MODEM" type=DALPROP_ATTR_TYPE_UINT32>
+      0
+    </props>
+    <props name="OEM_rot_pk_hash1_fuse_values" type=DALPROP_ATTR_TYPE_BYTE_SEQ>
+      0x00, end
+    </props>
+    <!-- RoT transfer: END-->
+
+    <!-- sec app load region information FIXME_60xx-->
+    <props name="OEM_pil_secure_app_load_region_size" type=DALPROP_ATTR_TYPE_UINT32>
+      0x0600000
+    </props>
+    <props name="OEM_pil_secure_app_load_region_start" type=DALPROP_ATTR_TYPE_UINT32>
+      0x49B00000
+    </props>
+    <!--FIXME_60xx -->
+    <props name="OEM_pil_subsys_load_region_start" type=DALPROP_ATTR_TYPE_UINT32>
+      0x40000000
+    </props>
+    <props name="OEM_pil_subsys_load_region_size" type=DALPROP_ATTR_TYPE_UINT32>
+      0x30000000
+    </props>
+    <props name="OEM_pil_enable_clear_pil_region" type=DALPROP_ATTR_TYPE_UINT32>
+      0
+    </props>
+
+    <!-- Mark 3rd party signed secure applications sandboxed by default -->
+    <props name="OEM_app_sandbox_default" type=DALPROP_ATTR_TYPE_UINT32>
+      1
+    </props>
+
+    <!-- MRC 2.0: provision to update activation/revocation list and enable/disable MRC list provisioning -->
+	<!-- Activation, revocation list updates are restricted to lower nibble(4 bits) of the data structure -->
+    <props name="OEM_MRC_activation_list" type=DALPROP_ATTR_TYPE_UINT32>
+      0
+    </props>
+    <props name="OEM_MRC_revocation_list" type=DALPROP_ATTR_TYPE_UINT32>
+      0
+    </props>
+    <!-- MRC 2.0: END-->
+
+    <!-- Enable TZ counter measure for hlos boot tampering -->
+    <props name="OEM_counter_measure_enable" type=DALPROP_ATTR_TYPE_UINT32>
+      1
+    </props>
+
+    <props name="OEM_pub_mod" type=DALPROP_ATTR_TYPE_STRING_PTR>
+      pub_mod
+    </props>
+    <props name="OEM_pub_exp" type=DALPROP_ATTR_TYPE_STRING_PTR>
+      pub_exp
+    </props>
+
+   <!-- providing the provision for OEMs to enable or disable encrypted Diag/QSEE log collection -->
+    <props name="OEM_log_encr_enable" type=DALPROP_ATTR_TYPE_UINT32>
+      0
+    </props>
+ 
+   <!-- Enable =1/Disable =0 TZ Crypto services support through SCM call-->
+    <props name="OEM_crypto_service_enable" type=DALPROP_ATTR_TYPE_UINT32>
+      0
+    </props>
+
+    <!-- Enable support for sysdbg flow when secureboot is enabled -->
+    <props name="OEM_enable_sdi_in_secboot" type=DALPROP_ATTR_TYPE_UINT32>
+    0x1
+    </props>
+
+    <!-- Enable =1/Disable =0 Rollback version upgrade controlled by Linux -->
+    <props name="OEM_rollback_ver_upgrade_hlos_ctrl_enable" type=DALPROP_ATTR_TYPE_UINT32>
+      0
+    </props>
+    
+  </device>
+
+  <device id="eseservice">
+    <!-- Embedded Secure Element information information -->
+    <props name="OEM_ese_spi_device_id" type=DALPROP_ATTR_TYPE_UINT32>
+      0x00  <!--The SPI device ID which maps on to the BLSP QUP core use -->
+    </props>
+    <props name="OEM_ese_spi_chip_select_id" type=DALPROP_ATTR_TYPE_UINT32>
+      0x00  <!--The Chip Select index (0 to 3) on with Secure Element is connected -->
+    </props>
+    <props name="OEM_ese_spi_max_frequency" type=DALPROP_ATTR_TYPE_UINT32>
+      960000<!-- SPI clock frequency as detailed in the Secure Element T=1 specification -->
+    </props>
+    <props name="OEM_ese_spi_bits_per_word" type=DALPROP_ATTR_TYPE_UINT32>
+      8     <!--The bits per word transmitted from/to the Interface device over SPI -->
+    </props>
+    <props name="OEM_ese_spi_nad_command" type=DALPROP_ATTR_TYPE_UINT32>
+      0x5A  <!-- NAD for commands to Secure Element. Should be changed to 0x00 for NQ220 -->
+    </props>
+    <props name="OEM_ese_spi_nad_response" type=DALPROP_ATTR_TYPE_UINT32>
+      0xA5  <!-- NAD for responses from the secure element -->
+    </props>
+    <props name="OEM_ese_feature_mask" type=DALPROP_ATTR_TYPE_UINT32>
+      <!-- 0x00000001 - Enable QSEE Secure Element Access Control  -->
+      <!-- 0x00000002 - Enable QSEE Secure Element Access Control APDU Filtering -->
+      <!-- 0x00000004 - Allow SELECT Command for GP TEE SE API TEE_SEChannelTransmit -->
+      <!-- 0x00000008 - Support for SPI Soft Reset of ESE -->
+      <!-- 0x00000010 - Support sending SPI end of APDU session command -->
+      <!-- 0x00000020 - Block access to Secure Element basic channel -->
+      <!-- 0x00000040 - Block access to Secure Element default applet -->
+      <!-- 0xFFFFFFFF - All features mask -->
+      0x00000000
+    </props>
+    <props name="OEM_ese_timers" type=DALPROP_ATTR_TYPE_UINT32>
+      <!-- 0x000007FF - Mask for Secure Element BWT - 1624ms maximum -->
+      <!-- 0x003FF000 - Mask for Secure Element Response polling time - default 50ms -->
+      0x00032658
+    </props>
+  </device>
+
+  <device id="wdog">
+    <!-- Start of TA Watchdog configuration -->
+    <!-- Watchdog flags: 0x00000001 - Enable in Full HLOS builds -->
+    <!--                 0x00000002 - Enable in UEFI-TZT builds  -->
+    <props name="OEM_wdog_flags"              type=DALPROP_ATTR_TYPE_UINT32>
+      0x00000000
+    </props>
+    <!-- Milliseconds allowed for TA thread resume to initial ACCEPT -->
+    <props name="OEM_wdog_ms_initial"         type=DALPROP_ATTR_TYPE_UINT32>
+      1500
+    </props>
+    <!-- Milliseconds allowed for TA thread to process incoming invocation -->
+    <!-- in a normal full HLOS build                                       -->
+    <props name="OEM_wdog_ms_accept_hlos"     type=DALPROP_ATTR_TYPE_UINT32>
+      60000
+    </props>
+    <!-- Milliseconds allowed for TA thread to process incoming invocation -->
+    <!-- in a UEFI-TZT build                                               -->
+    <props name="OEM_wdog_ms_accept_uefitzt"  type=DALPROP_ATTR_TYPE_UINT32>
+      120000
+    </props>
+    <!-- End of TA Watchdog configuration -->
+  </device>
+
+</driver>

@@ -1,0 +1,64 @@
+--- a/file.c
++++ b/file.c
+@@ -25,6 +25,7 @@
+ #define _DARWIN_C_SOURCE
+ #define _XOPEN_SOURCE 700
+ 
++#include <arpa/inet.h>
+ #include <sys/types.h>
+ #include <sys/dir.h>
+ #include <time.h>
+@@ -366,6 +367,43 @@ static void uh_file_response_405(struct
+ 	uh_http_header(cl, 405, "Method Not Allowed");
+ }
+ 
++static bool uh_file_response_404(struct client *cl, struct stat *s)
++{
++	int rem;
++	struct blob_attr *cur;
++	char *ptr, *url = NULL, *host = NULL;
++	char local_addr[INET6_ADDRSTRLEN];
++
++	inet_ntop(cl->srv_addr.family, &cl->srv_addr.in, local_addr, sizeof(local_addr));
++
++	blob_for_each_attr(cur, cl->hdr.head, rem) {
++		if (!strcmp(blobmsg_name(cur), "host"))
++			host = blobmsg_get_string(cur);
++
++		if (!strcmp(blobmsg_name(cur), "URL"))
++			url = blobmsg_get_string(cur);
++
++		if (url && host)
++			break;
++	}
++
++	if (!url || !host) {
++		return false;
++	}
++
++	if ((ptr = strchr(host, ']')) != NULL)
++		*(ptr+1) = 0;
++
++	cl->request.disable_chunked = true;
++	cl->request.connection_close = true;
++
++	uh_http_header(cl, 302, "Moved Temporarily");
++	ustream_printf(cl->us, "Location: http://%s/?url=http://%s%s\r\n\r\n", host, host, url);
++	uh_request_done(cl);
++
++	return true;
++}
++
+ static void uh_file_response_412(struct client *cl)
+ {
+ 	uh_http_header(cl, 412, "Precondition Failed");
+@@ -950,6 +988,9 @@ void uh_handle_request(struct client *cl
+ 			return;
+ 	}
+ 
++	if (uh_file_response_404(cl, NULL))
++		return;
++
+ 	escaped_url = uh_htmlescape(url);
+ 
+ 	uh_client_error(cl, 404, "Not Found", "The requested URL %s was not found on this server.",

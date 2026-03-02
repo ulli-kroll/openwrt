@@ -1,0 +1,108 @@
+diff --git a/src/ap/drv_callbacks.c b/src/ap/drv_callbacks.c
+index 5f8ffc297..501fbd081 100644
+--- a/src/ap/drv_callbacks.c
++++ b/src/ap/drv_callbacks.c
+@@ -901,6 +901,82 @@ fail:
+ 	return -1;
+ }
+ 
++void hostapd_notif_disassoc_sta(struct hostapd_data *hapd, struct sta_info *sta)
++{
++	ap_sta_set_authorized(hapd, sta, 0);
++	sta->flags &= ~(WLAN_STA_AUTH | WLAN_STA_ASSOC);
++	hostapd_set_sta_flags(hapd, sta);
++	wpa_auth_sm_event(sta->wpa_sm, WPA_DISASSOC);
++	sta->acct_terminate_cause = RADIUS_ACCT_TERMINATE_CAUSE_USER_REQUEST;
++	ieee802_1x_notify_port_enabled(sta->eapol_sm, 0);
++	ap_free_sta(hapd, sta);
++}
++
++static bool hostapd_ml_handle_notif_disassoc(struct hostapd_data *hapd,
++					     struct sta_info *sta)
++{
++#ifdef CONFIG_IEEE80211BE
++	struct hostapd_data *assoc_hapd, *tmp_hapd;
++	struct sta_info *assoc_sta;
++	unsigned int i, link_id;
++
++	if (!hostapd_is_mld_ap(hapd))
++		return false;
++
++	/*
++	 * Get the station on which the association was performed, as it holds
++	 * the information about all the other links.
++	 */
++	assoc_sta = hostapd_ml_get_assoc_sta(hapd, sta, &assoc_hapd);
++
++
++	for (link_id = 0; link_id < MAX_NUM_MLD_LINKS; link_id++) {
++		for (i = 0; i < assoc_hapd->iface->interfaces->count; i++) {
++			struct sta_info *tmp_sta;
++
++			if (!assoc_sta->mld_info.links[link_id].valid)
++				continue;
++
++			tmp_hapd =
++				assoc_hapd->iface->interfaces->iface[i]->bss[0];
++
++			if (!tmp_hapd->conf->mld_ap ||
++			    assoc_hapd->conf->mld_id != tmp_hapd->conf->mld_id)
++				continue;
++
++			for (tmp_sta = tmp_hapd->sta_list; tmp_sta;
++			     tmp_sta = tmp_sta->next) {
++				/*
++				 * Remove the station on which the association
++				 * was done only after all other link stations
++				 * are removed. Since there is only a single
++				 * station per struct hostapd_hapd with the
++				 * same association link simply break out from
++				 * the loop.
++				 */
++				if (tmp_sta == assoc_sta)
++					break;
++
++				if (tmp_sta->mld_assoc_link_id !=
++				    assoc_sta->mld_assoc_link_id ||
++				    tmp_sta->aid != assoc_sta->aid)
++					continue;
++
++				hostapd_notif_disassoc_sta(tmp_hapd, tmp_sta);
++				break;
++			}
++		}
++	}
++
++	/* Remove the station on which the association was performed. */
++	hostapd_notif_disassoc_sta(assoc_hapd, assoc_sta);
++
++	return true;
++#else
++	return false;
++#endif
++}
++
+ 
+ void hostapd_notif_disassoc(struct hostapd_data *hapd, const u8 *addr)
+ {
+@@ -930,13 +1006,10 @@ void hostapd_notif_disassoc(struct hostapd_data *hapd, const u8 *addr)
+ 		return;
+ 	}
+ 
+-	ap_sta_set_authorized(hapd, sta, 0);
+-	sta->flags &= ~(WLAN_STA_AUTH | WLAN_STA_ASSOC);
+-	hostapd_set_sta_flags(hapd, sta);
+-	wpa_auth_sm_event(sta->wpa_sm, WPA_DISASSOC);
+-	sta->acct_terminate_cause = RADIUS_ACCT_TERMINATE_CAUSE_USER_REQUEST;
+-	ieee802_1x_notify_port_enabled(sta->eapol_sm, 0);
+-	ap_free_sta(hapd, sta);
++	if (hostapd_ml_handle_notif_disassoc(hapd, sta))
++			return;
++
++	hostapd_notif_disassoc_sta(hapd, sta);
+ }
+ 
+ 
+-- 
+2.17.1
+

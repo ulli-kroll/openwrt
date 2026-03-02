@@ -1,0 +1,102 @@
+#!/bin/sh
+
+. /lib/functions.sh
+
+usage() {
+	cat <<EOF
+Usage: $0 [backup|restore|defaults]
+backup/restore/defaults configuration.
+EOF
+	exit 1
+}
+
+preset_buildtime() {
+	local backupfile
+	local backupinfo
+	local mtdblock=$(find_mtd_part backup)
+	if [ -n "$mtdblock" ]; then
+		cat "$mtdblock" > /tmp/backup.bin
+		backupfile="/tmp/backup.bin"
+	elif [ -f /etc/backup.bin ]; then
+		backupfile="/etc/backup.bin"
+	fi
+	[ -f "$backupfile" ] && {
+		backupinfo="$(crypt -d -i "$backupfile" -o /tmp/null)"
+		rm -rf /tmp/backup.bin
+	}
+	echo "$backupinfo"
+}
+
+preset_uci_defaults() {
+	. /lib/functions/system.sh
+
+	sed() { return 0; }
+	mv() { return 0; }
+
+	cp /rom/etc/uci-defaults/* /etc/uci-defaults/
+	cd /etc/uci-defaults || return 0
+	files="$(ls)"
+	[ -z "$files" ] && return 0
+	mkdir -p /tmp/.uci
+	for file in $files; do
+		( . "./$(basename $file)" ) && rm -f "$file"
+	done
+	uci commit
+	sync
+}
+
+preset_defaults() {
+	preset_uci_defaults
+	[ -f /etc/backup.bin ] && {
+		local mtdblock=$(find_mtd_part backup)
+		if [ -n "$mtdblock" ]; then
+			mtd write /etc/backup.bin backup
+		fi
+	}
+}
+
+preset_backup() {
+	local mtdblock=$(find_mtd_part backup)
+
+	rm -rf /etc/backup.bin
+	sysupgrade -b - | crypt -e -o /tmp/backup.bin
+	if [ -n "$mtdblock" ]; then
+		mtd write /tmp/backup.bin backup
+	fi
+	mv /tmp/backup.bin /etc/backup.bin
+	sync
+}
+
+preset_restore() {
+	local mtdblock=$(find_mtd_part backup)
+	if [ -n "$mtdblock" ]; then
+		cat "$mtdblock" > /tmp/backup.bin
+		crypt -d -i /tmp/backup.bin -o /tmp/backup.tar.gz
+		if [ "$?" -eq 0 ]; then
+			rm -rf /etc/config
+			sysupgrade -r /tmp/backup.tar.gz
+			preset_uci_defaults
+		else
+			/sbin/jffs2reset -y
+		fi
+	elif [ -f /etc/backup.bin ]; then
+		crypt -d -i /etc/backup.bin -o /tmp/backup.tar.gz
+		if [ "$?" -eq 0 ]; then
+			rm -rf /etc/config
+			sysupgrade -r /tmp/backup.tar.gz
+			preset_uci_defaults
+		else
+			/sbin/jffs2reset -y
+		fi
+	else
+		/sbin/jffs2reset -y
+	fi
+}
+
+case "$1" in
+	backup) preset_backup;;
+	restore) preset_restore;;
+	defaults) preset_defaults;;
+	buildtime) preset_buildtime;;
+	*) usage; exit 1;;
+esac

@@ -1,0 +1,124 @@
+#===============================================================================
+#
+# Architecture lib
+#
+# GENERAL DESCRIPTION
+#    build script
+#
+# Copyright (c) 2014,2017,2019 by Qualcomm Technologies, Inc.
+# All Rights Reserved.
+# QUALCOMM Proprietary/GTDR
+#
+#-------------------------------------------------------------------------------
+#
+#  $Header: //components/rel/ssg.tzw/1.2/securemsm/platform/drivers/pimem/build/SConscript#1 $
+#  $DateTime: 2020/11/02 23:12:26 $
+#  $Author: pwbldsvc $
+#  $Change: 27014951 $
+#                      EDIT HISTORY FOR FILE
+#
+#  This section contains comments describing changes made to the module.
+#  Notice that changes are listed in reverse chronological order.
+#
+# when       who     what, where, why
+# --------   ---     ---------------------------------------------------------
+# 05/13/14   ah     initial version
+#===============================================================================
+Import('env')
+env = env.Clone()
+
+env.LoadSoftwareUnits()
+
+#-------------------------------------------------------------------------------
+# Source PATH
+#-------------------------------------------------------------------------------
+SRCPATH = "../"
+
+env.VariantDir('${BUILDPATH}', SRCPATH, duplicate=0)
+
+#-------------------------------------------------------------------------------
+# PIMEM Version
+#-------------------------------------------------------------------------------
+env.Replace(PIMEM_VERSION = None)
+pimem_v2 = ['845','670','6150','7150','nicobar']
+if env['MSM_ID'] in pimem_v2:
+    env.Replace(PIMEM_VERSION = 'v2')
+
+pimem_v3 = ['855', '1000', '8250','saipan']
+if env['MSM_ID'] in pimem_v3:
+    env.Replace(PIMEM_VERSION = 'v3')
+
+#-------------------------------------------------------------------------------
+# Internal depends within CoreBSP
+#-------------------------------------------------------------------------------
+CBSP_API = [
+   'DAL',
+   'SERVICES',
+   'SYSTEMDRIVERS',
+   'KERNEL_API',
+   'KERNEL',
+]
+env.RequirePublicApi(CBSP_API, area='core')
+
+
+SSG_API = [
+   'QSEE',
+   'MINK',
+   'TZCHIPSET',
+   'MON_CALL',
+   'MONITOR_API',
+   'SSGPLATFORM',
+   'SSGPLATFORM_DRIVERS',
+   'SECUTILS',
+]
+env.RequirePublicApi(SSG_API, area = 'ssg')
+env.RequireRestrictedApi(SSG_API)
+
+#-------------------------------------------------------------------------------
+# Sources, libraries
+#-------------------------------------------------------------------------------
+
+QSEE_SOURCES = []
+MON_SOURCES = []
+
+if env.has_key('tzbsp_no_pimem'):
+
+  if env['tzbsp_no_pimem'] == 0 and env['PIMEM_VERSION'] is not None:
+    QSEE_SOURCES = [
+        '${BUILDPATH}/src/tzbsp_pimem_common.c',
+        '${BUILDPATH}/src/${PIMEM_VERSION}/tzbsp_pimem.c',
+    ]
+    MON_SOURCES = [
+        '${BUILDPATH}/src/${PIMEM_VERSION}/mon_pimem.c',
+    ]
+
+    if 'USES_DEVCFG' in env:
+      DEVCFG_IMG = ['DAL_DEVCFG_IMG']
+      env.AddDevCfgInfo(DEVCFG_IMG,
+      {
+        'devcfg_xml' : '${BUILD_ROOT}/ssg/securemsm/platform/drivers/pimem/cfg/pimem_${CHIPSET}.xml'
+      })
+
+  else:
+    QSEE_SOURCES = ['${BUILDPATH}/src/tzbsp_pimem_stub.c']
+
+#-------------------------------------------------------------------------------
+# Add Libraries to image
+#-------------------------------------------------------------------------------
+env.AddBinaryObject('TZOS_IMAGE', QSEE_SOURCES)
+env.AddBinaryObject('MONITOR_IMAGE', MON_SOURCES)
+
+# IPQ60XX: Not used here
+#if 'USES_RCINIT' in env:
+#  RCINIT_IMGS = ['CTZL64_IMAGE', 'TZOS_IMAGE', 'CTZL_IMAGE']
+#  env.AddRCInitFunc(
+#    RCINIT_IMGS,
+#    {
+#      'sequence_group'             : 'RCINIT_GROUP_2',
+#      'init_name'                  : 'pimem',
+#      'init_function'              : 'tzbsp_pimem_init',
+#      'dependencies'               : ['chipset'],
+#      'policy_optin'               : ['default']
+      
+#    })
+env.Deploy("SConscript")
