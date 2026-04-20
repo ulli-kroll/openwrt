@@ -21,6 +21,14 @@ define Device/siflower_sf19a2890-evb
 endef
 TARGET_DEVICES += siflower_sf19a2890-evb
 
+define Device/bananapi_wifi5
+  DEVICE_VENDOR := Bananapi
+  DEVICE_MODEL := Wifi5
+  BOARD_NAME := bananapi,wifi5
+  DEVICE_DTS := sf19a2890_bananapi-wifi5
+endef
+TARGET_DEVICES += bananapi_wifi5
+
 define Device/glinet_gl-sf1200
   DEVICE_VENDOR := GL.iNET
   DEVICE_MODEL := GL-SF1200
