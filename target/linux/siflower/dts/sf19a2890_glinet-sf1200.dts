@@ -1,0 +1,133 @@
+/dts-v1/;
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+#include "sf19a2890.dtsi"
+
+/ {
+	model = "GL Inet SFT1200";
+	compatible = "glinet,sft1200", "siflower,sf19a2890";
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x0 0x8000000>;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_wlan: wlan {
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 27 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+};
+
+&gmac {
+	status = "okay";
+	phy-mode = "rgmii-id";
+	snps,ps-speed = <1000>;
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+		pause;
+	};
+};
+
+&wlan_rf {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+};
+
+&usb {
+	status = "okay";
+};
+
+&usb_phy {
+	status = "okay";
+};
+
+&spi {
+	status = "okay";
+	flash@0 {
+		compatible = "jedec,spi-nand";
+		reg = <0>;
+		spi-max-frequency = <30000000>;
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "spl-loader";
+				reg = <0x0 0x20000>; /* 128k */
+				read-only;
+			};
+
+			partition@20000 {
+				label = "u-boot";
+				reg = <0x20000 0x60000>; /* 384k */
+			};
+
+			partition@80000 {
+				label = "u-boot-env";
+				reg = <0x80000 0x20000>; /* 128k */
+			};
+/*
+
+[   12.781731] macaddr is 94 83 c4 2f d3 b8
+[   12.901272] get gmac delay: 1715
+[   13.006248] sf_gmac: request irq=18 ret=0
+[   13.010431] sf_gmac: request pmt irq=19 ret=0
+
+
+*/
+			partition@90000 {
+				label = "factory";
+				reg = <0xa0000 0x7f400000>; /* 128k */
+			};
+
+			partition@c0000 {
+				label = "kernel";
+				reg = <0xc0000 0x400000>; /* 640k- */
+			};
+
+			partition@4c0000 {
+				label = "ubi";
+				reg = <0x4c0000 0x7b40000>; /* 640k- */
+			};
+
+		};
+	};
+};
+
+&mdio {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	switch@1f {
+		compatible = "maxlinear,gsw150";
+		reg = <0x1f>;
+	};
+};

@@ -20,3 +20,19 @@ define Device/siflower_sf19a2890-evb
   DEVICE_PACKAGES := kmod-switch-rtl8367b swconfig
 endef
 TARGET_DEVICES += siflower_sf19a2890-evb
+
+define Device/glinet_gl-sf1200
+  DEVICE_VENDOR := GL.iNET
+  DEVICE_MODEL := GL-SF1200
+  BOARD_NAME := glinet,sf1200
+  DEVICE_DTS := sf19a2890_glinet-sf1200
+endef
+TARGET_DEVICES += glinet_gl-sf1200
+
+define Device/glinet_gl-sft1200
+  DEVICE_VENDOR := GL.iNET
+  DEVICE_MODEL := GL-SFT1200
+  BOARD_NAME := glinet,sft1200
+  DEVICE_DTS := sf19a2890_glinet-sft1200
+endef
+TARGET_DEVICES += glinet_gl-sft1200

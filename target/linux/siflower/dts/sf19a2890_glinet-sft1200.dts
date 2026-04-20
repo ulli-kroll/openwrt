@@ -1,0 +1,224 @@
+/dts-v1/;
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+#include "sf19a2890.dtsi"
+
+/ {
+	model = "GL Inet SFT1200";
+	compatible = "glinet,sft1200", "siflower,sf19a2890";
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x0 0x8000000>;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 27 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+
+		switch {
+			label = "switch";
+			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&gmac {
+	nvmem-cells = <&macaddr_factory_0 1>;
+	nvmem-cell-names = "mac-address";
+
+	status = "okay";
+	phy-mode = "rgmii-id";
+	snps,ps-speed = <1000>;
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+		pause;
+	};
+};
+
+&wlan_rf {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+};
+
+&usb {
+	status = "okay";
+};
+
+&usb_phy {
+	status = "okay";
+};
+
+&spi {
+	status = "okay";
+	flash@0 {
+		compatible = "jedec,spi-nand";
+		reg = <0>;
+		spi-max-frequency = <30000000>;
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "spl-loader";
+				reg = <0x0 0x20000>; /* 128k */
+				read-only;
+			};
+
+			partition@20000 {
+				label = "u-boot";
+				reg = <0x20000 0x60000>; /* 384k */
+			};
+
+			partition@80000 {
+				label = "u-boot-env";
+				reg = <0x80000 0x20000>; /* 128k */
+			};
+
+			partition@a0000 {
+				label = "factory";
+				reg = <0xa0000 0x20000>; /* 128k */
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_factory_0: macaddr@0 {
+						reg = <0x0 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+
+					macaddr_factory_400: macaddr@400 {
+						compatible = "mac-base";
+						reg = <0x400 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+
+			partition@c0000 {
+				label = "firmware";
+				reg = <0xc0000 0x7e00000>; /* 640k- */
+			};
+
+		};
+	};
+};
+
+&mdio {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	switch@1f {
+		compatible = "intel,gsw150";
+		reg = <0x00>;
+		status = "okay";
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				label = "wan";
+				phy-handle = <&switchphy0>;
+				phy-mode = "internal";
+			};
+
+			port@1 {
+				reg = <1>;
+				label = "lan0";
+				phy-handle = <&switchphy1>;
+				phy-mode = "internal";
+			};
+
+			port@2 {
+				reg = <2>;
+				label = "lan1";
+				phy-handle = <&switchphy2>;
+				phy-mode = "internal";
+			};
+
+			port@5 {
+				reg = <5>;
+				phy-mode = "rgmii-id";
+
+				ethernet = <&gmac>;
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+		};
+
+		mdio {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			switchphy0: ethernet-phy@0 {
+				reg = <0>;
+
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					led@0 {
+						reg = <0>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = LED_FUNCTION_LAN;
+					};
+				};
+			};
+
+			switchphy1: ethernet-phy@1 {
+				reg = <1>;
+
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					led@0 {
+						reg = <0>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = LED_FUNCTION_LAN;
+					};
+				};
+			};
+
+			switchphy2: ethernet-phy@2 {
+				reg = <2>;
+
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					led@0 {
+						reg = <0>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = LED_FUNCTION_LAN;
+					};
+				};
+			};
+		};
+	};
+};
