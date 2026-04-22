@@ -1,0 +1,25 @@
+From 86fddf7979a87b3f3dbfe7d73ca2ce432aec5289 Mon Sep 17 00:00:00 2001
+From: Hans Ulli Kroll <linux@ulli-kroll.de>
+Date: Wed, 22 Apr 2026 18:27:27 +0200
+Subject: [PATCH] remove COMPILE_TEST flag
+
+Signed-off-by: Hans Ulli Kroll <linux@ulli-kroll.de>
+---
+ drivers/nvmem/Kconfig | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/drivers/nvmem/Kconfig b/drivers/nvmem/Kconfig
+index aac1b25..2617c55 100644
+--- a/drivers/nvmem/Kconfig
++++ b/drivers/nvmem/Kconfig
+@@ -31,7 +31,6 @@ source "drivers/nvmem/layouts/Kconfig"
+ 
+ config NVMEM_AN8855_EFUSE
+ 	tristate "Airoha AN8855 eFuse support"
+-	depends on COMPILE_TEST
+ 	help
+ 	  Say y here to enable support for reading eFuses on Airoha AN8855
+ 	  Switch. These are e.g. used to store factory programmed
+-- 
+2.53.0
+
