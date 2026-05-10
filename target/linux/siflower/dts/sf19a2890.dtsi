@@ -156,6 +156,7 @@
 			interrupts = <GIC_SHARED 217 IRQ_TYPE_LEVEL_HIGH>;
 			clocks = <&i2cclk 0>;
 			clock-names = "ref";
+			clock-frequency = <400000>;
 			resets = <&i2crst 0>;
 			pinctrl-names = "default";
 			pinctrl-0 = <&i2c0_pins>;
